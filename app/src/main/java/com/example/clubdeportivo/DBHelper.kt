@@ -828,10 +828,11 @@ package com.example.clubdeportivo
         fechaPago: String = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
     ): Long {
         val db = writableDatabase
-        val fechaVenc = LocalDate.parse(ultimoPago).plusMonths(1).toString()
-        val s = obtenerPersonaPorDni(dni)
+        val fechaVenc = ClubFormatters.proximoVencimiento(ultimoPago)
+        val cliente = obtenerPersonaPorDni(dni)
+            ?: throw IllegalArgumentException("No existe un cliente activo con ese DNI")
         val cv = ContentValues().apply {
-            put("idSocio", s!!.id)
+            put("idCliente", cliente.id)
             put("monto", monto)
             put("fechaPago", fechaPago)
             put("formaPago", formaPago)
@@ -1068,8 +1069,6 @@ package com.example.clubdeportivo
     private fun existeConDni(table: String, dni: String): Boolean =
         readableDatabase.query(table, arrayOf("dni"), "dni = ?", arrayOf(dni), null, null, null)
             .use { it.moveToFirst() }
-    private fun etiquetaDia(dia: Int) = when (dia) {
-        0 -> "Dom"; 1 -> "Lun"; 2 -> "Mar"; 3 -> "Mié"; 4 -> "Jue"; 5 -> "Vie"; else -> "Sáb"
-    }
-    private fun hhmm(mins: Int) = String.format("%02d:%02d", mins / 60, mins % 60)
+    private fun etiquetaDia(dia: Int) = ClubFormatters.etiquetaDia(dia)
+    private fun hhmm(mins: Int) = ClubFormatters.hhmm(mins)
 }

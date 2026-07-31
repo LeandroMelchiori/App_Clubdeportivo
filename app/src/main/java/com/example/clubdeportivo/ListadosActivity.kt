@@ -52,8 +52,8 @@ class ListadosActivity : AppCompatActivity() {
         tvFecha = findViewById(R.id.tvFecha)
 
 
-        // Fecha actual
-        val hoy = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
+        // Fecha actual usada para vencimientos y refrescos.
+        hoyISO = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
 
         // Recupera el nombre de usuario del intent y lo muestra
         val usuario = intent.getStringExtra("usuario") ?: "Usuario"
@@ -86,7 +86,7 @@ class ListadosActivity : AppCompatActivity() {
         // Listados
         renderNoSocios(db.obtenerNoSocios())
         renderSocios(db.obtenerSocios())
-        renderVencimientos(db.obtenerVencimientos(hoy))
+        renderVencimientos(db.obtenerVencimientos(hoyISO))
 
         // Botones listas
         val botonVencimiento: Button = findViewById(R.id.btnListVencimientos)

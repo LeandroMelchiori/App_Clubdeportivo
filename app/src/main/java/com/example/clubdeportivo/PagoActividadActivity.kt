@@ -67,13 +67,8 @@ class PagoActividadActivity : AppCompatActivity() {
         val fechaHoy = formato.format(Date())
         tvFecha.text = fechaHoy.replaceFirstChar { it.uppercase() }
 
-        // Valor int dia de la convertido a texto
-        val dias = arrayOf("Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado")
-        val diaTxt = when {
-            diaActividad in 0..6 -> dias[diaActividad]
-            diaActividad in 1..7 -> dias[diaActividad % 7] // 7→0 (Domingo)
-            else -> diaActividad.toString()
-        }
+        // Valor int del dia convertido a texto para mostrar en pantalla.
+        val diaTxt = ClubFormatters.nombreDia(diaActividad)
         // Asignar datos a views
         tvNombreActividad.text = "Actividad: $nombreActividad"
         tvHoraInicio.text = "$diaTxt - $horaInicio hs"
@@ -161,7 +156,7 @@ class PagoActividadActivity : AppCompatActivity() {
                 }
 
                 R.id.nav_listas -> {
-                    startActivity(Intent(this, ListadosActivity::class.java)) // o MainActivity
+                    startActivity(Intent(this, ListadosActivity::class.java).putExtra("usuario", usuario))
                     true
                 }
 
