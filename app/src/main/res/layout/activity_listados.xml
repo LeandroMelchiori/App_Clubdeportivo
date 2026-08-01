@@ -147,6 +147,16 @@
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
+            <TextView
+                android:id="@+id/tvEstadoLista"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="6dp"
+                android:paddingStart="20dp"
+                android:text="Mostrando 0 registros"
+                android:textColor="@color/text_secondary"
+                android:textSize="15sp" />
+
             <!-- Listados -->
             <FrameLayout
                 android:id="@+id/contenedorListas"

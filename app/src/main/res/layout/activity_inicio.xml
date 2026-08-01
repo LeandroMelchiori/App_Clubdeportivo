@@ -153,6 +153,15 @@
                     android:textColor="@color/text_secondary"
                     android:textSize="24sp" />
 
+                <TextView
+                    android:id="@+id/tvEstadoActividadesHoy"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="Actividades programadas: 0"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="16sp" />
+
                 <LinearLayout
                     android:id="@+id/contenedorActividadesHoy"
                     android:layout_width="match_parent"

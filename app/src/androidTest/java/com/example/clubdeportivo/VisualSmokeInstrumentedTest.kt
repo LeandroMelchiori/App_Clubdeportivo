@@ -39,6 +39,7 @@ class VisualSmokeInstrumentedTest {
             onView(withText("Nuevo Usuario")).check(matches(isDisplayed()))
             onView(withId(R.id.panelMetricas)).check(matches(isDisplayed()))
             onView(withId(R.id.tvIngresosMes)).check(matches(isDisplayed()))
+            onView(withId(R.id.tvEstadoActividadesHoy)).check(matches(isDisplayed()))
             onView(withId(R.id.contenedorActividadesHoy)).check(matches(isDisplayed()))
             onView(withId(R.id.bottomNav)).check(matches(isDisplayed()))
             captureScreen("inicio")
@@ -58,6 +59,7 @@ class VisualSmokeInstrumentedTest {
             onView(withId(R.id.btnListNoSocios)).check(matches(isDisplayed()))
             onView(withId(R.id.svBuscar)).check(matches(isDisplayed()))
             onView(withId(R.id.tvResumenVencimientos)).check(matches(isDisplayed()))
+            onView(withId(R.id.tvEstadoLista)).check(matches(isDisplayed()))
             onView(withId(R.id.rvNoSocios)).check(matches(isDisplayed()))
             captureScreen("listados")
         } finally {

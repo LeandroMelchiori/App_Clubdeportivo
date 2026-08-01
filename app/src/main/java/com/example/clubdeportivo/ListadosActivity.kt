@@ -26,6 +26,7 @@ class ListadosActivity : AppCompatActivity() {
     private lateinit var tvNombreLista: TextView
     private lateinit var tvFecha: TextView
     private lateinit var tvResumenVencimientos: TextView
+    private lateinit var tvEstadoLista: TextView
     private lateinit var noSocioAdapter: NoSocioAdapter
     private lateinit var socioAdapter: SocioAdapter
     private lateinit var vencimientoAdapter: VencimientoAdapter
@@ -52,6 +53,7 @@ class ListadosActivity : AppCompatActivity() {
         tvNombreLista = findViewById(R.id.tvNombreLista)
         tvFecha = findViewById(R.id.tvFecha)
         tvResumenVencimientos = findViewById(R.id.tvResumenVencimientos)
+        tvEstadoLista = findViewById(R.id.tvEstadoLista)
 
 
         // Fecha actual usada para vencimientos y refrescos.
@@ -186,9 +188,25 @@ class ListadosActivity : AppCompatActivity() {
         val resumen = db.obtenerResumenVencimientos(hoyISO)
         tvResumenVencimientos.text = "Al dia: ${resumen.alDia} | Por vencer: ${resumen.porVencer} | Vencidos: ${resumen.vencidos}"
     }
-    private fun renderNoSocios(lista: List<DBHelper.NoSocioCard>) = noSocioAdapter.submitList(lista)
-    private fun renderSocios(lista: List<DBHelper.SocioCard>)     = socioAdapter.submitList(lista)
-    private fun renderVencimientos(lista: List<DBHelper.VencimientoCard>) = vencimientoAdapter.submitList(lista)
+    private fun renderNoSocios(lista: List<DBHelper.NoSocioCard>) {
+        noSocioAdapter.submitList(lista)
+        actualizarEstadoLista(lista.size, "no socios")
+    }
+    private fun renderSocios(lista: List<DBHelper.SocioCard>) {
+        socioAdapter.submitList(lista)
+        actualizarEstadoLista(lista.size, "socios")
+    }
+    private fun renderVencimientos(lista: List<DBHelper.VencimientoCard>) {
+        vencimientoAdapter.submitList(lista)
+        actualizarEstadoLista(lista.size, "vencimientos")
+    }
+    private fun actualizarEstadoLista(cantidad: Int, tipo: String) {
+        tvEstadoLista.text = if (cantidad == 0) {
+            "Sin registros de $tipo"
+        } else {
+            "Mostrando $cantidad registros de $tipo"
+        }
+    }
     private fun refreshVisibleList() {
         val rvSocios        = findViewById<RecyclerView>(R.id.rvSocios)
         val rvNoSocios      = findViewById<RecyclerView>(R.id.rvNoSocios)

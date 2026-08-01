@@ -107,7 +107,13 @@ class InicioActivity : AppCompatActivity() {
 
     private fun renderActividadesHoy(actividades: List<ActividadHoy>, usuario: String) {
         val contenedor = findViewById<LinearLayout>(R.id.contenedorActividadesHoy)
+        val tvEstado = findViewById<TextView>(R.id.tvEstadoActividadesHoy)
         contenedor.removeAllViews()
+        tvEstado.text = if (actividades.isEmpty()) {
+            "Sin actividades programadas para hoy"
+        } else {
+            "Actividades programadas: ${actividades.size}"
+        }
 
         val inflater = LayoutInflater.from(this)
 
