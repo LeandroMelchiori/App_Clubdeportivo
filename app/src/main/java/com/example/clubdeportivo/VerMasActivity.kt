@@ -40,7 +40,10 @@ class VerMasActivity : AppCompatActivity() {
         val tvTelefono = findViewById<TextView>(R.id.tvTelefono)
         val tvFechaNacimiento = findViewById<TextView>(R.id.tvFechaNacimiento)
         val tvIdTipoSocio = findViewById<TextView>(R.id.tvIdTipoSocio)
-
+        val tvEstadoCuenta = findViewById<TextView>(R.id.tvEstadoCuenta)
+        val tvUltimoPago = findViewById<TextView>(R.id.tvUltimoPago)
+        val tvProximoVencimiento = findViewById<TextView>(R.id.tvProximoVencimiento)
+        val tvDeudaEstimada = findViewById<TextView>(R.id.tvDeudaEstimada)
 
         // Reemplaza datos en las view
         tvNombreCompleto.text = "${cliente?.nombre}, ${cliente?.apellido} "
@@ -50,9 +53,16 @@ class VerMasActivity : AppCompatActivity() {
         tvFechaNacimiento.text = "Fecha de nacimiento: ${cliente?.fecha_nac}"
         tvEmail.text = "Email: ${cliente?.email}"
         if (cliente.esSocio) {
-            tvIdTipoSocio.text = "Socio nº: ${cliente.id}"
+            tvIdTipoSocio.text = "Socio nro: ${cliente.id}"
         } else {
-        tvIdTipoSocio.text = "NoSocio nª: ${cliente.id}"}
+            tvIdTipoSocio.text = "No socio nro: ${cliente.id}"
+        }
+
+        val cuenta = db.obtenerCuentaCorriente(cliente.dni)
+        tvEstadoCuenta.text = "Estado: ${cuenta?.estado ?: "Sin datos"} - ${cuenta?.detalleEstado ?: ""}"
+        tvUltimoPago.text = "Ultimo pago: ${cuenta?.ultimoPagoCuota ?: cuenta?.ultimoPagoActividad ?: "Sin registros"}"
+        tvProximoVencimiento.text = "Proximo vencimiento: ${cuenta?.proximoVencimiento ?: "No aplica"}"
+        tvDeudaEstimada.text = "Deuda estimada: $${cuenta?.deudaEstimada ?: 0.0}"
 
         // Boton editar
         val btnEditar = findViewById<MaterialButton>(R.id.btnEditar)

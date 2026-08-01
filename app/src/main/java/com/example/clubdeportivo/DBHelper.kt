@@ -629,6 +629,64 @@ package com.example.clubdeportivo
         }
         return lista
     }
+    fun obtenerCuentaCorriente(dni: String): CuentaCorrienteDTO? {
+        val persona = obtenerPersonaPorDni(dni) ?: return null
+        val db = readableDatabase
+
+        var ultimoPagoCuota: String? = null
+        var proximoVencimiento: String? = null
+        var totalCuotas = 0.0
+        db.rawQuery(
+            """
+                SELECT fechaPago, fechaVencimiento, IFNULL(monto, 0)
+                FROM cuotas
+                WHERE idCliente = ?
+                ORDER BY fechaPago DESC, idCuota DESC
+                LIMIT 1
+            """.trimIndent(),
+            arrayOf(persona.id.toString())
+        ).use { c ->
+            if (c.moveToFirst()) {
+                ultimoPagoCuota = c.getString(0)
+                proximoVencimiento = c.getString(1)
+                totalCuotas = c.getDouble(2)
+            }
+        }
+
+        var ultimoPagoActividad: String? = null
+        var totalActividades = 0.0
+        db.rawQuery(
+            """
+                SELECT MAX(fecha_pago), IFNULL(SUM(monto), 0)
+                FROM pagos_actividad
+                WHERE idCliente = ?
+            """.trimIndent(),
+            arrayOf(persona.id.toString())
+        ).use { c ->
+            if (c.moveToFirst()) {
+                ultimoPagoActividad = c.getString(0)
+                totalActividades = c.getDouble(1)
+            }
+        }
+
+        val estado = if (persona.esSocio) {
+            CuentaCorrienteCalculator.evaluarSocio(proximoVencimiento)
+        } else {
+            CuentaCorrienteCalculator.evaluarNoSocio(ultimoPagoActividad != null)
+        }
+
+        return CuentaCorrienteDTO(
+            estado = estado.estado,
+            detalleEstado = estado.detalle,
+            ultimoPagoCuota = ultimoPagoCuota,
+            proximoVencimiento = proximoVencimiento,
+            ultimoPagoActividad = ultimoPagoActividad,
+            totalCuotas = totalCuotas,
+            totalActividades = totalActividades,
+            deudaEstimada = estado.deudaEstimada
+        )
+    }
+
     fun obtenerResumenPagosMes(anio: Int, mes: Int): ResumenPagosMes {
             val db = readableDatabase
             val anioStr = anio.toString()
@@ -1047,6 +1105,16 @@ package com.example.clubdeportivo
         val fichaMedica: String?,
         val esSocio: Boolean,
         )
+    data class CuentaCorrienteDTO(
+        val estado: String,
+        val detalleEstado: String,
+        val ultimoPagoCuota: String?,
+        val proximoVencimiento: String?,
+        val ultimoPagoActividad: String?,
+        val totalCuotas: Double,
+        val totalActividades: Double,
+        val deudaEstimada: Double
+    )
     data class ResumenPagosMes(
         val anio: Int,
         val mes: Int,
