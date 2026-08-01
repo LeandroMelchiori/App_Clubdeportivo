@@ -448,14 +448,12 @@ package com.example.clubdeportivo
                     GROUP BY idCliente
                 ) ult ON ult.idCliente = c.idCliente
                      AND ult.maxVenc = c.fechaVencimiento
-                -- Vence hoy o ya venció
-                WHERE c.fechaVencimiento <= ?
-                    AND s.activo = 1
+                WHERE s.activo = 1
                     AND esSocio = 1
                 ORDER BY s.apellido, s.nombre
             """.trimIndent()
 
-            val c = db.rawQuery(sql, arrayOf(fecha))
+            val c = db.rawQuery(sql, null)
             if (c.moveToFirst()) {
                 do {
                     val nombre  = c.getString(0)
@@ -471,6 +469,22 @@ package com.example.clubdeportivo
             db.close()
             return lista
         }
+    fun obtenerResumenVencimientos(fecha: String): ResumenVencimientos {
+        val hoy = LocalDate.parse(fecha)
+        var alDia = 0
+        var porVencer = 0
+        var vencidos = 0
+
+        obtenerVencimientos(fecha).forEach { item ->
+            when (VencimientoCalculator.clasificar(item.fechaVenc, hoy).categoria) {
+                "Al dia" -> alDia++
+                "Por vencer" -> porVencer++
+                "Vencido" -> vencidos++
+            }
+        }
+
+        return ResumenVencimientos(alDia, porVencer, vencidos)
+    }
     fun obtenerActividadesDelDia(dia: Int): List<InicioActivity.ActividadHoy> {
         val lista = mutableListOf<InicioActivity.ActividadHoy>()
         val db = readableDatabase
@@ -1075,6 +1089,11 @@ package com.example.clubdeportivo
         val dni: String,
         val fechaVenc: String,
         val ultimoPago: String?
+    )
+    data class ResumenVencimientos(
+        val alDia: Int,
+        val porVencer: Int,
+        val vencidos: Int
     )
     data class SocioCard(
         val nombre: String,

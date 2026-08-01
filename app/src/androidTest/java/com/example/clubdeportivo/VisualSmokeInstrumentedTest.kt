@@ -55,6 +55,7 @@ class VisualSmokeInstrumentedTest {
             onView(withId(R.id.btnListSocios)).check(matches(isDisplayed()))
             onView(withId(R.id.btnListNoSocios)).check(matches(isDisplayed()))
             onView(withId(R.id.svBuscar)).check(matches(isDisplayed()))
+            onView(withId(R.id.tvResumenVencimientos)).check(matches(isDisplayed()))
             onView(withId(R.id.rvNoSocios)).check(matches(isDisplayed()))
             captureScreen("listados")
         } finally {

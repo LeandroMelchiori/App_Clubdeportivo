@@ -25,6 +25,7 @@ class ListadosActivity : AppCompatActivity() {
     private lateinit var rvVenc: RecyclerView
     private lateinit var tvNombreLista: TextView
     private lateinit var tvFecha: TextView
+    private lateinit var tvResumenVencimientos: TextView
     private lateinit var noSocioAdapter: NoSocioAdapter
     private lateinit var socioAdapter: SocioAdapter
     private lateinit var vencimientoAdapter: VencimientoAdapter
@@ -50,6 +51,7 @@ class ListadosActivity : AppCompatActivity() {
         rvVenc     = findViewById(R.id.rvVencimientos)
         tvNombreLista = findViewById(R.id.tvNombreLista)
         tvFecha = findViewById(R.id.tvFecha)
+        tvResumenVencimientos = findViewById(R.id.tvResumenVencimientos)
 
 
         // Fecha actual usada para vencimientos y refrescos.
@@ -87,6 +89,7 @@ class ListadosActivity : AppCompatActivity() {
         renderNoSocios(db.obtenerNoSocios())
         renderSocios(db.obtenerSocios())
         renderVencimientos(db.obtenerVencimientos(hoyISO))
+        renderResumenVencimientos()
 
         // Botones listas
         val botonVencimiento: Button = findViewById(R.id.btnListVencimientos)
@@ -120,6 +123,7 @@ class ListadosActivity : AppCompatActivity() {
             botonSocios.setTextColor(Color.BLACK);
             botonVencimiento.setTextColor(Color.WHITE)
             tvNombreLista.text = "Listado Vencimientos"
+            renderResumenVencimientos()
         }
         botonSocios.setOnClickListener {
             mostrar(rvSocios)
@@ -178,6 +182,10 @@ class ListadosActivity : AppCompatActivity() {
         rvVenc.visibility     = View.GONE
         rv.visibility         = View.VISIBLE
     }
+    private fun renderResumenVencimientos() {
+        val resumen = db.obtenerResumenVencimientos(hoyISO)
+        tvResumenVencimientos.text = "Al dia: ${resumen.alDia} | Por vencer: ${resumen.porVencer} | Vencidos: ${resumen.vencidos}"
+    }
     private fun renderNoSocios(lista: List<DBHelper.NoSocioCard>) = noSocioAdapter.submitList(lista)
     private fun renderSocios(lista: List<DBHelper.SocioCard>)     = socioAdapter.submitList(lista)
     private fun renderVencimientos(lista: List<DBHelper.VencimientoCard>) = vencimientoAdapter.submitList(lista)
@@ -192,8 +200,10 @@ class ListadosActivity : AppCompatActivity() {
             rvNoSocios.visibility == View.VISIBLE ->
                 renderNoSocios(db.obtenerNoSocios())
 
-            rvVencimientos.visibility == View.VISIBLE ->
+            rvVencimientos.visibility == View.VISIBLE -> {
                 renderVencimientos(db.obtenerVencimientos(hoyISO))
+                renderResumenVencimientos()
+            }
 
             else ->
                 renderNoSocios(db.obtenerNoSocios()) // fallback

@@ -124,6 +124,16 @@
                 android:background="@drawable/bg_input_gray"
                 android:text="Buscar" />
 
+            <TextView
+                android:id="@+id/tvResumenVencimientos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="Al dia: 0 | Por vencer: 0 | Vencidos: 0"
+                android:textColor="@color/text_secondary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
             <!-- Fecha -->
             <TextView
                 android:id="@+id/tvNombreLista"
