@@ -51,35 +51,38 @@ class NuevoUsuarioActivity : AppCompatActivity() {
                 val email     = etEmail.text.toString().trim()
 
                 // Validaciones campos vacios
+                listOf(etNombre, etApellido, etFecha, etDNI, etDireccion, etTelefono, etEmail).forEach { it.error = null }
 
                 if (nombre.isEmpty() || apellido.isEmpty() || dni.isEmpty() || fecha.isEmpty() || direccion.isEmpty() || telefono.isEmpty() || email.isEmpty()) {
                     Toast.makeText(this, "Todos los campos son obligatorios", Toast.LENGTH_LONG).show()
                     return@setOnClickListener
                 }
 
-                //  Validar DNI
-                if (!dni.matches(Regex("^\\d{8,9}\$"))) {
-                    Toast.makeText(this, "El DNI debe tener 8 o 9 números", Toast.LENGTH_LONG).show()
+                if (!UsuarioValidator.dniValido(dni)) {
+                    etDNI.error = "Debe tener 8 o 9 numeros"
                     etDNI.requestFocus()
                     return@setOnClickListener
                 }
 
-                // Validar teléfono
-                if (!telefono.matches(Regex("^\\d{9,12}\$"))) {
-                    Toast.makeText(this, "Ingrese numerode telefono valido", Toast.LENGTH_LONG).show()
+                if (!UsuarioValidator.telefonoValido(telefono)) {
+                    etTelefono.error = "Debe tener entre 9 y 12 numeros"
                     etTelefono.requestFocus()
                     return@setOnClickListener
                 }
 
-                // 4) Validar email
-                if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                    Toast.makeText(this, "Ingrese un correo electrónico válido", Toast.LENGTH_LONG).show()
+                if (!UsuarioValidator.emailValido(email)) {
+                    etEmail.error = "Correo invalido"
                     etEmail.requestFocus()
                     return@setOnClickListener
                 }
 
-                // Normaliza la fecha de nacimiento
-                val fechaISO = normalizarFecha(fecha)
+                val fechaISO = UsuarioValidator.normalizarFechaNacimiento(fecha)
+                if (fechaISO == null) {
+                    etFecha.error = "Usa el formato dd/mm/aaaa"
+                    etFecha.requestFocus()
+                    return@setOnClickListener
+                }
+
                 // Fecha hoy
                 val hoyISO = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
                 // Tabla
@@ -90,7 +93,7 @@ class NuevoUsuarioActivity : AppCompatActivity() {
                     put("dni", dni.trim())
                     put("nombre", nombre.trim())
                     put("apellido", apellido.trim())
-                    fechaISO?.let { put("fecha_nac", it) }
+                    put("fecha_nac", fechaISO)
                     put("direccion", direccion)
                     put("telefono", telefono.trim())
                     put("email", email.trim())
@@ -179,17 +182,6 @@ class NuevoUsuarioActivity : AppCompatActivity() {
         }
     }
 
-    // Metodo para normalizar la fecha
-    private fun normalizarFecha(input: String): String? {
-        if (input.isBlank()) return null
-        return try {
-            val inFmt  = SimpleDateFormat("dd/MM/yyyy", Locale("es", "AR"))
-            val outFmt = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-            outFmt.format(inFmt.parse(input)!!)
-        } catch (_: Exception) {
-            null
-        }
-    }
 
     // Metodo para chequear si el DNI ya está registrado
     private fun existeDni(db: SQLiteDatabase, tabla: String, dni: String): Boolean {
