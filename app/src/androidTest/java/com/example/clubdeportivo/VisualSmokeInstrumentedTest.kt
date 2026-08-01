@@ -65,6 +65,21 @@ class VisualSmokeInstrumentedTest {
         }
     }
 
+
+    @Test
+    fun resumenMensual_muestraExportacion() {
+        val intent = Intent(ApplicationProvider.getApplicationContext(), ResumenMensualActivity::class.java)
+            .putExtra("usuario", "QA")
+        val scenario = ActivityScenario.launch<ResumenMensualActivity>(intent)
+        try {
+            onView(withId(R.id.tvIngresosTotales)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnDescargar)).check(matches(isDisplayed()))
+            captureScreen("resumen_mensual")
+        } finally {
+            scenario.close()
+        }
+    }
+
     private fun captureScreen(name: String) {
         Screenshot.capture().setName(name).process()
     }

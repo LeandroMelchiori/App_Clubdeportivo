@@ -2,11 +2,14 @@ package com.example.clubdeportivo
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Environment
 import android.widget.ImageButton
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import java.text.SimpleDateFormat
+import java.io.File
 import java.util.Calendar
 import java.util.Locale
 
@@ -47,6 +50,7 @@ class ResumenMensualActivity : AppCompatActivity() {
         val tvIngresosTotales = findViewById<TextView>(R.id.tvIngresosTotales)
         val btnMesAnterior = findViewById<ImageButton>(R.id.btnMesAnterior)
         val btnMesSiguiente = findViewById<ImageButton>(R.id.btnMesSiguiente)
+        val btnDescargar = findViewById<TextView>(R.id.btnDescargar)
 
         fun nombreMes(mes: Int): String {
             val meses = arrayOf(
@@ -81,6 +85,15 @@ class ResumenMensualActivity : AppCompatActivity() {
                 anioActual--
             }
             cargarMes()
+        }
+
+        btnDescargar.setOnClickListener {
+            val resumen = db.obtenerResumenPagosMes(anioActual, mesActual)
+            val csv = CsvExporter.resumenMensual(nombreMes(mesActual), resumen)
+            val dir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) ?: filesDir
+            val file = File(dir, "resumen_${anioActual}_${String.format("%02d", mesActual)}.csv")
+            file.writeText(csv)
+            Toast.makeText(this, "CSV guardado: ${file.name}", Toast.LENGTH_LONG).show()
         }
 
         btnMesSiguiente.setOnClickListener {
