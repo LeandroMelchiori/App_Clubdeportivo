@@ -12,8 +12,11 @@ import androidx.recyclerview.widget.RecyclerView
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
-class NoSocioAdapter :
+class NoSocioAdapter(
+    usuario: String = SessionExtras.DEFAULT_USUARIO
+) :
     ListAdapter<DBHelper.NoSocioCard, NoSocioAdapter.VH>(DIFF) {
+    private val usuarioSesion = SessionExtras.nombreUsuario(usuario)
 
     class VH(view: View) : RecyclerView.ViewHolder(view) {
         val tvNombre: TextView = view.findViewById(R.id.tvNombre)
@@ -53,11 +56,14 @@ class NoSocioAdapter :
                 putExtra("nombre", "${ns.apellido}, ${ns.nombre}")
                 putExtra("tipoOperacion", "Ser socio")
                 putExtra("precio", "30000")
+                putExtra(SessionExtras.USUARIO, usuarioSesion)
             })
         }
         h.btnVerMas.setOnClickListener {
             val c = h.itemView.context
-            c.startActivity(Intent(c, VerMasActivity::class.java).putExtra("dni", ns.dni))
+            c.startActivity(Intent(c, VerMasActivity::class.java)
+                .putExtra("dni", ns.dni)
+                .putExtra(SessionExtras.USUARIO, usuarioSesion))
         }
     }
 

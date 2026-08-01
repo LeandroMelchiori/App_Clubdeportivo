@@ -69,6 +69,22 @@ class VisualSmokeInstrumentedTest {
 
 
     @Test
+    fun verMas_muestraUsuarioSesion() {
+        val intent = Intent(ApplicationProvider.getApplicationContext(), VerMasActivity::class.java)
+            .putExtra("usuario", "QA")
+            .putExtra("dni", "30111222")
+        val scenario = ActivityScenario.launch<VerMasActivity>(intent)
+        try {
+            onView(withText("Bienvenido, QA")).check(matches(isDisplayed()))
+            onView(withId(R.id.tvDatosPersonales)).check(matches(isDisplayed()))
+            captureScreen("ver_mas_usuario")
+        } finally {
+            scenario.close()
+        }
+    }
+
+
+    @Test
     fun resumenMensual_muestraExportacion() {
         val intent = Intent(ApplicationProvider.getApplicationContext(), ResumenMensualActivity::class.java)
             .putExtra("usuario", "QA")

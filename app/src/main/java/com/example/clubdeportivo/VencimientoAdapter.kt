@@ -11,12 +11,15 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 
 class VencimientoAdapter(
+    usuario: String = SessionExtras.DEFAULT_USUARIO,
     private val onAccion: (DBHelper.VencimientoCard) -> Unit = {},
     private val onVerMas: (DBHelper.VencimientoCard) -> Unit = {},
     // Podés usar un layout propio (p.ej. R.layout.item_vencimiento).
     // Mientras tanto reutilizo el de no socio que ya tenés.
     private val layoutRes: Int = R.layout.item_nosocio
 ) : ListAdapter<DBHelper.VencimientoCard, VencimientoAdapter.VH>(DIFF) {
+    private val usuarioSesion = SessionExtras.nombreUsuario(usuario)
+
     companion object {
         private val DIFF = object : DiffUtil.ItemCallback<DBHelper.VencimientoCard>() {
             override fun areItemsTheSame(
@@ -71,10 +74,13 @@ class VencimientoAdapter(
                 putExtra("ultimoPago", item.ultimoPago)
                 putExtra("precio", "33000")
                 putExtra("esSocio", true)
+                putExtra(SessionExtras.USUARIO, usuarioSesion)
             })
         }
         h.btnVerMas.setOnClickListener { val c = h.itemView.context
-            c.startActivity(Intent(c, VerMasActivity::class.java).putExtra("dni", item.dni)) }
+            c.startActivity(Intent(c, VerMasActivity::class.java)
+                .putExtra("dni", item.dni)
+                .putExtra(SessionExtras.USUARIO, usuarioSesion)) }
     }
 
     private var fullList: List<DBHelper.VencimientoCard> = emptyList()

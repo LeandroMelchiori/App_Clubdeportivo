@@ -13,11 +13,13 @@ import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 class SocioAdapter(
+    usuario: String = SessionExtras.DEFAULT_USUARIO,
     private val onAccion: (DBHelper.SocioCard) -> Unit = {},
     private val onVerMas: (DBHelper.SocioCard) -> Unit = {},
     // Si ya tenés un layout específico para socios, cambialo aquí
     private val layoutRes: Int = R.layout.item_nosocio
 ) : ListAdapter<DBHelper.SocioCard, SocioAdapter.VH>(DIFF) {
+    private val usuarioSesion = SessionExtras.nombreUsuario(usuario)
 
     companion object {
         private val DIFF = object : DiffUtil.ItemCallback<DBHelper.SocioCard>() {
@@ -71,10 +73,13 @@ class SocioAdapter(
                 putExtra("ultimoPago", item.ultimoPago)
                 putExtra("precio", "30000")
                 putExtra("esSocio", true)
+                putExtra(SessionExtras.USUARIO, usuarioSesion)
             })
         }
         h.btnVerMas.setOnClickListener { val c = h.itemView.context
-            c.startActivity(Intent(c, VerMasActivity::class.java).putExtra("dni", item.dni)) }
+            c.startActivity(Intent(c, VerMasActivity::class.java)
+                .putExtra("dni", item.dni)
+                .putExtra(SessionExtras.USUARIO, usuarioSesion)) }
     }
 
     private var fullList: List<DBHelper.SocioCard> = emptyList()

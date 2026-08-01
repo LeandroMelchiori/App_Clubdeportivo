@@ -60,7 +60,7 @@ class ListadosActivity : AppCompatActivity() {
         hoyISO = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
 
         // Recupera el nombre de usuario del intent y lo muestra
-        val usuario = intent.getStringExtra("usuario") ?: "Usuario"
+        val usuario = SessionExtras.nombreUsuario(intent.getStringExtra(SessionExtras.USUARIO))
         val tvBienvenida = findViewById<TextView>(R.id.tvBienvenida)
         tvBienvenida.text = "Bienvenido, $usuario"
 
@@ -75,9 +75,9 @@ class ListadosActivity : AppCompatActivity() {
         rvVenc.layoutManager     = LinearLayoutManager(this)
 
         //  crear instancias
-        noSocioAdapter = NoSocioAdapter()
-        socioAdapter   = SocioAdapter()
-        vencimientoAdapter    = VencimientoAdapter()
+        noSocioAdapter = NoSocioAdapter(usuario)
+        socioAdapter   = SocioAdapter(usuario)
+        vencimientoAdapter    = VencimientoAdapter(usuario)
 
         // Asignar adapters
         rvNoSocios.adapter = noSocioAdapter
