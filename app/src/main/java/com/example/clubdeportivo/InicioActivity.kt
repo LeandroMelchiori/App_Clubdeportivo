@@ -33,6 +33,8 @@ class InicioActivity : AppCompatActivity() {
         val diaHoy = LocalDate.now().dayOfWeek.value % 7  // Lunes=1 ... Domingo=7 → ajustamos a 0–6
 
         val actividades = db.obtenerActividadesDelDia(diaHoy) // devuelve List<ActividadHoy>
+        val hoy = LocalDate.now()
+        val metricas = db.obtenerMetricasInicio(hoy.toString(), diaHoy, hoy.year, hoy.monthValue)
 
         // Recupera el nombre de usuario del intent y lo muestra
         val usuario = intent.getStringExtra("usuario") ?: "Usuario"
@@ -46,6 +48,7 @@ class InicioActivity : AppCompatActivity() {
         tvFecha.text = fechaHoy.replaceFirstChar { it.uppercase() }
 
         // Renderiza la lista de actividades del día
+        renderMetricas(metricas)
         renderActividadesHoy(actividades, usuario)
 
         // Boton nuevo usuario
@@ -94,6 +97,14 @@ class InicioActivity : AppCompatActivity() {
     }
 
     // Renderiza la lista de actividades del día con el item de tarjeta
+    private fun renderMetricas(metricas: DBHelper.MetricasInicio) {
+        findViewById<TextView>(R.id.tvSociosActivos).text = "Socios: ${metricas.sociosActivos}"
+        findViewById<TextView>(R.id.tvNoSociosActivos).text = "No socios: ${metricas.noSociosActivos}"
+        findViewById<TextView>(R.id.tvVencidos).text = "Vencidos: ${metricas.vencidos}"
+        findViewById<TextView>(R.id.tvIngresosMes).text = "Ingresos: ${DashboardFormatters.montoPesos(metricas.ingresosMes)}"
+        findViewById<TextView>(R.id.tvActividadesHoyMetrica).text = "Hoy: ${metricas.actividadesHoy}"
+    }
+
     private fun renderActividadesHoy(actividades: List<ActividadHoy>, usuario: String) {
         val contenedor = findViewById<LinearLayout>(R.id.contenedorActividadesHoy)
         contenedor.removeAllViews()

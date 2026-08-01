@@ -643,6 +643,73 @@ package com.example.clubdeportivo
         }
         return lista
     }
+    fun obtenerMetricasInicio(fechaIso: String, dia: Int, anio: Int, mes: Int): MetricasInicio {
+        val db = readableDatabase
+        val sociosActivos = android.database.DatabaseUtils.longForQuery(
+            db,
+            "SELECT COUNT(*) FROM clientes WHERE activo = 1 AND esSocio = 1",
+            null
+        ).toInt()
+        val noSociosActivos = android.database.DatabaseUtils.longForQuery(
+            db,
+            "SELECT COUNT(*) FROM clientes WHERE activo = 1 AND esSocio = 0",
+            null
+        ).toInt()
+        val vencidos = android.database.DatabaseUtils.longForQuery(
+            db,
+            """
+                SELECT COUNT(*)
+                FROM clientes s
+                JOIN cuotas c ON c.idCliente = s.id
+                JOIN (
+                    SELECT idCliente, MAX(fechaVencimiento) AS maxVenc
+                    FROM cuotas
+                    GROUP BY idCliente
+                ) ult ON ult.idCliente = c.idCliente
+                     AND ult.maxVenc = c.fechaVencimiento
+                WHERE s.activo = 1
+                  AND s.esSocio = 1
+                  AND c.fechaVencimiento < ?
+            """.trimIndent(),
+            arrayOf(fechaIso)
+        ).toInt()
+        val actividadesHoy = android.database.DatabaseUtils.longForQuery(
+            db,
+            """
+                SELECT COUNT(*)
+                FROM dias_horarios dh
+                JOIN actividad_profesor ap ON ap.id = dh.actividad_profesor_id
+                WHERE dh.activo = 1
+                  AND ap.activo = 1
+                  AND dh.dia = ?
+            """.trimIndent(),
+            arrayOf(dia.toString())
+        ).toInt()
+
+        val mesStr = String.format("%02d", mes)
+        var ingresosMes = 0.0
+        db.rawQuery(
+            """
+                SELECT
+                    (SELECT IFNULL(SUM(monto), 0) FROM cuotas
+                     WHERE strftime('%Y', fechaPago) = ? AND strftime('%m', fechaPago) = ?) +
+                    (SELECT IFNULL(SUM(monto), 0) FROM pagos_actividad
+                     WHERE strftime('%Y', fecha_pago) = ? AND strftime('%m', fecha_pago) = ?)
+            """.trimIndent(),
+            arrayOf(anio.toString(), mesStr, anio.toString(), mesStr)
+        ).use { c ->
+            if (c.moveToFirst()) ingresosMes = c.getDouble(0)
+        }
+
+        return MetricasInicio(
+            sociosActivos = sociosActivos,
+            noSociosActivos = noSociosActivos,
+            vencidos = vencidos,
+            ingresosMes = ingresosMes,
+            actividadesHoy = actividadesHoy
+        )
+    }
+
     fun obtenerCuentaCorriente(dni: String): CuentaCorrienteDTO? {
         val persona = obtenerPersonaPorDni(dni) ?: return null
         val db = readableDatabase
@@ -1124,6 +1191,13 @@ package com.example.clubdeportivo
         val fichaMedica: String?,
         val esSocio: Boolean,
         )
+    data class MetricasInicio(
+        val sociosActivos: Int,
+        val noSociosActivos: Int,
+        val vencidos: Int,
+        val ingresosMes: Double,
+        val actividadesHoy: Int
+    )
     data class CuentaCorrienteDTO(
         val estado: String,
         val detalleEstado: String,

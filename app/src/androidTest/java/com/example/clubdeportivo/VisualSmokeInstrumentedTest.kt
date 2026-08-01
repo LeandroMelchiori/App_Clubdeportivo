@@ -37,6 +37,8 @@ class VisualSmokeInstrumentedTest {
         try {
             onView(withId(R.id.tvBienvenida)).check(matches(isDisplayed()))
             onView(withText("Nuevo Usuario")).check(matches(isDisplayed()))
+            onView(withId(R.id.panelMetricas)).check(matches(isDisplayed()))
+            onView(withId(R.id.tvIngresosMes)).check(matches(isDisplayed()))
             onView(withId(R.id.contenedorActividadesHoy)).check(matches(isDisplayed()))
             onView(withId(R.id.bottomNav)).check(matches(isDisplayed()))
             captureScreen("inicio")
