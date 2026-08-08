@@ -941,6 +941,11 @@ package com.example.clubdeportivo
             }
 
             // Insertar día/horario
+            validarRangoHorario(horaInicio, horaFin)
+            if (profesorTieneSolapamiento(db, profesorDni, dia, horaInicio, horaFin)) {
+                throw IllegalArgumentException("El profesor ya tiene un horario activo en ese rango")
+            }
+
             val cvHorario = ContentValues().apply {
                 put("actividad_profesor_id", apId)
                 put("dia", dia)
@@ -1083,13 +1088,74 @@ package com.example.clubdeportivo
         horaInicio: Int,
         horaFin: Int,
     ): Boolean {
+        val db = writableDatabase
+        validarRangoHorario(horaInicio, horaFin)
+        val profesorDni = profesorDniPorHorario(db, idDiaHorario)
+            ?: throw IllegalArgumentException("Horario no encontrado")
+        if (profesorTieneSolapamiento(db, profesorDni, dia, horaInicio, horaFin, idDiaHorario)) {
+            throw IllegalArgumentException("El profesor ya tiene un horario activo en ese rango")
+        }
+
         val cv = ContentValues().apply {
             put("dia", dia)
             put("hora_inicio", horaInicio)
             put("hora_fin", horaFin)
         }
-        val rows = writableDatabase.update("dias_horarios", cv, "id = ?", arrayOf(idDiaHorario.toString()))
+        val rows = db.update("dias_horarios", cv, "id = ?", arrayOf(idDiaHorario.toString()))
         return rows > 0
+    }
+
+
+    private fun validarRangoHorario(horaInicio: Int, horaFin: Int) {
+        if (!ScheduleOverlapValidator.isValidRange(horaInicio, horaFin)) {
+            throw IllegalArgumentException("El horario de fin debe ser mayor al de inicio")
+        }
+    }
+
+    private fun profesorDniPorHorario(db: SQLiteDatabase, idDiaHorario: Int): String? {
+        val sql = """
+            SELECT ap.profesor_dni
+            FROM dias_horarios dh
+            JOIN actividad_profesor ap ON ap.id = dh.actividad_profesor_id
+            WHERE dh.id = ?
+        """.trimIndent()
+        db.rawQuery(sql, arrayOf(idDiaHorario.toString())).use { c ->
+            return if (c.moveToFirst()) c.getString(0) else null
+        }
+    }
+
+    private fun profesorTieneSolapamiento(
+        db: SQLiteDatabase,
+        profesorDni: String,
+        dia: Int,
+        horaInicio: Int,
+        horaFin: Int,
+        excluirDiaHorarioId: Int? = null
+    ): Boolean {
+        val args = mutableListOf(profesorDni, dia.toString())
+        val excluirClause = if (excluirDiaHorarioId != null) {
+            args += excluirDiaHorarioId.toString()
+            "AND dh.id <> ?"
+        } else {
+            ""
+        }
+        val sql = """
+            SELECT dh.hora_inicio, dh.hora_fin
+            FROM dias_horarios dh
+            JOIN actividad_profesor ap ON ap.id = dh.actividad_profesor_id
+            WHERE ap.profesor_dni = ?
+              AND dh.dia = ?
+              AND COALESCE(dh.activo, 1) = 1
+              $excluirClause
+        """.trimIndent()
+        db.rawQuery(sql, args.toTypedArray()).use { c ->
+            while (c.moveToNext()) {
+                if (ScheduleOverlapValidator.overlaps(horaInicio, horaFin, c.getInt(0), c.getInt(1))) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 
     // Clientes

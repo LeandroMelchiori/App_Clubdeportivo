@@ -6,6 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -54,6 +55,25 @@ class DBHelperInstrumentedTest {
             assertEquals("2026-08-31", cursor.getString(4))
         }
 
+        helper.close()
+    }
+
+
+    @Test
+    fun insertarHorario_rechazaSolapamientoDeProfesor() {
+        val helper = DBHelper(context)
+
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            helper.insertarHorario(
+                actividadId = 2L,
+                profesorDni = "27999888",
+                dia = 1,
+                horaInicio = 8 * 60 + 30,
+                horaFin = 9 * 60 + 30
+            )
+        }
+
+        assertEquals("El profesor ya tiene un horario activo en ese rango", error.message)
         helper.close()
     }
 
