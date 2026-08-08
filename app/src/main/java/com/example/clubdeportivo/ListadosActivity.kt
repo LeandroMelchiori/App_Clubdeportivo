@@ -8,6 +8,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.SearchView
 import android.widget.TextView
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -30,6 +31,7 @@ class ListadosActivity : AppCompatActivity() {
     private lateinit var tvFecha: TextView
     private lateinit var tvResumenVencimientos: TextView
     private lateinit var tvEstadoLista: TextView
+    private lateinit var panelFiltrosVencimientos: LinearLayout
     private lateinit var noSocioAdapter: NoSocioAdapter
     private lateinit var socioAdapter: SocioAdapter
     private lateinit var vencimientoAdapter: VencimientoAdapter
@@ -37,6 +39,7 @@ class ListadosActivity : AppCompatActivity() {
     private var noSociosActuales: List<DBHelper.NoSocioCard> = emptyList()
     private var sociosActuales: List<DBHelper.SocioCard> = emptyList()
     private var vencimientosActuales: List<DBHelper.VencimientoCard> = emptyList()
+    private var filtroVencimiento = VencimientoFilters.Tipo.TODOS
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // DB Helper
@@ -60,6 +63,7 @@ class ListadosActivity : AppCompatActivity() {
         tvFecha = findViewById(R.id.tvFecha)
         tvResumenVencimientos = findViewById(R.id.tvResumenVencimientos)
         tvEstadoLista = findViewById(R.id.tvEstadoLista)
+        panelFiltrosVencimientos = findViewById(R.id.panelFiltrosVencimientos)
 
 
         // Fecha actual usada para vencimientos y refrescos.
@@ -104,6 +108,10 @@ class ListadosActivity : AppCompatActivity() {
         val botonSocios: Button = findViewById(R.id.btnListSocios)
         val botonNoSocios: Button = findViewById(R.id.btnListNoSocios)
         val botonExportar: Button = findViewById(R.id.btnExportarListados)
+        val botonFiltroTodos: Button = findViewById(R.id.btnFiltroVencTodos)
+        val botonFiltroAlDia: Button = findViewById(R.id.btnFiltroVencAlDia)
+        val botonFiltroPorVencer: Button = findViewById(R.id.btnFiltroVencPorVencer)
+        val botonFiltroVencidos: Button = findViewById(R.id.btnFiltroVencVencidos)
 
         // Lista por defecto
         botonNoSocios.setTextColor(Color.WHITE);
@@ -128,14 +136,17 @@ class ListadosActivity : AppCompatActivity() {
         // onClick
         botonVencimiento.setOnClickListener {
             mostrar(rvVenc)
+            panelFiltrosVencimientos.visibility = View.VISIBLE
             botonNoSocios.setTextColor(Color.BLACK);
             botonSocios.setTextColor(Color.BLACK);
             botonVencimiento.setTextColor(Color.WHITE)
             tvNombreLista.text = "Listado Vencimientos"
+            aplicarFiltroVencimientos(filtroVencimiento)
             renderResumenVencimientos()
         }
         botonSocios.setOnClickListener {
             mostrar(rvSocios)
+            panelFiltrosVencimientos.visibility = View.GONE
             botonNoSocios.setTextColor(Color.BLACK);
             botonSocios.setTextColor(Color.WHITE);
             botonVencimiento.setTextColor(Color.BLACK)
@@ -143,12 +154,17 @@ class ListadosActivity : AppCompatActivity() {
         }
         botonNoSocios.setOnClickListener {
             mostrar(rvNoSocios)
+            panelFiltrosVencimientos.visibility = View.GONE
             botonNoSocios.setTextColor(Color.WHITE);
             botonSocios.setTextColor(Color.BLACK);
             botonVencimiento.setTextColor(Color.BLACK)
             tvNombreLista.text = "Listado No Socios"
         }
 
+        botonFiltroTodos.setOnClickListener { aplicarFiltroVencimientos(VencimientoFilters.Tipo.TODOS) }
+        botonFiltroAlDia.setOnClickListener { aplicarFiltroVencimientos(VencimientoFilters.Tipo.AL_DIA) }
+        botonFiltroPorVencer.setOnClickListener { aplicarFiltroVencimientos(VencimientoFilters.Tipo.POR_VENCER) }
+        botonFiltroVencidos.setOnClickListener { aplicarFiltroVencimientos(VencimientoFilters.Tipo.VENCIDO) }
         botonExportar.setOnClickListener { exportarListadoVisible() }
 
         // Bottom
@@ -209,9 +225,21 @@ class ListadosActivity : AppCompatActivity() {
     }
     private fun renderVencimientos(lista: List<DBHelper.VencimientoCard>) {
         vencimientosActuales = lista
-        vencimientoAdapter.submitList(lista)
-        actualizarEstadoLista(lista.size, "vencimientos")
+        aplicarFiltroVencimientos(filtroVencimiento)
     }
+    private fun aplicarFiltroVencimientos(tipo: VencimientoFilters.Tipo) {
+        filtroVencimiento = tipo
+        val filtrados = VencimientoFilters.filtrar(vencimientosActuales, tipo)
+        vencimientoAdapter.submitList(filtrados)
+        val etiqueta = when (tipo) {
+            VencimientoFilters.Tipo.TODOS -> "vencimientos"
+            VencimientoFilters.Tipo.AL_DIA -> "vencimientos al dia"
+            VencimientoFilters.Tipo.POR_VENCER -> "vencimientos por vencer"
+            VencimientoFilters.Tipo.VENCIDO -> "vencimientos vencidos"
+        }
+        actualizarEstadoLista(filtrados.size, etiqueta)
+    }
+
     private fun actualizarEstadoLista(cantidad: Int, tipo: String) {
         tvEstadoLista.text = if (cantidad == 0) {
             "Sin registros de $tipo"

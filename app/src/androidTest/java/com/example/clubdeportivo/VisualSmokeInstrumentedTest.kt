@@ -5,6 +5,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
@@ -55,6 +56,10 @@ class VisualSmokeInstrumentedTest {
         val scenario = ActivityScenario.launch<ListadosActivity>(intent)
         try {
             onView(withId(R.id.btnListVencimientos)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnListVencimientos)).perform(click())
+            onView(withId(R.id.panelFiltrosVencimientos)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnFiltroVencAlDia)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnFiltroVencPorVencer)).check(matches(isDisplayed()))
             onView(withId(R.id.btnListSocios)).check(matches(isDisplayed()))
             onView(withId(R.id.btnListNoSocios)).check(matches(isDisplayed()))
             onView(withId(R.id.svBuscar)).check(matches(isDisplayed()))
