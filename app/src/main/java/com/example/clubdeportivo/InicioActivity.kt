@@ -7,7 +7,6 @@ import android.widget.TextView
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
 import java.time.LocalDate
 
@@ -55,40 +54,7 @@ class InicioActivity : AppCompatActivity() {
         }
 
         // Bottom
-        val bottom = findViewById<BottomNavigationView>(R.id.bottomNav)
-        bottom.selectedItemId = R.id.nav_home
-        bottom.setOnItemSelectedListener { item ->
-        when (item.itemId) {
-            R.id.nav_pagos -> {
-                val intent = Intent(this, ResumenMensualActivity::class.java)
-                intent.putExtra("usuario", usuario)
-                startActivity(intent)
-                true
-                }
-
-                R.id.nav_activity -> {
-                    val intent = Intent(this, ActividadesActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_settings -> {
-                    val intent = Intent(this, ConfiguracionActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_listas -> {
-                    val intent = Intent(this, ListadosActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-                else -> true
-            }
-        }
+        BottomNavHelper.setup(this, usuario, R.id.nav_home)
     }
 
     // Renderiza la lista de actividades del día con el item de tarjeta

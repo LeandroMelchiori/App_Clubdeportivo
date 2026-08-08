@@ -7,7 +7,6 @@ import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import java.io.File
 import java.util.Calendar
 
@@ -111,40 +110,6 @@ class ResumenMensualActivity : AppCompatActivity() {
 
 
         // --------- Bottom nav ----------
-        val bottom = findViewById<BottomNavigationView>(R.id.bottomNav)
-        bottom.selectedItemId = R.id.nav_pagos
-        bottom.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_activity -> {
-                    val intent = Intent(this, ActividadesActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_settings -> {
-                    val intent = Intent(this, ConfiguracionActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_listas -> {
-                    val intent = Intent(this, ListadosActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_home -> {
-                    val intent = Intent(this, InicioActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                else -> true
-            }
-        }
+        BottomNavHelper.setup(this, usuario, R.id.nav_pagos)
     }
 }

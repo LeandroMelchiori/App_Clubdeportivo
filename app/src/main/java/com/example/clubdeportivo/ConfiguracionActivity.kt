@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
 
 class ConfiguracionActivity : AppCompatActivity() {
@@ -55,39 +54,6 @@ class ConfiguracionActivity : AppCompatActivity() {
         }
 
         // Bottom
-        val bottom = findViewById<BottomNavigationView>(R.id.bottomNav)
-        bottom.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_pagos -> {
-                    val intent = Intent(this, ResumenMensualActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_activity -> {
-                    val intent = Intent(this, ActividadesActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_listas -> {
-                    val intent = Intent(this, ListadosActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_home -> {
-                    val intent = Intent(this, InicioActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-                else -> true
-            }
-        }
-        bottom.selectedItemId = R.id.nav_settings
+        BottomNavHelper.setup(this, usuario, R.id.nav_settings)
     }
 }
