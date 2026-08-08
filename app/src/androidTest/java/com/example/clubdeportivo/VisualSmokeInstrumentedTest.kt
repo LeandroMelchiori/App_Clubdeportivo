@@ -91,6 +91,27 @@ class VisualSmokeInstrumentedTest {
 
 
     @Test
+    fun pagoCuota_muestraDatosYMediosDePago() {
+        val intent = Intent(ApplicationProvider.getApplicationContext(), PagoDeCuotaActivity::class.java)
+            .putExtra("usuario", "QA")
+            .putExtra("nombre", "Perez, Juan")
+            .putExtra("dni", "40111111")
+            .putExtra("ultimoPago", "2026-07-01")
+            .putExtra("tipoOperacion", "Cuota mensual")
+            .putExtra("precio", "30000")
+            .putExtra("esSocio", true)
+        val scenario = ActivityScenario.launch<PagoDeCuotaActivity>(intent)
+        try {
+            onView(withId(R.id.rgMediosdePago)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnPagar)).check(matches(isDisplayed()))
+            captureScreen("pago_cuota")
+        } finally {
+            scenario.close()
+        }
+    }
+
+
+    @Test
     fun resumenMensual_muestraExportacion() {
         val intent = Intent(ApplicationProvider.getApplicationContext(), ResumenMensualActivity::class.java)
             .putExtra("usuario", "QA")

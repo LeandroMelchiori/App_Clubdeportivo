@@ -64,18 +64,15 @@ class PagoDeCuotaActivity : AppCompatActivity() {
             val radioGroup = findViewById<RadioGroup>(R.id.rgMediosdePago)
             val selectedId = radioGroup.checkedRadioButtonId
 
-            if (selectedId == -1) {
-                Toast.makeText(this, "Debe seleccionar una forma de pago", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            val formaPago = findViewById<RadioButton>(selectedId).text.toString()
-
+            val formaPago = if (selectedId != -1) findViewById<RadioButton>(selectedId).text.toString() else null
             val monto = precio.toDoubleOrNull()
-            if (monto == null) {
-                Toast.makeText(this, "Monto inválido", Toast.LENGTH_SHORT).show()
+            val validacion = PaymentValidator.validateManualPayment(monto, formaPago)
+            if (!validacion.isValid) {
+                Toast.makeText(this, validacion.error, Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+            val medioPago = formaPago.orEmpty()
+            val montoPago = monto ?: 0.0
             if (esSocio) {
                 // Si ultimo pago esta dentro del mes actual, debe indicar que el pago  del mes ya esta hecho
                 val fechaUltimoPago = LocalDate.parse(ultimoPago)
@@ -91,7 +88,7 @@ class PagoDeCuotaActivity : AppCompatActivity() {
                             try {
                                 val fechaHoy = LocalDate.now().toString()
                                 val db = DBHelper(this)
-                                db.registrarPagoCuota(dni, monto, formaPago, fechaHoy)
+                                db.registrarPagoCuota(dni, montoPago, medioPago, fechaHoy)
                                 Toast.makeText(this, "¡Pago exitoso!", Toast.LENGTH_LONG).show()
                                 intent = Intent(this, ListadosActivity::class.java)
                                 intent.putExtra("usuario", usuario)
@@ -114,7 +111,7 @@ class PagoDeCuotaActivity : AppCompatActivity() {
                     try {
                         val fechaHoy = LocalDate.now().toString()
                         val db = DBHelper(this)
-                        val idSocio = db.hacerSocioDesdeNoSocio(dni.toInt(), monto, formaPago, fechaHoy)
+                        val idSocio = db.hacerSocioDesdeNoSocio(dni.toInt(), montoPago, medioPago, fechaHoy)
                         Toast.makeText(this, "¡Pago exitoso! Ahora es socio (id $idSocio)", Toast.LENGTH_LONG).show()
                         intent = Intent(this, ListadosActivity::class.java)
                         intent.putExtra("usuario", usuario)

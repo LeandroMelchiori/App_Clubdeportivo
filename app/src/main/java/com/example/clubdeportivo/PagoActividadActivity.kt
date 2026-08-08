@@ -172,26 +172,31 @@ class PagoActividadActivity : AppCompatActivity() {
         // 1) Buscar persona
         val cliente = db.obtenerPersonaPorDni(dni)
 
-        if (cliente!!.esSocio) {
+        if (cliente == null) {
+            throw IllegalArgumentException("Debe ingresar un DNI valido")
+        }
+
+        if (cliente.esSocio) {
             toast("Los socios no necesitan pagar esta actividad")
             return
         }
 
         // 2) Validar medio de pago
         val selectedId = rgMedioPago.checkedRadioButtonId
-        if (selectedId == -1) {
-            Toast.makeText(this, "Debe seleccionar una forma de pago", Toast.LENGTH_SHORT).show()
+        val formaPago = if (selectedId != -1) findViewById<RadioButton>(selectedId).text.toString() else null
+        val validacion = PaymentValidator.validateManualPayment(precio, formaPago)
+        if (!validacion.isValid) {
+            Toast.makeText(this, validacion.error, Toast.LENGTH_SHORT).show()
             return
         }
-
-        val formaPago = findViewById<RadioButton>(selectedId).text.toString()
+        val medioPago = formaPago.orEmpty()
 
         // 3) Registrar pago
         val insertedId = db.registrarPagoActividadNoSocio(
-            idCliente = cliente!!.id.toString(),
+            idCliente = cliente.id.toString(),
             horarioId = idActividad,
             monto = precio,
-            medioPago = formaPago
+            medioPago = medioPago
         )
         if (insertedId > 0L) {
             toast("Pago registrado")
