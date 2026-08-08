@@ -77,6 +77,18 @@ class DBHelperInstrumentedTest {
         helper.close()
     }
 
+
+    @Test
+    fun obtenerCuentaCorriente_incluyeHistorialDeMovimientos() {
+        val helper = DBHelper(context)
+
+        val cuenta = helper.obtenerCuentaCorriente("30111222")
+
+        assertTrue(cuenta != null)
+        assertTrue(cuenta!!.movimientos.isNotEmpty())
+        helper.close()
+    }
+
     private companion object {
         const val DB_NAME = "app_clubDeportivo.db"
     }

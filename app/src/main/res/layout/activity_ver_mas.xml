@@ -207,6 +207,27 @@
                         android:textColor="@color/black"
                         android:textSize="18sp" />
 
+
+
+                    <TextView
+                        android:id="@+id/tvTituloHistorialCuenta"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:text="Ultimos movimientos"
+                        android:textColor="@color/black"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvHistorialCuenta"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Sin movimientos registrados"
+                        android:textColor="@color/black"
+                        android:textSize="16sp" />
+
                     <!-- Botones -->
                     <LinearLayout
                         android:id="@+id/llBotones"

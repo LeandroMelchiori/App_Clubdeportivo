@@ -750,6 +750,8 @@ package com.example.clubdeportivo
             }
         }
 
+        val movimientos = obtenerMovimientosCuenta(db, persona.id.toString())
+
         val estado = if (persona.esSocio) {
             CuentaCorrienteCalculator.evaluarSocio(proximoVencimiento)
         } else {
@@ -764,8 +766,53 @@ package com.example.clubdeportivo
             ultimoPagoActividad = ultimoPagoActividad,
             totalCuotas = totalCuotas,
             totalActividades = totalActividades,
-            deudaEstimada = estado.deudaEstimada
+            deudaEstimada = estado.deudaEstimada,
+            movimientos = movimientos
         )
+    }
+
+    private fun obtenerMovimientosCuenta(db: SQLiteDatabase, idCliente: String): List<MovimientoCuenta> {
+        val movimientos = mutableListOf<MovimientoCuenta>()
+        db.rawQuery(
+            """
+                SELECT fechaPago, IFNULL(monto, 0), formaPago
+                FROM cuotas
+                WHERE idCliente = ?
+                ORDER BY fechaPago DESC, idCuota DESC
+                LIMIT 5
+            """.trimIndent(),
+            arrayOf(idCliente)
+        ).use { c ->
+            while (c.moveToNext()) {
+                movimientos += MovimientoCuenta(
+                    tipo = "Cuota",
+                    fecha = c.getString(0),
+                    monto = c.getDouble(1),
+                    detalle = c.getString(2)
+                )
+            }
+        }
+        db.rawQuery(
+            """
+                SELECT p.fecha_pago, IFNULL(p.monto, 0), a.nombre
+                FROM pagos_actividad p
+                LEFT JOIN actividades a ON a.id_actividad = p.id_actividad
+                WHERE p.idCliente = ?
+                ORDER BY p.fecha_pago DESC, p.id_pago DESC
+                LIMIT 5
+            """.trimIndent(),
+            arrayOf(idCliente)
+        ).use { c ->
+            while (c.moveToNext()) {
+                movimientos += MovimientoCuenta(
+                    tipo = "Actividad",
+                    fecha = c.getString(0),
+                    monto = c.getDouble(1),
+                    detalle = if (!c.isNull(2)) c.getString(2) else "Sin actividad"
+                )
+            }
+        }
+        return movimientos.sortedWith(compareByDescending<MovimientoCuenta> { it.fecha }.thenBy { it.tipo }).take(5)
     }
 
     fun obtenerResumenPagosMes(anio: Int, mes: Int): ResumenPagosMes {
@@ -1272,7 +1319,14 @@ package com.example.clubdeportivo
         val ultimoPagoActividad: String?,
         val totalCuotas: Double,
         val totalActividades: Double,
-        val deudaEstimada: Double
+        val deudaEstimada: Double,
+        val movimientos: List<MovimientoCuenta>
+    )
+    data class MovimientoCuenta(
+        val tipo: String,
+        val fecha: String,
+        val monto: Double,
+        val detalle: String
     )
     data class ResumenPagosMes(
         val anio: Int,

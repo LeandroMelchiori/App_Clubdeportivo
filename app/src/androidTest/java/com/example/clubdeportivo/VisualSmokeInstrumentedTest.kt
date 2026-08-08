@@ -82,7 +82,8 @@ class VisualSmokeInstrumentedTest {
         val scenario = ActivityScenario.launch<VerMasActivity>(intent)
         try {
             onView(withText("Bienvenido, QA")).check(matches(isDisplayed()))
-            onView(withId(R.id.tvDatosPersonales)).check(matches(isDisplayed()))
+            onView(withId(R.id.tvDNI)).check(matches(isDisplayed()))
+            onView(withId(R.id.tvHistorialCuenta)).check(matches(isDisplayed()))
             captureScreen("ver_mas_usuario")
         } finally {
             scenario.close()

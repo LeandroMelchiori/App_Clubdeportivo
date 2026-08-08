@@ -44,6 +44,7 @@ class VerMasActivity : AppCompatActivity() {
         val tvUltimoPago = findViewById<TextView>(R.id.tvUltimoPago)
         val tvProximoVencimiento = findViewById<TextView>(R.id.tvProximoVencimiento)
         val tvDeudaEstimada = findViewById<TextView>(R.id.tvDeudaEstimada)
+        val tvHistorialCuenta = findViewById<TextView>(R.id.tvHistorialCuenta)
 
         // Reemplaza datos en las view
         tvNombreCompleto.text = "${cliente?.nombre}, ${cliente?.apellido} "
@@ -63,6 +64,7 @@ class VerMasActivity : AppCompatActivity() {
         tvUltimoPago.text = "Ultimo pago: ${cuenta?.ultimoPagoCuota ?: cuenta?.ultimoPagoActividad ?: "Sin registros"}"
         tvProximoVencimiento.text = "Proximo vencimiento: ${cuenta?.proximoVencimiento ?: "No aplica"}"
         tvDeudaEstimada.text = "Deuda estimada: $${cuenta?.deudaEstimada ?: 0.0}"
+        tvHistorialCuenta.text = CuentaCorrienteFormatter.historial(cuenta?.movimientos.orEmpty())
 
         // Boton editar
         val btnEditar = findViewById<MaterialButton>(R.id.btnEditar)
