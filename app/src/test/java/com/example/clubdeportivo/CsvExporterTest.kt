@@ -33,4 +33,35 @@ class CsvExporterTest {
         assertEquals('"', csv.first { it == '"' })
         assertTrue(csv.startsWith("Periodo,\"Agosto, especial\",2026"))
     }
+
+    @Test
+    fun noSocios_generaCsvConActividadYFecha() {
+        val csv = CsvExporter.noSocios(
+            listOf(DBHelper.NoSocioCard("Ana", "Lopez", "30111222", "2026-08-01", "Yoga"))
+        )
+
+        assertTrue(csv.startsWith("Apellido,Nombre,DNI,Ultima actividad,Fecha ultimo pago"))
+        assertTrue(csv.contains("Lopez,Ana,30111222,Yoga,2026-08-01"))
+    }
+
+    @Test
+    fun socios_generaCsvConUltimoPago() {
+        val csv = CsvExporter.socios(
+            listOf(DBHelper.SocioCard("Juan", "Perez", "25111222", "2026-07-15"))
+        )
+
+        assertTrue(csv.startsWith("Apellido,Nombre,DNI,Ultimo pago"))
+        assertTrue(csv.contains("Perez,Juan,25111222,2026-07-15"))
+    }
+
+    @Test
+    fun vencimientos_generaCsvConEstado() {
+        val csv = CsvExporter.vencimientos(
+            listOf(DBHelper.VencimientoCard("Luis", "Diaz", "22111222", "2026-01-01", "2025-12-01"))
+        )
+
+        assertTrue(csv.startsWith("Apellido,Nombre,DNI,Vencimiento,Ultimo pago,Estado"))
+        assertTrue(csv.contains("Diaz,Luis,22111222,2026-01-01,2025-12-01,Vencido"))
+    }
+
 }

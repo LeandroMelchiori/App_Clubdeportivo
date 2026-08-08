@@ -3,14 +3,17 @@ package com.example.clubdeportivo
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Environment
 import android.view.View
 import android.widget.Button
 import android.widget.SearchView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import java.io.File
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -31,6 +34,9 @@ class ListadosActivity : AppCompatActivity() {
     private lateinit var socioAdapter: SocioAdapter
     private lateinit var vencimientoAdapter: VencimientoAdapter
     private lateinit var verMasLauncher: androidx.activity.result.ActivityResultLauncher<Intent>
+    private var noSociosActuales: List<DBHelper.NoSocioCard> = emptyList()
+    private var sociosActuales: List<DBHelper.SocioCard> = emptyList()
+    private var vencimientosActuales: List<DBHelper.VencimientoCard> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // DB Helper
@@ -97,6 +103,7 @@ class ListadosActivity : AppCompatActivity() {
         val botonVencimiento: Button = findViewById(R.id.btnListVencimientos)
         val botonSocios: Button = findViewById(R.id.btnListSocios)
         val botonNoSocios: Button = findViewById(R.id.btnListNoSocios)
+        val botonExportar: Button = findViewById(R.id.btnExportarListados)
 
         // Lista por defecto
         botonNoSocios.setTextColor(Color.WHITE);
@@ -141,6 +148,8 @@ class ListadosActivity : AppCompatActivity() {
             botonVencimiento.setTextColor(Color.BLACK)
             tvNombreLista.text = "Listado No Socios"
         }
+
+        botonExportar.setOnClickListener { exportarListadoVisible() }
 
         // Bottom
         val bottom = findViewById<BottomNavigationView>(R.id.bottomNav)
@@ -189,14 +198,17 @@ class ListadosActivity : AppCompatActivity() {
         tvResumenVencimientos.text = "Al dia: ${resumen.alDia} | Por vencer: ${resumen.porVencer} | Vencidos: ${resumen.vencidos}"
     }
     private fun renderNoSocios(lista: List<DBHelper.NoSocioCard>) {
+        noSociosActuales = lista
         noSocioAdapter.submitList(lista)
         actualizarEstadoLista(lista.size, "no socios")
     }
     private fun renderSocios(lista: List<DBHelper.SocioCard>) {
+        sociosActuales = lista
         socioAdapter.submitList(lista)
         actualizarEstadoLista(lista.size, "socios")
     }
     private fun renderVencimientos(lista: List<DBHelper.VencimientoCard>) {
+        vencimientosActuales = lista
         vencimientoAdapter.submitList(lista)
         actualizarEstadoLista(lista.size, "vencimientos")
     }
@@ -207,6 +219,22 @@ class ListadosActivity : AppCompatActivity() {
             "Mostrando $cantidad registros de $tipo"
         }
     }
+    private fun exportarListadoVisible() {
+        val (nombreArchivo, csv) = when {
+            rvSocios.visibility == View.VISIBLE ->
+                "socios_$hoyISO.csv" to CsvExporter.socios(sociosActuales)
+
+            rvVenc.visibility == View.VISIBLE ->
+                "vencimientos_$hoyISO.csv" to CsvExporter.vencimientos(vencimientosActuales)
+
+            else ->
+                "no_socios_$hoyISO.csv" to CsvExporter.noSocios(noSociosActuales)
+        }
+        val dir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) ?: filesDir
+        File(dir, nombreArchivo).writeText(csv)
+        Toast.makeText(this, "CSV guardado: $nombreArchivo", Toast.LENGTH_LONG).show()
+    }
+
     private fun refreshVisibleList() {
         val rvSocios        = findViewById<RecyclerView>(R.id.rvSocios)
         val rvNoSocios      = findViewById<RecyclerView>(R.id.rvNoSocios)

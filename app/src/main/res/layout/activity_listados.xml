@@ -157,6 +157,19 @@
                 android:textColor="@color/text_secondary"
                 android:textSize="15sp" />
 
+
+            <Button
+                android:id="@+id/btnExportarListados"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/bg_chip_blue"
+                android:text="Exportar CSV"
+                android:textColor="@color/black"
+                app:backgroundTint="#0099FF" />
+
             <!-- Listados -->
             <FrameLayout
                 android:id="@+id/contenedorListas"

@@ -11,10 +11,50 @@ object CsvExporter {
             listOf("Monto actividades", resumen.montoActividades.toString()),
             listOf("Ingresos totales", resumen.ingresosTotales.toString())
         )
-        return rows.joinToString(separator = "\n", postfix = "\n") { row ->
+        return rowsToCsv(rows)
+    }
+
+    fun noSocios(items: List<DBHelper.NoSocioCard>): String {
+        val rows = listOf(listOf("Apellido", "Nombre", "DNI", "Ultima actividad", "Fecha ultimo pago")) +
+            items.map { item ->
+                listOf(
+                    item.apellido,
+                    item.nombre,
+                    item.dni,
+                    item.nombreAct.orEmpty(),
+                    item.ultimaPago.orEmpty()
+                )
+            }
+        return rowsToCsv(rows)
+    }
+
+    fun socios(items: List<DBHelper.SocioCard>): String {
+        val rows = listOf(listOf("Apellido", "Nombre", "DNI", "Ultimo pago")) +
+            items.map { item ->
+                listOf(item.apellido, item.nombre, item.dni, item.ultimoPago.orEmpty())
+            }
+        return rowsToCsv(rows)
+    }
+
+    fun vencimientos(items: List<DBHelper.VencimientoCard>): String {
+        val rows = listOf(listOf("Apellido", "Nombre", "DNI", "Vencimiento", "Ultimo pago", "Estado")) +
+            items.map { item ->
+                listOf(
+                    item.apellido,
+                    item.nombre,
+                    item.dni,
+                    item.fechaVenc,
+                    item.ultimoPago.orEmpty(),
+                    VencimientoCalculator.clasificar(item.fechaVenc).categoria
+                )
+            }
+        return rowsToCsv(rows)
+    }
+
+    private fun rowsToCsv(rows: List<List<String>>): String =
+        rows.joinToString(separator = "\n", postfix = "\n") { row ->
             row.joinToString(",") { escape(it) }
         }
-    }
 
     private fun escape(value: String): String {
         val needsQuotes = value.any { it == ',' || it == '"' || it == '\n' || it == '\r' }
