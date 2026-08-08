@@ -31,6 +31,12 @@ class VerMasActivity : AppCompatActivity() {
             Toast.makeText(this, "Error al cargar el cliente", Toast.LENGTH_LONG).show()
         }
         val cliente = db.obtenerPersonaPorDni(dniUsuario)
+        if (cliente == null) {
+            Toast.makeText(this, "Error al cargar el cliente", Toast.LENGTH_LONG).show()
+            startActivity(Intent(this, ListadosActivity::class.java).putExtra(SessionExtras.USUARIO, usuario))
+            finish()
+            return
+        }
 
         //Inicializar vistas
         val tvNombreCompleto = findViewById<TextView>(R.id.tvNombreUsuario)
@@ -47,17 +53,13 @@ class VerMasActivity : AppCompatActivity() {
         val tvHistorialCuenta = findViewById<TextView>(R.id.tvHistorialCuenta)
 
         // Reemplaza datos en las view
-        tvNombreCompleto.text = "${cliente?.nombre}, ${cliente?.apellido} "
-        tvDNI.text = "DNI: ${cliente!!.dni}"
-        tvTelefono.text = "Telefono: ${cliente?.telefono}"
-        tvDireccion.text = "Domicilio: ${cliente?.direccion}"
-        tvFechaNacimiento.text = "Fecha de nacimiento: ${cliente?.fecha_nac}"
-        tvEmail.text = "Email: ${cliente?.email}"
-        if (cliente.esSocio) {
-            tvIdTipoSocio.text = "Socio nro: ${cliente.id}"
-        } else {
-            tvIdTipoSocio.text = "No socio nro: ${cliente.id}"
-        }
+        tvNombreCompleto.text = PersonaDisplayFormatter.nombreCompleto(cliente.nombre, cliente.apellido)
+        tvDNI.text = PersonaDisplayFormatter.etiqueta("DNI", cliente.dni)
+        tvTelefono.text = PersonaDisplayFormatter.etiqueta("Telefono", cliente.telefono)
+        tvDireccion.text = PersonaDisplayFormatter.etiqueta("Domicilio", cliente.direccion)
+        tvFechaNacimiento.text = PersonaDisplayFormatter.etiqueta("Fecha de nacimiento", cliente.fecha_nac)
+        tvEmail.text = PersonaDisplayFormatter.etiqueta("Email", cliente.email)
+        tvIdTipoSocio.text = PersonaDisplayFormatter.tipoSocio(cliente.id, cliente.esSocio)
 
         val cuenta = db.obtenerCuentaCorriente(cliente.dni)
         tvEstadoCuenta.text = "Estado: ${cuenta?.estado ?: "Sin datos"} - ${cuenta?.detalleEstado ?: ""}"
@@ -70,7 +72,7 @@ class VerMasActivity : AppCompatActivity() {
         val btnEditar = findViewById<MaterialButton>(R.id.btnEditar)
         btnEditar.setOnClickListener {
             val intent = Intent(this, EditarUsuarioActivity::class.java)
-            intent.putExtra("id", cliente!!.id)
+            intent.putExtra("id", cliente.id)
             intent.putExtra("dni", cliente.dni)
             intent.putExtra("esSocio", cliente.esSocio)
             startActivity(intent)
@@ -84,7 +86,7 @@ class VerMasActivity : AppCompatActivity() {
                 .setMessage("¿Seguro que querés eliminar a esta persona? Esta acción no se puede deshacer.")
                 .setNegativeButton("Cancelar", null)
                 .setPositiveButton("Eliminar") { _, _ ->
-                    val ok = db.eliminarPersonaPorId(cliente!!.id.toString()) // ← clave
+                    val ok = db.eliminarPersonaPorId(cliente.id.toString()) // ← clave
                     if (ok) {
                         Toast.makeText(this, "Eliminado correctamente", Toast.LENGTH_SHORT).show()
                         val data = Intent().putExtra("dniEliminado", cliente.dni)
