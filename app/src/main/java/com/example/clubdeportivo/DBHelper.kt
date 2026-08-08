@@ -11,7 +11,12 @@ package com.example.clubdeportivo
     import java.util.Date
     import java.util.Locale
 
-    class DBHelper(context: Context) : SQLiteOpenHelper(context, "app_clubDeportivo.db", null, 1) {
+    class DBHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_VERSION) {
+
+    private companion object {
+        const val DB_NAME = "app_clubDeportivo.db"
+        const val DB_VERSION = 2
+    }
 
     // ----------------------------------- Creacion DB -----------------------------------------
     override fun onConfigure(db: SQLiteDatabase) {
@@ -352,19 +357,40 @@ package com.example.clubdeportivo
             db.endTransaction()
         }
     }
-    // Actualizar tablas
+    // Actualiza la base sin borrar datos existentes.
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("DROP TABLE IF EXISTS dias_horarios")
-        db.execSQL("DROP TABLE IF EXISTS actividad_profesores")
-        db.execSQL("DROP TABLE IF EXISTS pagos_actividad")
-        db.execSQL("DROP TABLE IF EXISTS cuotas")
-        db.execSQL("DROP TABLE IF EXISTS profesores")
-        db.execSQL("DROP TABLE IF EXISTS socios")
-        db.execSQL("DROP TABLE IF EXISTS no_socios")
-        db.execSQL("DROP TABLE IF EXISTS actividades")
+        DatabaseMigrationPlanner.pendingSteps(oldVersion, newVersion).forEach { step ->
+            when (step) {
+                2 -> migrateToVersion2(db)
+            }
+        }
+    }
 
-        // Vuelve a crear todo
-        onCreate(db)
+    private fun migrateToVersion2(db: SQLiteDatabase) {
+        db.execSQL("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_dh_active_unique
+            ON dias_horarios(actividad_profesor_id, dia, hora_inicio, hora_fin)
+            WHERE activo = 1;
+        """.trimIndent())
+        db.execSQL("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_ap_unique
+            ON actividad_profesor(actividad_id, profesor_dni);
+        """.trimIndent())
+        db.execSQL("""
+            CREATE INDEX IF NOT EXISTS idx_dh_ap
+            ON dias_horarios(actividad_profesor_id);
+        """.trimIndent())
+        db.execSQL("""
+            CREATE TRIGGER IF NOT EXISTS trg_delete_ap_if_no_dh
+            AFTER DELETE ON dias_horarios
+            BEGIN
+              DELETE FROM actividad_profesor
+              WHERE id = OLD.actividad_profesor_id
+              AND NOT EXISTS (
+                  SELECT 1 FROM dias_horarios WHERE actividad_profesor_id = OLD.actividad_profesor_id
+              );
+            END;
+        """.trimIndent())
     }
 
     // ----------------------------------------- READ -------------------------------------------
