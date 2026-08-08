@@ -15,11 +15,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import java.io.File
-import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Date
-import java.util.Locale
 
 class ListadosActivity : AppCompatActivity() {
     private lateinit var db: DBHelper
@@ -75,9 +72,7 @@ class ListadosActivity : AppCompatActivity() {
         tvBienvenida.text = "Bienvenido, $usuario"
 
         // Fecha encabezado
-        val formato = SimpleDateFormat("EEEE, d 'de' MMMM", Locale("es", "AR"))
-        val fechaHoy = formato.format(Date())
-        tvFecha.text = fechaHoy.replaceFirstChar { it.uppercase() }
+        tvFecha.text = HeaderDateFormatter.format()
 
 
         rvNoSocios.layoutManager = LinearLayoutManager(this)

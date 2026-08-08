@@ -10,10 +10,7 @@ import android.widget.RadioButton
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.button.MaterialButton
-import java.text.SimpleDateFormat
 import java.time.LocalDate
-import java.util.Date
-import java.util.Locale
 
 class PagoDeCuotaActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,9 +34,7 @@ class PagoDeCuotaActivity : AppCompatActivity() {
 
         // Fecha encabezado
         val tvFecha = findViewById<TextView>(R.id.tvFecha)
-        val formato = SimpleDateFormat("EEEE, d 'de' MMMM", Locale("es", "AR"))
-        val fechaEncabezado = formato.format(Date())
-        tvFecha.text = fechaEncabezado.replaceFirstChar { it.uppercase() }
+        tvFecha.text = HeaderDateFormatter.format()
 
         // Inicializar vistas
         val tvNombre = findViewById<TextView>(R.id.tvNombre)

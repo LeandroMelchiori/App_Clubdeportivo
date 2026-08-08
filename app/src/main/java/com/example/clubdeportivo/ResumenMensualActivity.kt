@@ -8,10 +8,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import java.text.SimpleDateFormat
 import java.io.File
 import java.util.Calendar
-import java.util.Locale
 
 class ResumenMensualActivity : AppCompatActivity() {
 
@@ -37,8 +35,7 @@ class ResumenMensualActivity : AppCompatActivity() {
         anioActual = calendar.get(Calendar.YEAR)
 
         val tvFecha = findViewById<TextView>(R.id.tvFecha)
-        val formatoFecha = SimpleDateFormat("EEEE, d 'de' MMMM", Locale("es", "AR"))
-        tvFecha.text = formatoFecha.format(calendar.time)
+        tvFecha.text = HeaderDateFormatter.format(calendar.time)
 
         // --------- Referencias a los TextView del resumen ----------
         val tvMes = findViewById<TextView>(R.id.tvMes)

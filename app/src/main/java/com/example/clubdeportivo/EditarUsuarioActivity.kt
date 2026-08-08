@@ -8,9 +8,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class EditarUsuarioActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,9 +22,7 @@ class EditarUsuarioActivity : AppCompatActivity() {
 
         // Fecha encabezado
         val tvFecha = findViewById<TextView>(R.id.tvFechaHoy)
-        val formato = SimpleDateFormat("EEEE, d 'de' MMMM", Locale("es", "AR"))
-        val fechaHoy = formato.format(Date())
-        tvFecha.text = fechaHoy.replaceFirstChar { it.uppercase() }
+        tvFecha.text = HeaderDateFormatter.format()
 
         // Recuperar datos del intent
         val id = intent.getIntExtra("id", -1)
