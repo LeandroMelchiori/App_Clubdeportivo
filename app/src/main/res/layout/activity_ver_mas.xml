@@ -147,7 +147,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
-                        android:text="Telefono: "
+                        android:text="Tel&#233;fono: "
                         android:textColor="@color/black"
                         android:textSize="20sp" />
 
@@ -185,7 +185,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="Ultimo pago:"
+                        android:text="&#218;ltimo pago:"
                         android:textColor="@color/black"
                         android:textSize="18sp" />
 
@@ -194,7 +194,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="Proximo vencimiento:"
+                        android:text="Pr&#243;ximo vencimiento:"
                         android:textColor="@color/black"
                         android:textSize="18sp" />
 
@@ -214,7 +214,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="14dp"
-                        android:text="Ultimos movimientos"
+                        android:text="&#218;ltimos movimientos"
                         android:textColor="@color/black"
                         android:textSize="18sp"
                         android:textStyle="bold" />

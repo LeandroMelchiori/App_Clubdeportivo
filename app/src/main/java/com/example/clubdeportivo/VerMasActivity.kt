@@ -55,7 +55,7 @@ class VerMasActivity : AppCompatActivity() {
         // Reemplaza datos en las view
         tvNombreCompleto.text = PersonaDisplayFormatter.nombreCompleto(cliente.nombre, cliente.apellido)
         tvDNI.text = PersonaDisplayFormatter.etiqueta("DNI", cliente.dni)
-        tvTelefono.text = PersonaDisplayFormatter.etiqueta("Telefono", cliente.telefono)
+        tvTelefono.text = PersonaDisplayFormatter.etiqueta("Tel\u00e9fono", cliente.telefono)
         tvDireccion.text = PersonaDisplayFormatter.etiqueta("Domicilio", cliente.direccion)
         tvFechaNacimiento.text = PersonaDisplayFormatter.etiqueta("Fecha de nacimiento", cliente.fecha_nac)
         tvEmail.text = PersonaDisplayFormatter.etiqueta("Email", cliente.email)
@@ -63,8 +63,8 @@ class VerMasActivity : AppCompatActivity() {
 
         val cuenta = db.obtenerCuentaCorriente(cliente.dni)
         tvEstadoCuenta.text = "Estado: ${cuenta?.estado ?: "Sin datos"} - ${cuenta?.detalleEstado ?: ""}"
-        tvUltimoPago.text = "Ultimo pago: ${cuenta?.ultimoPagoCuota ?: cuenta?.ultimoPagoActividad ?: "Sin registros"}"
-        tvProximoVencimiento.text = "Proximo vencimiento: ${cuenta?.proximoVencimiento ?: "No aplica"}"
+        tvUltimoPago.text = "\u00daltimo pago: ${cuenta?.ultimoPagoCuota ?: cuenta?.ultimoPagoActividad ?: "Sin registros"}"
+        tvProximoVencimiento.text = "Pr\u00f3ximo vencimiento: ${cuenta?.proximoVencimiento ?: "No aplica"}"
         tvDeudaEstimada.text = "Deuda estimada: $${cuenta?.deudaEstimada ?: 0.0}"
         tvHistorialCuenta.text = CuentaCorrienteFormatter.historial(cuenta?.movimientos.orEmpty())
 

@@ -149,7 +149,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
                     android:layout_marginBottom="24dp"
-                    android:text="Actividades del dia.."
+                    android:text="Actividades del d&#237;a"
                     android:textColor="@color/text_secondary"
                     android:textSize="24sp" />
 

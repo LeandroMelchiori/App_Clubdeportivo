@@ -8,7 +8,7 @@ object PaymentValidator {
             return Result(false, "Debe seleccionar una forma de pago")
         }
         if (amount == null || amount <= 0.0) {
-            return Result(false, "Monto invalido")
+            return Result(false, "Monto inv\u00e1lido")
         }
         return Result(true)
     }

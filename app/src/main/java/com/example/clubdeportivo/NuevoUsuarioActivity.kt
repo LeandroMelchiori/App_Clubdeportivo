@@ -65,13 +65,13 @@ class NuevoUsuarioActivity : AppCompatActivity() {
                 }
 
                 if (!UsuarioValidator.telefonoValido(telefono)) {
-                    etTelefono.error = "Debe tener entre 9 y 12 numeros"
+                    etTelefono.error = "Debe tener entre 9 y 12 n\u00fameros"
                     etTelefono.requestFocus()
                     return@setOnClickListener
                 }
 
                 if (!UsuarioValidator.emailValido(email)) {
-                    etEmail.error = "Correo invalido"
+                    etEmail.error = "Correo inv\u00e1lido"
                     etEmail.requestFocus()
                     return@setOnClickListener
                 }

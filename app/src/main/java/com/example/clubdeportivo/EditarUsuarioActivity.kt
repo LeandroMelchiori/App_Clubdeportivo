@@ -75,7 +75,7 @@ class EditarUsuarioActivity : AppCompatActivity() {
             }
             // Validar teléfono
             if (!telefono.matches(Regex("^\\d{9,12}\$"))) {
-                Toast.makeText(this, "Ingrese numerode telefono valido", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Ingrese un n\u00famero de tel\u00e9fono v\u00e1lido", Toast.LENGTH_LONG).show()
                 etTelefono.requestFocus()
                 return@setOnClickListener
             }
@@ -104,7 +104,7 @@ class EditarUsuarioActivity : AppCompatActivity() {
                         val intent = Intent(this, VerMasActivity::class.java)
                         intent.putExtra("dni", dni)
                         startActivity(intent)
-                        Toast.makeText(this, "Cliente actualizado con exito", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Cliente actualizado con \u00e9xito", Toast.LENGTH_SHORT).show()
                     } catch (e: IllegalArgumentException) {
                         Toast.makeText(this, e.message ?: "Error al actualizar usuario", Toast.LENGTH_LONG).show()
                     } catch (e: Exception) {

@@ -12,7 +12,7 @@ class PersonaDisplayFormatterTest {
 
     @Test
     fun etiqueta_muestraSinDatosParaCamposVacios() {
-        assertEquals("Telefono: Sin datos", PersonaDisplayFormatter.etiqueta("Telefono", null))
+        assertEquals("Tel\u00e9fono: Sin datos", PersonaDisplayFormatter.etiqueta("Tel\u00e9fono", null))
     }
 
     @Test

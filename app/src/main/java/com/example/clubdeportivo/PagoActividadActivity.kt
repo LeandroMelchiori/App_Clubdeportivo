@@ -79,7 +79,7 @@ class PagoActividadActivity : AppCompatActivity() {
                     tvIdUsuario.text = "DNI: ${persona.dni}"
                     rgMedioPago.isEnabled = true
                 } else {
-                    toast("Ingresa un DNI valido")
+                    toast("Ingres\u00e1 un DNI v\u00e1lido")
                 }
                 return true
             }
@@ -95,7 +95,7 @@ class PagoActividadActivity : AppCompatActivity() {
         // Boton Pagar
         btnPagar.setOnClickListener {
             if (etBuscar.query.isEmpty()) {
-                toast("Debe ingresar un dni valido")
+                toast("Debe ingresar un DNI v\u00e1lido")
             } else{
                 AlertDialog.Builder(this)
                     .setTitle("Confirmar pago actividad")
@@ -168,7 +168,7 @@ class PagoActividadActivity : AppCompatActivity() {
         val cliente = db.obtenerPersonaPorDni(dni)
 
         if (cliente == null) {
-            throw IllegalArgumentException("Debe ingresar un DNI valido")
+            throw IllegalArgumentException("Debe ingresar un DNI v\u00e1lido")
         }
 
         if (cliente.esSocio) {

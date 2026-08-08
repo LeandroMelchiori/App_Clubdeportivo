@@ -100,7 +100,7 @@ class EditarActividadActivity : AppCompatActivity() {
                             horaInicio = nuevaIni,
                             horaFin =nuevaFin
                         )
-                        Toast.makeText(this, "Actividad actualizada con exito", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Actividad actualizada con \u00e9xito", Toast.LENGTH_SHORT).show()
                         intent = Intent(this, ActividadesActivity::class.java)
                         intent.putExtra("usuario", usuario)
                         startActivity(intent)

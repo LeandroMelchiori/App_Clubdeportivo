@@ -15,7 +15,7 @@ object CsvExporter {
     }
 
     fun noSocios(items: List<DBHelper.NoSocioCard>): String {
-        val rows = listOf(listOf("Apellido", "Nombre", "DNI", "Ultima actividad", "Fecha ultimo pago")) +
+        val rows = listOf(listOf("Apellido", "Nombre", "DNI", "\u00daltima actividad", "Fecha ultimo pago")) +
             items.map { item ->
                 listOf(
                     item.apellido,
@@ -29,7 +29,7 @@ object CsvExporter {
     }
 
     fun socios(items: List<DBHelper.SocioCard>): String {
-        val rows = listOf(listOf("Apellido", "Nombre", "DNI", "Ultimo pago")) +
+        val rows = listOf(listOf("Apellido", "Nombre", "DNI", "\u00daltimo pago")) +
             items.map { item ->
                 listOf(item.apellido, item.nombre, item.dni, item.ultimoPago.orEmpty())
             }
@@ -37,7 +37,7 @@ object CsvExporter {
     }
 
     fun vencimientos(items: List<DBHelper.VencimientoCard>): String {
-        val rows = listOf(listOf("Apellido", "Nombre", "DNI", "Vencimiento", "Ultimo pago", "Estado")) +
+        val rows = listOf(listOf("Apellido", "Nombre", "DNI", "Vencimiento", "\u00daltimo pago", "Estado")) +
             items.map { item ->
                 listOf(
                     item.apellido,
