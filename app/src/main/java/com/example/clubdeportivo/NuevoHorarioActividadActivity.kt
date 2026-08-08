@@ -13,7 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 class NuevoHorarioActividadActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_pago_actividad)
+        setContentView(R.layout.activity_nuevo_horario_actividad)
 
         // Recupera el nombre de usuario del intent y lo muestra
         val usuario = intent.getStringExtra("usuario") ?: "Usuario"

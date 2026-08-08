@@ -126,6 +126,23 @@ class VisualSmokeInstrumentedTest {
         }
     }
 
+    @Test
+    fun nuevoHorario_muestraFormularioPropio() {
+        val intent = Intent(ApplicationProvider.getApplicationContext(), NuevoHorarioActividadActivity::class.java)
+            .putExtra("usuario", "QA")
+        val scenario = ActivityScenario.launch<NuevoHorarioActividadActivity>(intent)
+        try {
+            onView(withId(R.id.spActividad)).check(matches(isDisplayed()))
+            onView(withId(R.id.spProfesor)).check(matches(isDisplayed()))
+            onView(withId(R.id.spDia)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnIngresar)).check(matches(isDisplayed()))
+            captureScreen("nuevo_horario")
+        } finally {
+            scenario.close()
+        }
+    }
+
+
     private fun captureScreen(name: String) {
         Screenshot.capture().setName(name).process()
     }
