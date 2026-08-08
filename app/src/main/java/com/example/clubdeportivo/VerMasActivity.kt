@@ -74,6 +74,7 @@ class VerMasActivity : AppCompatActivity() {
             intent.putExtra("id", cliente.id)
             intent.putExtra("dni", cliente.dni)
             intent.putExtra("esSocio", cliente.esSocio)
+            intent.putExtra(SessionExtras.USUARIO, usuario)
             startActivity(intent)
         }
 
@@ -91,7 +92,7 @@ class VerMasActivity : AppCompatActivity() {
                         val data = Intent().putExtra("dniEliminado", cliente.dni)
                         setResult(Activity.RESULT_OK, data)
                         intent = Intent(this, ListadosActivity::class.java)
-                        intent.putExtra("usuario", usuario)
+                        intent.putExtra(SessionExtras.USUARIO, usuario)
                         startActivity(intent)
                     } else {
                         Toast.makeText(this, "No se pudo eliminar", Toast.LENGTH_LONG).show()

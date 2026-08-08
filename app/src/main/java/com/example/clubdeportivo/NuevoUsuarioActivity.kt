@@ -113,7 +113,7 @@ class NuevoUsuarioActivity : AppCompatActivity() {
                     .setPositiveButton("Sí") { _, _ ->
                         try {
                             val rowId = db.insertOrThrow(tabla, null, values)  // usa insertOrThrow para ver el error real
-                            startActivity(Intent(this, InicioActivity::class.java))
+                            startActivity(Intent(this, InicioActivity::class.java).putExtra(SessionExtras.USUARIO, usuario))
                             Toast.makeText(this, "Registro exitoso (ID $rowId)", Toast.LENGTH_LONG).show()
 
                             // Limpieza de campos

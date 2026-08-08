@@ -25,7 +25,7 @@ class ConfiguracionActivity : AppCompatActivity() {
         val btnEditar = findViewById<MaterialButton>(R.id.btnEditar)
         btnEditar.isEnabled = false
         btnEditar.setOnClickListener {
-            startActivity(Intent(this, EditarAdminActivity::class.java))
+            startActivity(Intent(this, EditarAdminActivity::class.java).putExtra(SessionExtras.USUARIO, usuario))
         }
 
         // Boton nuevo admin

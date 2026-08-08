@@ -102,6 +102,7 @@ class EditarUsuarioActivity : AppCompatActivity() {
                         )
                         val intent = Intent(this, VerMasActivity::class.java)
                         intent.putExtra("dni", dni)
+                        intent.putExtra(SessionExtras.USUARIO, usuario)
                         startActivity(intent)
                         Toast.makeText(this, "Cliente actualizado con \u00e9xito", Toast.LENGTH_SHORT).show()
                     } catch (e: IllegalArgumentException) {
