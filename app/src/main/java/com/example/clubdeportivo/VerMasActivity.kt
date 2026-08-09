@@ -8,7 +8,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.button.MaterialButton
 
 class VerMasActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,7 +74,7 @@ class VerMasActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnHistorialActividades).setOnClickListener { mostrarHistorial(CuentaCorrienteFormatter.Filtro.ACTIVIDADES) }
 
         // Boton editar
-        val btnEditar = findViewById<MaterialButton>(R.id.btnEditar)
+        val btnEditar = findViewById<Button>(R.id.btnEditar)
         btnEditar.contentDescription = AccessibilityText.editPerson
         btnEditar.setOnClickListener {
             val intent = Intent(this, EditarUsuarioActivity::class.java)
