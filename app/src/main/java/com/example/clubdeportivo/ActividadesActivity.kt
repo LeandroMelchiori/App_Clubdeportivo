@@ -65,7 +65,7 @@ class ActividadesActivity : AppCompatActivity() {
             onEliminar = { act ->
                 androidx.appcompat.app.AlertDialog.Builder(this)
                     .setTitle("Eliminar actividad")
-                    .setMessage("Se eliminará \"${act.nombre}\" en el horario del ${act.etiquetaHorario} ¿Continuar?")
+                    .setMessage(ActividadDisplayFormatter.mensajeEliminar(act.nombre, act.etiquetaHorario))
                     .setPositiveButton("Eliminar") { _, _ ->
                         val ok = db.darDeBajaHorario(act.idDiaHorario)
                         if (ok) {

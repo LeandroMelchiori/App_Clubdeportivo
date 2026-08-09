@@ -202,6 +202,24 @@ class VisualSmokeInstrumentedTest {
         }
     }
 
+
+    @Test
+    fun actividades_muestraControlesPrincipales() {
+        val intent = Intent(ApplicationProvider.getApplicationContext(), ActividadesActivity::class.java)
+            .putExtra("usuario", "QA")
+        val scenario = ActivityScenario.launch<ActividadesActivity>(intent)
+        try {
+            onView(withId(R.id.tvBienvenida)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnAgregar)).check(matches(isDisplayed()))
+            onView(withId(R.id.etBuscar)).check(matches(isDisplayed()))
+            onView(withId(R.id.contenedorActividades)).check(matches(isDisplayed()))
+            onView(withId(R.id.bottomNav)).check(matches(isDisplayed()))
+            captureScreen("actividades")
+        } finally {
+            scenario.close()
+        }
+    }
+
     private fun captureScreen(name: String) {
         Screenshot.capture().setName(name).process()
     }
