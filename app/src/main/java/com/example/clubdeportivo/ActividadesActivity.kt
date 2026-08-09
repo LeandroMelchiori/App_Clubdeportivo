@@ -50,6 +50,7 @@ class ActividadesActivity : AppCompatActivity() {
             startActivity(intent)
         }
         adapter = ActividadCardAdapter(
+            currency = db.obtenerConfiguracionClub().currency,
             onEditar = { act ->
                 startActivity(
                     Intent(this, EditarActividadActivity::class.java).apply {

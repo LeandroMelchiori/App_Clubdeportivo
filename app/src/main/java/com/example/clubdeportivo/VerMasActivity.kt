@@ -16,6 +16,7 @@ class VerMasActivity : AppCompatActivity() {
 
         // DB Helper
         val db = DBHelper(this)
+        val configuration = db.obtenerConfiguracionClub()
 
         // Recupera el nombre de usuario del intent y lo muestra
         val usuario = intent.getStringExtra("usuario") ?: "Usuario"
@@ -63,10 +64,17 @@ class VerMasActivity : AppCompatActivity() {
         tvEstadoCuenta.text = "Estado: ${cuenta?.estado ?: "Sin datos"} - ${cuenta?.detalleEstado ?: ""}"
         tvUltimoPago.text = "\u00daltimo pago: ${cuenta?.ultimoPagoCuota ?: cuenta?.ultimoPagoActividad ?: "Sin registros"}"
         tvProximoVencimiento.text = "Pr\u00f3ximo vencimiento: ${cuenta?.proximoVencimiento ?: "No aplica"}"
-        tvDeudaEstimada.text = "Deuda estimada: $${cuenta?.deudaEstimada ?: 0.0}"
+        tvDeudaEstimada.text = getString(
+            R.string.estimated_debt,
+            MoneyFormatter.format(cuenta?.deudaEstimada ?: 0.0, configuration.currency)
+        )
         val movimientosCuenta = cuenta?.movimientos.orEmpty()
         fun mostrarHistorial(filtro: CuentaCorrienteFormatter.Filtro) {
-            tvHistorialCuenta.text = CuentaCorrienteFormatter.historial(movimientosCuenta, filtro)
+            tvHistorialCuenta.text = CuentaCorrienteFormatter.historial(
+                movimientosCuenta,
+                configuration.currency,
+                filtro
+            )
         }
         mostrarHistorial(CuentaCorrienteFormatter.Filtro.TODOS)
         findViewById<Button>(R.id.btnHistorialTodos).setOnClickListener { mostrarHistorial(CuentaCorrienteFormatter.Filtro.TODOS) }

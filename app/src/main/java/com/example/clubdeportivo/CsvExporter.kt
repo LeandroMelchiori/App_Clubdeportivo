@@ -1,9 +1,14 @@
 package com.example.clubdeportivo
 
 object CsvExporter {
-    fun resumenMensual(nombreMes: String, resumen: DBHelper.ResumenPagosMes): String {
+    fun resumenMensual(
+        nombreMes: String,
+        resumen: DBHelper.ResumenPagosMes,
+        currency: ClubCurrency
+    ): String {
         val rows = listOf(
             listOf("Periodo", nombreMes, resumen.anio.toString()),
+            listOf("Moneda", currency.code),
             listOf("No socios", resumen.cantNoSocios.toString()),
             listOf("Socios", resumen.cantSocios.toString()),
             listOf("Total clientes", resumen.totalClientes.toString()),

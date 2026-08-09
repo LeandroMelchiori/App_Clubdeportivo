@@ -21,6 +21,7 @@ class ResumenMensualActivity : AppCompatActivity() {
         setContentView(R.layout.activity_resumen_mensual)
 
         db = DBHelper(this)
+        val configuration = db.obtenerConfiguracionClub()
 
         // --------- Usuario ----------
         val usuario = intent.getStringExtra("usuario") ?: "Usuario"
@@ -64,9 +65,18 @@ class ResumenMensualActivity : AppCompatActivity() {
             tvNoSocios.text = "No Socios : ${resumen.cantNoSocios}"
             tvSocios.text = "Socios: ${resumen.cantSocios}"
             tvTotalClientes.text = "Total clientes: ${resumen.totalClientes}"
-            tvMontoCuotas.text = "Monto cuotas: $${resumen.montoCuotas}"
-            tvMontoActividades.text = "Monto Actividades: $${resumen.montoActividades}"
-            tvIngresosTotales.text = "Ingresos Totales: $${resumen.ingresosTotales}"
+            tvMontoCuotas.text = getString(
+                R.string.summary_quota_amount,
+                MoneyFormatter.format(resumen.montoCuotas, configuration.currency)
+            )
+            tvMontoActividades.text = getString(
+                R.string.summary_activity_amount,
+                MoneyFormatter.format(resumen.montoActividades, configuration.currency)
+            )
+            tvIngresosTotales.text = getString(
+                R.string.summary_total_income,
+                MoneyFormatter.format(resumen.ingresosTotales, configuration.currency)
+            )
         }
         cargarMes()
 
@@ -85,7 +95,11 @@ class ResumenMensualActivity : AppCompatActivity() {
 
         btnDescargar.setOnClickListener {
             val resumen = db.obtenerResumenPagosMes(anioActual, mesActual)
-            val csv = CsvExporter.resumenMensual(nombreMes(mesActual), resumen)
+            val csv = CsvExporter.resumenMensual(
+                nombreMes(mesActual),
+                resumen,
+                configuration.currency
+            )
             val dir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) ?: filesDir
             val file = File(dir, "resumen_${anioActual}_${String.format("%02d", mesActual)}.csv")
             file.writeText(csv)

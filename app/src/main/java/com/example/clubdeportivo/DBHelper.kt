@@ -674,7 +674,10 @@ package com.example.clubdeportivo
         val movimientos = obtenerMovimientosCuenta(db, persona.id.toString())
 
         val estado = if (persona.esSocio) {
-            CuentaCorrienteCalculator.evaluarSocio(proximoVencimiento)
+            CuentaCorrienteCalculator.evaluarSocio(
+                proximoVencimiento,
+                obtenerConfiguracionClub().monthlyFee
+            )
         } else {
             CuentaCorrienteCalculator.evaluarNoSocio(ultimoPagoActividad != null)
         }
@@ -794,49 +797,40 @@ package com.example.clubdeportivo
     // ----------------------------------------- CREATE -----------------------------------------
     fun hacerSocioDesdeNoSocio(
         dni: Int,
-        monto: Double,
         formaPago: String,
         fechaPago: String // "YYYY-MM-DD"
     ): Int? {
-
+        val configuration = obtenerConfiguracionClub()
+        val paymentMethod = PaymentDbRules.configuredPaymentMethod(configuration, formaPago)
+        val fechaVenc = PaymentDbRules.cuotaVencimiento(
+            fechaPago,
+            configuration.dueDay,
+            configuration.graceDays
+        )
         val db = writableDatabase
         db.beginTransaction()
 
         try {
-            // 1) Traer cliente por DNI
             val cliente = obtenerPersonaPorDni(dni.toString())
                 ?: throw IllegalArgumentException("No existe un cliente con ese DNI")
-
-            // Si ya es socio, no corresponde hacer el alta
             if (cliente.esSocio) {
                 throw IllegalStateException("El cliente ya es socio")
             }
 
-            // 2) Actualizar tabla clientes: pasar a socio
             val cvUpdate = ContentValues().apply {
                 put("esSocio", 1)
                 put("activo", 1)
                 put("carnet", 1)
             }
+            db.update("clientes", cvUpdate, "dni = ?", arrayOf(dni.toString()))
 
-            db.update(
-                "clientes",
-                cvUpdate,
-                "dni = ?",
-                arrayOf(dni.toString())
-            )
-
-            val idCliente = cliente.id  // tu clase Persona debería tener este id
-
-            // 3) Registrar cuota inicial pagada
-            val fechaVenc = LocalDate.parse(fechaPago).plusMonths(1).toString()
-
+            val idCliente = cliente.id
             val cvCuota = ContentValues().apply {
                 put("idCliente", idCliente)
-                put("monto", monto)
+                put("monto", configuration.monthlyFee)
                 put("fechaPago", fechaPago)
-                put("formaPago", formaPago)
-                put("estadoDelPago", PaymentDbRules.cuotaEstadoPagado())  // pagado
+                put("formaPago", paymentMethod.displayName)
+                put("estadoDelPago", PaymentDbRules.cuotaEstadoPagado())
                 put("fechaVencimiento", fechaVenc)
             }
             db.insertOrThrow("cuotas", null, cvCuota)
@@ -844,7 +838,6 @@ package com.example.clubdeportivo
             return idCliente
         } finally {
             db.endTransaction()
-            db.close()
         }
     }
     fun insertarHorario(
@@ -934,43 +927,65 @@ package com.example.clubdeportivo
     }
     fun registrarPagoCuota(
         dni: String,
-        monto: Double,
         formaPago: String,
-        ultimoPago: String,
         fechaPago: String = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
     ): Long {
-        val db = writableDatabase
-        val fechaVenc = PaymentDbRules.cuotaVencimiento(ultimoPago)
+        val configuration = obtenerConfiguracionClub()
+        val paymentMethod = PaymentDbRules.configuredPaymentMethod(configuration, formaPago)
+        val fechaVenc = PaymentDbRules.cuotaVencimiento(
+            fechaPago,
+            configuration.dueDay,
+            configuration.graceDays
+        )
         val cliente = obtenerPersonaPorDni(dni)
             ?: throw IllegalArgumentException(PaymentDbRules.activeClientMissing)
         val cv = ContentValues().apply {
             put("idCliente", cliente.id)
-            put("monto", monto)
+            put("monto", configuration.monthlyFee)
             put("fechaPago", fechaPago)
-            put("formaPago", formaPago)
+            put("formaPago", paymentMethod.displayName)
             put("estadoDelPago", PaymentDbRules.cuotaEstadoPagado())
             put("fechaVencimiento", fechaVenc)
         }
-        return db.insert("cuotas", null, cv)
+        return writableDatabase.insert("cuotas", null, cv)
     }
+
+    fun obtenerPrecioHorario(horarioId: Int): Double? {
+        readableDatabase.rawQuery(
+            """
+                SELECT a.precio
+                FROM dias_horarios dh
+                JOIN actividad_profesor ap ON ap.id = dh.actividad_profesor_id
+                JOIN actividades a ON a.id_actividad = ap.actividad_id
+                WHERE dh.id = ? AND dh.activo = 1
+            """.trimIndent(),
+            arrayOf(horarioId.toString())
+        ).use { cursor ->
+            return if (cursor.moveToFirst()) cursor.getDouble(0) else null
+        }
+    }
+
     fun registrarPagoActividadNoSocio(
         idCliente: String,
         horarioId: Int,
-        monto: Double,
         medioPago: String,
         fechaIso: String = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
     ): Long {
-        val db = writableDatabase
+        val configuration = obtenerConfiguracionClub()
+        val paymentMethod = PaymentDbRules.configuredPaymentMethod(configuration, medioPago)
+        val amount = obtenerPrecioHorario(horarioId)
+            ?: throw IllegalArgumentException("No existe un horario activo para registrar el pago")
+        require(amount > 0.0 && amount.isFinite()) { "La actividad debe tener un precio valido" }
+
         val cv = ContentValues().apply {
             put("idCliente", idCliente)
             put("id_actividad", horarioId)
-            put("monto", monto)
-            put("forma_pago", medioPago)
+            put("monto", amount)
+            put("forma_pago", paymentMethod.displayName)
             put("fecha_pago", fechaIso)
         }
-        return db.insert("pagos_actividad", null, cv)
+        return writableDatabase.insert("pagos_actividad", null, cv)
     }
-
     // ----------------------------------------- Delete -----------------------------------------
     // Borrado logico del padrón para evitar conflicto con tabla de pagos
     fun darDeBajaHorario(dhId: Int, motivo: String? = null): Boolean {

@@ -69,9 +69,7 @@ class SocioAdapter(
             c.startActivity(Intent(c, PagoDeCuotaActivity::class.java).apply {
                 putExtra("dni", item.dni)
                 putExtra("nombre", "${item.apellido}, ${item.nombre}")
-                putExtra("tipoOperacion", "Cuota mensual")
                 putExtra("ultimoPago", item.ultimoPago)
-                putExtra("precio", "30000")
                 putExtra("esSocio", true)
                 putExtra(SessionExtras.USUARIO, usuarioSesion)
             })

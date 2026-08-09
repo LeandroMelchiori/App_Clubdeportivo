@@ -26,6 +26,7 @@ class InicioActivity : AppCompatActivity() {
 
         // Dia de la semana
         val db = DBHelper(this)
+        val configuration = db.obtenerConfiguracionClub()
         val diaHoy = LocalDate.now().dayOfWeek.value % 7  // Lunes=1 ... Domingo=7 → ajustamos a 0–6
 
         val actividades = db.obtenerActividadesDelDia(diaHoy) // devuelve List<ActividadHoy>
@@ -42,7 +43,7 @@ class InicioActivity : AppCompatActivity() {
         tvFecha.text = HeaderDateFormatter.format()
 
         // Renderiza la lista de actividades del día
-        renderMetricas(metricas)
+        renderMetricas(metricas, configuration.currency)
         renderActividadesHoy(actividades, usuario)
 
         // Boton nuevo usuario
@@ -58,11 +59,14 @@ class InicioActivity : AppCompatActivity() {
     }
 
     // Renderiza la lista de actividades del día con el item de tarjeta
-    private fun renderMetricas(metricas: DBHelper.MetricasInicio) {
+    private fun renderMetricas(metricas: DBHelper.MetricasInicio, currency: ClubCurrency) {
         findViewById<TextView>(R.id.tvSociosActivos).text = "Socios: ${metricas.sociosActivos}"
         findViewById<TextView>(R.id.tvNoSociosActivos).text = "No socios: ${metricas.noSociosActivos}"
         findViewById<TextView>(R.id.tvVencidos).text = "Vencidos: ${metricas.vencidos}"
-        findViewById<TextView>(R.id.tvIngresosMes).text = "Ingresos: ${DashboardFormatters.montoPesos(metricas.ingresosMes)}"
+        findViewById<TextView>(R.id.tvIngresosMes).text = getString(
+            R.string.dashboard_income,
+            DashboardFormatters.monto(metricas.ingresosMes, currency)
+        )
         findViewById<TextView>(R.id.tvActividadesHoyMetrica).text = "Hoy: ${metricas.actividadesHoy}"
     }
 
@@ -89,7 +93,6 @@ class InicioActivity : AppCompatActivity() {
                 intent = Intent(this, PagoActividadActivity::class.java)
                 intent.putExtra("idActividad", act.id)
                 intent.putExtra("nombreActividad", act.nombre)
-                intent.putExtra("precioActividad", act.precio)
                 intent.putExtra("diaActividad", act.dia)
                 intent.putExtra("horaInicio", act.horaInicio)
                 intent.putExtra("usuario", usuario)

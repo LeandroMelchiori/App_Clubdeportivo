@@ -54,8 +54,6 @@ class NoSocioAdapter(
             c.startActivity(Intent(c, PagoDeCuotaActivity::class.java).apply {
                 putExtra("dni", ns.dni)
                 putExtra("nombre", "${ns.apellido}, ${ns.nombre}")
-                putExtra("tipoOperacion", "Ser socio")
-                putExtra("precio", "30000")
                 putExtra(SessionExtras.USUARIO, usuarioSesion)
             })
         }

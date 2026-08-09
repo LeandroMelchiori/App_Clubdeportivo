@@ -37,7 +37,7 @@
         android:id="@+id/tvPrecio"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Valor: $5000 ARS"
+        android:text="Valor: --"
         android:textSize="20sp"
         android:textColor="@android:color/black"
         android:layout_marginTop="2dp"/>

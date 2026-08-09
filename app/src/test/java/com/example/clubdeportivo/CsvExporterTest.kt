@@ -18,7 +18,7 @@ class CsvExporterTest {
             ingresosTotales = 255000.0
         )
 
-        val csv = CsvExporter.resumenMensual("Agosto", resumen)
+        val csv = CsvExporter.resumenMensual("Agosto", resumen, ClubCurrency.ARS)
 
         assertTrue(csv.startsWith("Periodo,Agosto,2026"))
         assertTrue(csv.contains("Ingresos totales,255000.0"))
@@ -28,7 +28,7 @@ class CsvExporterTest {
     fun resumenMensual_escapaMesConComa() {
         val resumen = DBHelper.ResumenPagosMes(2026, 8, 0, 0, 0, 0.0, 0.0, 0.0)
 
-        val csv = CsvExporter.resumenMensual("Agosto, especial", resumen)
+        val csv = CsvExporter.resumenMensual("Agosto, especial", resumen, ClubCurrency.ARS)
 
         assertEquals('"', csv.first { it == '"' })
         assertTrue(csv.startsWith("Periodo,\"Agosto, especial\",2026"))

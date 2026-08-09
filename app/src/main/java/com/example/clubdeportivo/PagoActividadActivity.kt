@@ -3,7 +3,6 @@ package com.example.clubdeportivo
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
-import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.SearchView
 import android.widget.TextView
@@ -12,154 +11,153 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 
 class PagoActividadActivity : AppCompatActivity() {
-
     private lateinit var db: DBHelper
-    private lateinit var etBuscar: SearchView            // <--- usa el id real de tu buscador (ej: etBuscar)
-    private lateinit var tvNombreUsuario: TextView     // tvNombreUsuario
-    private lateinit var tvNombreActividad: TextView   // tvNombreActividad
-    private lateinit var tvHoraInicio: TextView           // tvHorario
-    private lateinit var tvPrecio: TextView            // tvPrecio
-
-    private lateinit var tvIdUsuario: TextView
-    // tvIdUsuario
-    private lateinit var btnPagar: Button              // btnPagar
-    private lateinit var rgMedioPago: RadioGroup       // rgMedioPago
-
-
+    private lateinit var configuration: ClubConfiguration
+    private lateinit var search: SearchView
+    private lateinit var personName: TextView
+    private lateinit var personId: TextView
+    private lateinit var payButton: Button
+    private lateinit var paymentMethods: RadioGroup
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_inscribir_actividad)
+
         db = DBHelper(this)
+        configuration = db.obtenerConfiguracionClub()
+        search = findViewById(R.id.etBuscar)
+        personName = findViewById(R.id.tvNombreUsuario)
+        personId = findViewById(R.id.tvIdUsuario)
+        payButton = findViewById(R.id.btnPagar)
+        paymentMethods = findViewById(R.id.rgMedioPago)
 
-        // Inicializar views
-        tvNombreActividad = findViewById<TextView>(R.id.tvNombreActividad)
-        tvNombreUsuario = findViewById(R.id.tvNombreUsuario)
-        tvIdUsuario = findViewById(R.id.tvIdUsuario)
-        tvHoraInicio = findViewById(R.id.tvHorario)
-        tvPrecio = findViewById(R.id.tvPrecio)
-        btnPagar = findViewById(R.id.btnPagar)
-        btnPagar.contentDescription = AccessibilityText.pay
-        rgMedioPago = findViewById(R.id.rgMedioPago)
+        val scheduleId = intent.getIntExtra("idActividad", -1)
+        val activityName = intent.getStringExtra("nombreActividad") ?: "Actividad"
+        val startTime = intent.getStringExtra("horaInicio") ?: "--:--"
+        val activityDay = intent.getIntExtra("diaActividad", -1)
+        val price = db.obtenerPrecioHorario(scheduleId) ?: 0.0
+        val user = SessionExtras.nombreUsuario(intent.getStringExtra(SessionExtras.USUARIO))
 
-        // Deshabilitados inicialmente
-        btnPagar.isEnabled = false
-        rgMedioPago.isEnabled = false
+        findViewById<TextView>(R.id.tvBienvenida).text = getString(R.string.welcome_user, user)
+        findViewById<TextView>(R.id.tvFecha).text = HeaderDateFormatter.format()
+        findViewById<TextView>(R.id.tvNombreActividad).text = "Actividad: $activityName"
+        findViewById<TextView>(R.id.tvHorario).text =
+            "${ClubFormatters.nombreDia(activityDay)} - $startTime hs"
+        findViewById<TextView>(R.id.tvPrecio).text = getString(
+            R.string.price_amount,
+            MoneyFormatter.format(price, configuration.currency)
+        )
 
-        // Recupera datos de la actividad del intent
-        val idActividad = intent.getIntExtra("idActividad", -1)
-        val nombreActividad = intent.getStringExtra("nombreActividad") ?: "nombre de la actividad"
-        val horaInicio = intent.getStringExtra("horaInicio") ?: "Hora de inicio"
-        val diaActividad = intent.getIntExtra("diaActividad", -1)
-        val precio = intent.getDoubleExtra("precioActividad", 0.0)
+        payButton.contentDescription = AccessibilityText.pay
+        payButton.isEnabled = false
+        PaymentMethodUi.bind(paymentMethods, configuration, enabled = false)
+        setupPersonSearch()
+        paymentMethods.setOnCheckedChangeListener { _, checkedId ->
+            payButton.isEnabled = checkedId != -1 && search.query.isNotEmpty()
+        }
+        payButton.setOnClickListener {
+            confirmPayment(scheduleId, activityName, price, user)
+        }
+        BottomNavHelper.setup(this, user, R.id.nav_home)
+    }
 
-        // Recupera el nombre de usuario del intent y lo muestra
-        val usuario = intent.getStringExtra("usuario") ?: "Usuario"
-        val tvBienvenida = findViewById<TextView>(R.id.tvBienvenida)
-        tvBienvenida.text = "Bienvenido, $usuario"
+    override fun onDestroy() {
+        db.close()
+        super.onDestroy()
+    }
 
-        // Fecha encabezado
-        val tvFecha = findViewById<TextView>(R.id.tvFecha)
-        tvFecha.text = HeaderDateFormatter.format()
-
-        // Valor int del dia convertido a texto para mostrar en pantalla.
-        val diaTxt = ClubFormatters.nombreDia(diaActividad)
-        // Asignar datos a views
-        tvNombreActividad.text = "Actividad: $nombreActividad"
-        tvHoraInicio.text = "$diaTxt - $horaInicio hs"
-        tvPrecio.text = "Precio: $precio"
-
-        // Buscador
-        etBuscar = findViewById(R.id.etBuscar)
-        etBuscar.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+    private fun setupPersonSearch() {
+        search.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String): Boolean {
-                val persona = db.obtenerPersonaPorDni(query)
-                if (persona != null) {
-                    tvNombreUsuario.text = "${persona.apellido}, ${persona.nombre}"
-                    tvIdUsuario.text = "DNI: ${persona.dni}"
-                    rgMedioPago.isEnabled = true
-                } else {
-                    toast("Ingres\u00e1 un DNI v\u00e1lido")
+                val person = db.obtenerPersonaPorDni(query)
+                if (person == null) {
+                    personName.text = "-----"
+                    personId.text = "----"
+                    PaymentMethodUi.setEnabled(paymentMethods, configuration, false)
+                    payButton.isEnabled = false
+                    toast("Ingresa un DNI valido")
+                    return true
                 }
+
+                personName.text = "${person.apellido}, ${person.nombre}"
+                personId.text = "DNI: ${person.dni}"
+                PaymentMethodUi.setEnabled(paymentMethods, configuration, true)
+                payButton.isEnabled = paymentMethods.checkedRadioButtonId != -1
                 return true
             }
 
-            override fun onQueryTextChange(newText: String?) = false
-        })
-
-        // RadioGroup
-        rgMedioPago.setOnCheckedChangeListener { _, checkedId ->
-            btnPagar.isEnabled = checkedId != -1
-        }
-
-        // Boton Pagar
-        btnPagar.setOnClickListener {
-            if (etBuscar.query.isEmpty()) {
-                toast("Debe ingresar un DNI v\u00e1lido")
-            } else{
-                AlertDialog.Builder(this)
-                    .setTitle(PaymentDialogText.confirmActivityTitle)
-                    .setMessage(PaymentDialogText.actividad(precio, nombreActividad))
-                    .setPositiveButton(PaymentDialogText.confirm) { _, _ ->
-                        try {
-                            pagarActividad(etBuscar.query.toString(), idActividad, precio)
-                            intent = Intent(this, InicioActivity::class.java)
-                            intent.putExtra("usuario", usuario)
-                            startActivity(intent)
-                        } catch (e: IllegalArgumentException) {
-                            Toast.makeText(this, e.message ?: "No se pudo realizar la inscripci\u00f3n", Toast.LENGTH_LONG).show()
-                        } catch (e: Exception) {
-                            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
-                        }
-                    }
-                    .setNegativeButton(PaymentDialogText.cancel, null)
-                    .show()
+            override fun onQueryTextChange(newText: String?): Boolean {
+                payButton.isEnabled = false
+                return false
             }
-        }
-
-        // Bottom
-        BottomNavHelper.setup(this, usuario, R.id.nav_home)
+        })
     }
 
-    private fun toast(msg: String) =
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-
-    fun pagarActividad(dni: String, idActividad: Int, precio: Double) {
-        // 1) Buscar persona
-        val cliente = db.obtenerPersonaPorDni(dni)
-
-        if (cliente == null) {
-            throw IllegalArgumentException("Debe ingresar un DNI v\u00e1lido")
+    private fun confirmPayment(
+        scheduleId: Int,
+        activityName: String,
+        price: Double,
+        user: String
+    ) {
+        val method = PaymentMethodUi.selected(paymentMethods)
+        val validation = PaymentValidator.validateManualPayment(price, method?.displayName)
+        if (!validation.isValid) {
+            toast(validation.error ?: "Selecciona un medio de pago")
+            return
         }
+        val paymentMethod = method?.displayName.orEmpty()
 
-        if (cliente.esSocio) {
+        AlertDialog.Builder(this)
+            .setTitle(PaymentDialogText.confirmActivityTitle)
+            .setMessage(
+                PaymentDialogText.actividad(
+                    price,
+                    activityName,
+                    paymentMethod,
+                    configuration.currency
+                )
+            )
+            .setPositiveButton(PaymentDialogText.confirm) { _, _ ->
+                try {
+                    if (payActivity(search.query.toString(), scheduleId, paymentMethod)) {
+                        startActivity(
+                            Intent(this, InicioActivity::class.java)
+                                .putExtra(SessionExtras.USUARIO, user)
+                        )
+                        finish()
+                    }
+                } catch (error: IllegalArgumentException) {
+                    toast(error.message ?: "No se pudo registrar el pago")
+                } catch (error: Exception) {
+                    toast("Error: ${error.message}")
+                }
+            }
+            .setNegativeButton(PaymentDialogText.cancel, null)
+            .show()
+    }
+
+    private fun payActivity(dni: String, scheduleId: Int, paymentMethod: String): Boolean {
+        val client = db.obtenerPersonaPorDni(dni)
+            ?: throw IllegalArgumentException("Debe ingresar un DNI valido")
+        if (client.esSocio) {
             toast("Los socios no necesitan pagar esta actividad")
-            return
+            return false
         }
 
-        // 2) Validar medio de pago
-        val selectedId = rgMedioPago.checkedRadioButtonId
-        val formaPago = if (selectedId != -1) findViewById<RadioButton>(selectedId).text.toString() else null
-        val validacion = PaymentValidator.validateManualPayment(precio, formaPago)
-        if (!validacion.isValid) {
-            Toast.makeText(this, validacion.error, Toast.LENGTH_SHORT).show()
-            return
-        }
-        val medioPago = formaPago.orEmpty()
-
-        // 3) Registrar pago
         val insertedId = db.registrarPagoActividadNoSocio(
-            idCliente = cliente.id.toString(),
-            horarioId = idActividad,
-            monto = precio,
-            medioPago = medioPago
+            idCliente = client.id.toString(),
+            horarioId = scheduleId,
+            medioPago = paymentMethod
         )
-        if (insertedId > 0L) {
-            toast("Pago registrado")
-            finish()
-        } else {
+        if (insertedId <= 0L) {
             toast("No se pudo registrar el pago")
+            return false
         }
+        toast("Pago registrado")
+        return true
     }
 
+    private fun toast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+    }
 }
