@@ -19,6 +19,24 @@ Versiones principales:
 - `minSdk` `30`
 - JVM target `11`
 
+## Variantes de la aplicacion
+
+- `demo`: usa `com.example.clubdeportivo.demo`, muestra una etiqueta de demostracion y carga datos ficticios.
+- `production`: usa `com.example.clubdeportivo` y crea solamente el esquema vacio.
+
+Los inicializadores viven en source sets separados. Los datos ficticios de `src/demo` no forman parte del codigo de produccion.
+
+Comandos por variante:
+
+```powershell
+.\gradlew.bat assembleDemoDebug
+.\gradlew.bat assembleProductionDebug
+.\gradlew.bat testDemoDebugUnitTest
+.\gradlew.bat testProductionDebugUnitTest
+.\gradlew.bat connectedDemoDebugAndroidTest
+.\gradlew.bat connectedProductionDebugAndroidTest
+```
+
 ## Requisitos
 
 - Android Studio o JDK compatible configurado en `JAVA_HOME`
@@ -37,9 +55,9 @@ Desde la raiz del proyecto en Windows:
 
 `connectedAndroidTest` requiere un emulador o dispositivo conectado.
 
-## Credenciales de prueba
+## Credenciales temporales de prueba
 
-El login acepta usuarios de prueba donde usuario y contrasena coinciden:
+El login actual acepta usuarios temporales donde usuario y contrasena coinciden. Esta autenticacion debe reemplazarse antes de una entrega profesional:
 
 - `admin` / `admin`
 - `charlie` / `charlie`
@@ -96,8 +114,9 @@ Tests unitarios JVM:
 
 Tests instrumentados:
 
-- `DBHelperInstrumentedTest`: verifica que el pago de cuota se guarde con `idCliente`, monto, forma de pago y vencimiento correcto.
-- `VisualSmokeInstrumentedTest`: abre Login, Inicio y Listados, valida que sus controles principales se muestren y genera capturas con `Screenshot.capture()`.
+- `DBHelperInstrumentedTest`: usa fixtures aislados y verifica pagos, cuenta corriente y solapamientos sin depender del seed demo.
+- `EnvironmentDatabaseInstrumentedTest`: confirma que demo inicia con datos y production con tablas vacias.
+- `VisualSmokeInstrumentedTest`: recorre las pantallas principales, valida la etiqueta demo y genera capturas identificadas por variante.
 
 Para obtener evidencia visual, ejecutar:
 

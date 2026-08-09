@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Club deportivo</string>
+    <string name="demo_mode_badge">MODO DEMO</string>
 </resources>

@@ -7,6 +7,12 @@ android {
     namespace = "com.example.clubdeportivo"
     compileSdk = 36
 
+    buildFeatures {
+        buildConfig = true
+    }
+
+    flavorDimensions += "environment"
+
     defaultConfig {
         applicationId = "com.example.clubdeportivo"
         minSdk = 30
@@ -15,6 +21,19 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    productFlavors {
+        create("demo") {
+            dimension = "environment"
+            applicationIdSuffix = ".demo"
+            versionNameSuffix = "-demo"
+            buildConfigField("boolean", "DEMO_MODE", "true")
+        }
+        create("production") {
+            dimension = "environment"
+            buildConfigField("boolean", "DEMO_MODE", "false")
+        }
     }
 
     buildTypes {

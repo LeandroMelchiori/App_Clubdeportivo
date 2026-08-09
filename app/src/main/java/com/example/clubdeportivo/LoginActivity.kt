@@ -2,7 +2,9 @@ package com.example.clubdeportivo
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
@@ -13,6 +15,9 @@ class LoginActivity : AppCompatActivity() {
         setContentView(R.layout.activity_login)
 
         // Variables
+        findViewById<TextView>(R.id.tvEnvironmentBadge).visibility =
+            if (BuildConfig.DEMO_MODE) View.VISIBLE else View.GONE
+
         val etUsuario = findViewById<EditText>(R.id.etUsuario)
         val etContrasena = findViewById<EditText>(R.id.etContrasena)
         val btnLogin = findViewById<MaterialButton>(R.id.btnLogin)

@@ -1,12 +1,16 @@
 package com.example.clubdeportivo
 
+import android.content.ContentValues
 import android.content.Intent
+import android.database.sqlite.SQLiteDatabase
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.matcher.ViewMatchers.Visibility
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
@@ -27,6 +31,13 @@ class VisualSmokeInstrumentedTest {
             onView(withId(R.id.etContrasena)).check(matches(isDisplayed()))
             onView(withId(R.id.btnLogin)).check(matches(isDisplayed()))
             onView(withText("INGRESAR")).check(matches(isDisplayed()))
+            if (BuildConfig.DEMO_MODE) {
+                onView(withId(R.id.tvEnvironmentBadge)).check(matches(isDisplayed()))
+                onView(withText("MODO DEMO")).check(matches(isDisplayed()))
+            } else {
+                onView(withId(R.id.tvEnvironmentBadge))
+                    .check(matches(withEffectiveVisibility(Visibility.GONE)))
+            }
             captureScreen("login")
         } finally {
             scenario.close()
@@ -79,6 +90,7 @@ class VisualSmokeInstrumentedTest {
 
     @Test
     fun verMas_muestraUsuarioSesion() {
+        ensureDetailClient()
         val intent = Intent(ApplicationProvider.getApplicationContext(), VerMasActivity::class.java)
             .putExtra("usuario", "QA")
             .putExtra("dni", "30111222")
@@ -273,7 +285,33 @@ class VisualSmokeInstrumentedTest {
         }
     }
 
+    private fun ensureDetailClient() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        DBHelper(context).use { helper ->
+            val values = ContentValues().apply {
+                put("nombre", "Usuario")
+                put("apellido", "Visual")
+                put("dni", "30111222")
+                put("fecha_nac", "1990-01-01")
+                put("telefono", "3415550000")
+                put("direccion", "Domicilio de prueba")
+                put("fecha_inscripcion", "2026-01-01")
+                put("ficha_medica", 1)
+                put("email", "visual@example.com")
+                put("esSocio", 0)
+                put("activo", 1)
+                put("carnet", 0)
+            }
+            helper.writableDatabase.insertWithOnConflict(
+                "clientes",
+                null,
+                values,
+                SQLiteDatabase.CONFLICT_IGNORE
+            )
+        }
+    }
+
     private fun captureScreen(name: String) {
-        Screenshot.capture().setName(name).process()
+        Screenshot.capture().setName("${BuildConfig.FLAVOR}_$name").process()
     }
 }
