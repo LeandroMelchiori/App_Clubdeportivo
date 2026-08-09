@@ -63,28 +63,28 @@ class EditarUsuarioActivity : AppCompatActivity() {
 
             // Validar campos obligatorios y formatos compartidos con el alta.
             if (nombre.isEmpty() || apellido.isEmpty() || fechaNac.isEmpty() || direccion.isEmpty() || telefono.isEmpty() || email.isEmpty()) {
-                Toast.makeText(this, "Todos los campos son obligatorios", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, UsuarioFormText.requiredFields, Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
             if (!UsuarioValidator.dniValido(dni)) {
-                Toast.makeText(this, "El DNI debe tener 8 o 9 n\u00fameros", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, UsuarioFormText.invalidDni, Toast.LENGTH_LONG).show()
                 etDni.requestFocus()
                 return@setOnClickListener
             }
             if (!UsuarioValidator.telefonoValido(telefono)) {
-                Toast.makeText(this, "Ingrese un n\u00famero de tel\u00e9fono v\u00e1lido", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, UsuarioFormText.invalidPhone, Toast.LENGTH_LONG).show()
                 etTelefono.requestFocus()
                 return@setOnClickListener
             }
             if (!UsuarioValidator.emailValido(email)) {
-                Toast.makeText(this, "Ingrese un correo electr\u00f3nico v\u00e1lido", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, UsuarioFormText.invalidEmail, Toast.LENGTH_LONG).show()
                 etEmail.requestFocus()
                 return@setOnClickListener
             }
 
             AlertDialog.Builder(this)
-                .setTitle("Confirmar edici\u00f3n")
-                .setMessage("¿Confirmás editar al cliente con DNI: $dni?")
+                .setTitle(UsuarioFormText.confirmEditTitle)
+                .setMessage(UsuarioFormText.confirmEditMessage(dni))
                 .setPositiveButton("Sí") { _, _ ->
                     try {
                         db.actualizarClientePorId(

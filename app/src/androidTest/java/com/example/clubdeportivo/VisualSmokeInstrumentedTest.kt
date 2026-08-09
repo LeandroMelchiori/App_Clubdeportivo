@@ -161,6 +161,23 @@ class VisualSmokeInstrumentedTest {
     }
 
 
+
+    @Test
+    fun nuevoUsuario_muestraFormularioPrincipal() {
+        val intent = Intent(ApplicationProvider.getApplicationContext(), NuevoUsuarioActivity::class.java)
+            .putExtra("usuario", "QA")
+        val scenario = ActivityScenario.launch<NuevoUsuarioActivity>(intent)
+        try {
+            onView(withText("Fecha de nacimiento:")).check(matches(isDisplayed()))
+            onView(withId(R.id.etNombre)).check(matches(isDisplayed()))
+            onView(withId(R.id.etDNI)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnRegistrar)).check(matches(isDisplayed()))
+            captureScreen("nuevo_usuario")
+        } finally {
+            scenario.close()
+        }
+    }
+
     @Test
     fun editarUsuario_muestraFormularioPrincipal() {
         val intent = Intent(ApplicationProvider.getApplicationContext(), EditarUsuarioActivity::class.java)
@@ -170,6 +187,7 @@ class VisualSmokeInstrumentedTest {
             .putExtra("esSocio", false)
         val scenario = ActivityScenario.launch<EditarUsuarioActivity>(intent)
         try {
+            onView(withText("Fecha de nacimiento:")).check(matches(isDisplayed()))
             onView(withId(R.id.etNombre)).check(matches(isDisplayed()))
             onView(withId(R.id.etDni)).check(matches(isDisplayed()))
             onView(withId(R.id.btnConfirmar)).check(matches(isDisplayed()))

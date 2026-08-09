@@ -53,31 +53,31 @@ class NuevoUsuarioActivity : AppCompatActivity() {
                 listOf(etNombre, etApellido, etFecha, etDNI, etDireccion, etTelefono, etEmail).forEach { it.error = null }
 
                 if (nombre.isEmpty() || apellido.isEmpty() || dni.isEmpty() || fecha.isEmpty() || direccion.isEmpty() || telefono.isEmpty() || email.isEmpty()) {
-                    Toast.makeText(this, "Todos los campos son obligatorios", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, UsuarioFormText.requiredFields, Toast.LENGTH_LONG).show()
                     return@setOnClickListener
                 }
 
                 if (!UsuarioValidator.dniValido(dni)) {
-                    etDNI.error = "Debe tener 8 o 9 numeros"
+                    etDNI.error = UsuarioFormText.invalidDni
                     etDNI.requestFocus()
                     return@setOnClickListener
                 }
 
                 if (!UsuarioValidator.telefonoValido(telefono)) {
-                    etTelefono.error = "Debe tener entre 9 y 12 n\u00fameros"
+                    etTelefono.error = UsuarioFormText.invalidPhone
                     etTelefono.requestFocus()
                     return@setOnClickListener
                 }
 
                 if (!UsuarioValidator.emailValido(email)) {
-                    etEmail.error = "Correo inv\u00e1lido"
+                    etEmail.error = UsuarioFormText.invalidEmail
                     etEmail.requestFocus()
                     return@setOnClickListener
                 }
 
                 val fechaISO = UsuarioValidator.normalizarFechaNacimiento(fecha)
                 if (fechaISO == null) {
-                    etFecha.error = "Usa el formato dd/mm/aaaa"
+                    etFecha.error = UsuarioFormText.invalidBirthDate
                     etFecha.requestFocus()
                     return@setOnClickListener
                 }
@@ -108,8 +108,8 @@ class NuevoUsuarioActivity : AppCompatActivity() {
                 }
 
                 AlertDialog.Builder(this)
-                    .setTitle("Confirmar registro")
-                    .setMessage("¿Confirmás registro nuevo usuario?")
+                    .setTitle(UsuarioFormText.confirmCreateTitle)
+                    .setMessage(UsuarioFormText.confirmCreateMessage)
                     .setPositiveButton("Sí") { _, _ ->
                         try {
                             val rowId = db.insertOrThrow(tabla, null, values)  // usa insertOrThrow para ver el error real
