@@ -76,14 +76,14 @@ class PagoDeCuotaActivity : AppCompatActivity() {
                 } else {
                     // 💬 Diálogo de confirmación
                     AlertDialog.Builder(this)
-                        .setTitle("Confirmar pago")
-                        .setMessage("¿Confirmás registrar el pago de $$monto por \"$formaPago\"?")
-                        .setPositiveButton("Sí") { _, _ ->
+                        .setTitle(PaymentDialogText.confirmTitle)
+                        .setMessage(PaymentDialogText.cuota(montoPago, medioPago))
+                        .setPositiveButton(PaymentDialogText.confirm) { _, _ ->
                             try {
                                 val fechaHoy = LocalDate.now().toString()
                                 val db = DBHelper(this)
                                 db.registrarPagoCuota(dni, montoPago, medioPago, fechaHoy)
-                                Toast.makeText(this, "¡Pago exitoso!", Toast.LENGTH_LONG).show()
+                                Toast.makeText(this, PaymentDialogText.quotaSuccess, Toast.LENGTH_LONG).show()
                                 intent = Intent(this, ListadosActivity::class.java)
                                 intent.putExtra("usuario", usuario)
                                 startActivity(intent)
@@ -93,20 +93,20 @@ class PagoDeCuotaActivity : AppCompatActivity() {
                                 Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
                             }
                         }
-                        .setNegativeButton("Cancelar", null)
+                        .setNegativeButton(PaymentDialogText.cancel, null)
                         .show()
                 }
             } else {
             // 💬 Diálogo de confirmación
             AlertDialog.Builder(this)
-                .setTitle("Confirmar pago")
-                .setMessage("¿Confirmás registrar el pago de $$monto por \"$formaPago\" y convertir a $noSocio en socio?")
-                .setPositiveButton("Sí") { _, _ ->
+                .setTitle(PaymentDialogText.confirmTitle)
+                .setMessage(PaymentDialogText.convertirNoSocio(montoPago, medioPago, noSocio))
+                .setPositiveButton(PaymentDialogText.confirm) { _, _ ->
                     try {
                         val fechaHoy = LocalDate.now().toString()
                         val db = DBHelper(this)
                         val idSocio = db.hacerSocioDesdeNoSocio(dni.toInt(), montoPago, medioPago, fechaHoy)
-                        Toast.makeText(this, "¡Pago exitoso! Ahora es socio (id $idSocio)", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, PaymentDialogText.socioCreado(idSocio), Toast.LENGTH_LONG).show()
                         intent = Intent(this, ListadosActivity::class.java)
                         intent.putExtra("usuario", usuario)
                         startActivity(intent)
@@ -116,7 +116,7 @@ class PagoDeCuotaActivity : AppCompatActivity() {
                         Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
                     }
                 }
-                .setNegativeButton("Cancelar", null)
+                .setNegativeButton(PaymentDialogText.cancel, null)
                 .show()
             }
         }

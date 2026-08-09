@@ -104,6 +104,7 @@ class VisualSmokeInstrumentedTest {
             .putExtra("esSocio", true)
         val scenario = ActivityScenario.launch<PagoDeCuotaActivity>(intent)
         try {
+            onView(withText("Método de pago:")).check(matches(isDisplayed()))
             onView(withId(R.id.rgMediosdePago)).check(matches(isDisplayed()))
             onView(withId(R.id.btnPagar)).check(matches(isDisplayed()))
             captureScreen("pago_cuota")
@@ -112,6 +113,27 @@ class VisualSmokeInstrumentedTest {
         }
     }
 
+
+
+    @Test
+    fun pagoActividad_muestraDatosYMediosDePago() {
+        val intent = Intent(ApplicationProvider.getApplicationContext(), PagoActividadActivity::class.java)
+            .putExtra("usuario", "QA")
+            .putExtra("idActividad", 1)
+            .putExtra("nombreActividad", "Funcional")
+            .putExtra("horaInicio", "08:00")
+            .putExtra("diaActividad", 1)
+            .putExtra("precioActividad", 5000.0)
+        val scenario = ActivityScenario.launch<PagoActividadActivity>(intent)
+        try {
+            onView(withText("Método de pago:")).check(matches(isDisplayed()))
+            onView(withId(R.id.rgMedioPago)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnPagar)).check(matches(isDisplayed()))
+            captureScreen("pago_actividad")
+        } finally {
+            scenario.close()
+        }
+    }
 
     @Test
     fun resumenMensual_muestraExportacion() {

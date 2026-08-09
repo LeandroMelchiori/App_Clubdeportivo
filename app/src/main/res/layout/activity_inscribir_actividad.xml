@@ -160,7 +160,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
-                    android:text="Metodo de pago:"
+                    android:text="M&#233;todo de pago:"
                     android:textColor="@color/black"
                     android:textSize="18sp" />
 
@@ -192,7 +192,7 @@
                         android:id="@+id/rbTarjeta"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Tarjeta de credito"
+                        android:text="Tarjeta de cr&#233;dito"
                         android:layout_marginBottom="15dp"
                         android:textSize="14sp"/>
 

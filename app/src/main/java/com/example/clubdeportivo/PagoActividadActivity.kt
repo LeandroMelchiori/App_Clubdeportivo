@@ -97,21 +97,21 @@ class PagoActividadActivity : AppCompatActivity() {
                 toast("Debe ingresar un DNI v\u00e1lido")
             } else{
                 AlertDialog.Builder(this)
-                    .setTitle("Confirmar pago actividad")
-                    .setMessage("¿Confirmás registrar el pago de $precio por la actividad: $nombreActividad ?")
-                    .setPositiveButton("Sí") { _, _ ->
+                    .setTitle(PaymentDialogText.confirmActivityTitle)
+                    .setMessage(PaymentDialogText.actividad(precio, nombreActividad))
+                    .setPositiveButton(PaymentDialogText.confirm) { _, _ ->
                         try {
                             pagarActividad(etBuscar.query.toString(), idActividad, precio)
                             intent = Intent(this, InicioActivity::class.java)
                             intent.putExtra("usuario", usuario)
                             startActivity(intent)
                         } catch (e: IllegalArgumentException) {
-                            Toast.makeText(this, e.message ?: "No se pudo realizar la inscripcion", Toast.LENGTH_LONG).show()
+                            Toast.makeText(this, e.message ?: "No se pudo realizar la inscripci\u00f3n", Toast.LENGTH_LONG).show()
                         } catch (e: Exception) {
                             Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
                         }
                     }
-                    .setNegativeButton("Cancelar", null)
+                    .setNegativeButton(PaymentDialogText.cancel, null)
                     .show()
             }
         }
