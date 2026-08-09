@@ -24,7 +24,7 @@
             android:id="@+id/ivIcono"
             android:layout_width="20dp"
             android:layout_height="20dp"
-            android:tint="@color/white"
+            app:tint="@color/white"
             android:layout_centerVertical="true"
             android:src="@android:drawable/ic_lock_idle_alarm"
             android:alpha="0.85" />

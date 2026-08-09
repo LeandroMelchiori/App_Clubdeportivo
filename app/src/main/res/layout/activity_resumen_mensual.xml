@@ -111,7 +111,7 @@
                                 android:background="@android:color/transparent"
                                 android:padding="8dp"
                                 android:src="@drawable/outline_arrow_back_ios_24"
-                                android:tint="@color/black"
+                                app:tint="@color/black"
                                 android:contentDescription="Mes anterior"
                                 android:scaleType="centerInside" />
 
@@ -134,7 +134,7 @@
                                 android:background="@android:color/transparent"
                                 android:padding="8dp"
                                 android:src="@drawable/outline_arrow_forward_ios_24"
-                                android:tint="@color/black"
+                                app:tint="@color/black"
                                 android:contentDescription="Mes siguiente"
                                 android:scaleType="centerInside" />
 

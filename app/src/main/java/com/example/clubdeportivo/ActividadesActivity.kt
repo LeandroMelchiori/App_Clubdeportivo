@@ -85,7 +85,6 @@ class ActividadesActivity : AppCompatActivity() {
         )
 
         rv.layoutManager = LinearLayoutManager(this)
-        rv.setHasFixedSize(true)
         rv.adapter = adapter
 
         // Carga inicial
