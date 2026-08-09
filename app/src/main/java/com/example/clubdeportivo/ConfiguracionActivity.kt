@@ -39,9 +39,9 @@ class ConfiguracionActivity : AppCompatActivity() {
         val btnSalir = findViewById<MaterialButton>(R.id.btnCerrarSesion)
         btnSalir.setOnClickListener {
             AlertDialog.Builder(this)
-                .setTitle("Cerrar sesi\u00f3n")
-                .setMessage("?Est\u00e1s seguro de que quer\u00e9s cerrar sesi\u00f3n?")
-                .setPositiveButton("S\u00ed") { _, _ ->
+                .setTitle(SessionDialogText.logoutTitle)
+                .setMessage(SessionDialogText.logoutMessage)
+                .setPositiveButton(SessionDialogText.confirm) { _, _ ->
                     startActivity(
                         Intent(
                             this,
@@ -49,7 +49,7 @@ class ConfiguracionActivity : AppCompatActivity() {
                         )
                     )
                 }
-                .setNegativeButton("No", null)
+                .setNegativeButton(SessionDialogText.cancel, null)
                 .show()
         }
 

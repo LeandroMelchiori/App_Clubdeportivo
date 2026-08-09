@@ -151,6 +151,8 @@ class VisualSmokeInstrumentedTest {
         try {
             onView(withId(R.id.btnCerrarSesion)).check(matches(isDisplayed()))
             onView(withId(R.id.bottomNav)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnCerrarSesion)).perform(click())
+            onView(withText(SessionDialogText.logoutMessage)).check(matches(isDisplayed()))
             captureScreen("configuracion")
         } finally {
             scenario.close()
