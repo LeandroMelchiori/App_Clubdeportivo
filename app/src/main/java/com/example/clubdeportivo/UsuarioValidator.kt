@@ -1,6 +1,7 @@
 package com.example.clubdeportivo
 
 import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.util.Locale
 
 object UsuarioValidator {
@@ -11,6 +12,16 @@ object UsuarioValidator {
     fun telefonoValido(telefono: String): Boolean = telefono.matches(Regex("^\\d{9,12}$"))
 
     fun emailValido(email: String): Boolean = emailRegex.matches(email)
+
+    fun fechaNacimientoValida(input: String): Boolean {
+        if (normalizarFechaNacimiento(input) != null) return true
+        return try {
+            LocalDate.parse(input)
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
 
     fun normalizarFechaNacimiento(input: String): String? {
         if (input.isBlank()) return null

@@ -39,4 +39,11 @@ class UsuarioValidatorTest {
     fun normalizarFechaNacimiento_rechazaFechaInexistente() {
         assertNull(UsuarioValidator.normalizarFechaNacimiento("31/02/1993"))
     }
+    @Test
+    fun fechaNacimientoValida_aceptaFormatoArgentinoOIso() {
+        assertTrue(UsuarioValidator.fechaNacimientoValida("15/02/1993"))
+        assertTrue(UsuarioValidator.fechaNacimientoValida("1993-02-15"))
+        assertFalse(UsuarioValidator.fechaNacimientoValida("31/02/1993"))
+    }
+
 }

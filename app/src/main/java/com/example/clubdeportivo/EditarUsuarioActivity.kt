@@ -3,6 +3,7 @@ package com.example.clubdeportivo
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -29,23 +30,23 @@ class EditarUsuarioActivity : AppCompatActivity() {
         val esSocio = intent.getBooleanExtra("esSocio", false)
 
         // Inicializar views
-        val etDni = findViewById<TextView>(R.id.etDni)
-        val etNombre = findViewById<TextView>(R.id.etNombre)
-        val etApellido = findViewById<TextView>(R.id.etApellido)
-        val etTelefono = findViewById<TextView>(R.id.etTelefono)
-        val etEmail = findViewById<TextView>(R.id.etEmail)
-        val etDireccion = findViewById<TextView>(R.id.etDireccion)
-        val etFechaNac = findViewById<TextView>(R.id.etFechaNac)
+        val etDni = findViewById<EditText>(R.id.etDni)
+        val etNombre = findViewById<EditText>(R.id.etNombre)
+        val etApellido = findViewById<EditText>(R.id.etApellido)
+        val etTelefono = findViewById<EditText>(R.id.etTelefono)
+        val etEmail = findViewById<EditText>(R.id.etEmail)
+        val etDireccion = findViewById<EditText>(R.id.etDireccion)
+        val etFechaNac = findViewById<EditText>(R.id.etFechaNac)
 
         // Llenar views
         val persona = db.obtenerPersonaPorDni(dni)
-        etNombre.text = persona?.nombre
-        etApellido.text = persona?.apellido
-        etTelefono.text = persona?.telefono
-        etEmail.text = persona?.email
-        etDireccion.text = persona?.direccion
-        etFechaNac.text = persona?.fecha_nac
-        etDni.text = persona?.dni
+        etNombre.setText(persona?.nombre.orEmpty())
+        etApellido.setText(persona?.apellido.orEmpty())
+        etTelefono.setText(persona?.telefono.orEmpty())
+        etEmail.setText(persona?.email.orEmpty())
+        etDireccion.setText(persona?.direccion.orEmpty())
+        etFechaNac.setText(persona?.fecha_nac.orEmpty())
+        etDni.setText(persona?.dni.orEmpty())
 
         // Campo dni deshabilitado
         etDni.isEnabled = false
@@ -61,24 +62,42 @@ class EditarUsuarioActivity : AppCompatActivity() {
             val direccion = etDireccion.text.toString().trim()
             val email = etEmail.text.toString().trim()
 
+            listOf(etNombre, etApellido, etFechaNac, etDni, etDireccion, etTelefono, etEmail).forEach { it.error = null }
+
             // Validar campos obligatorios y formatos compartidos con el alta.
-            if (nombre.isEmpty() || apellido.isEmpty() || fechaNac.isEmpty() || direccion.isEmpty() || telefono.isEmpty() || email.isEmpty()) {
+            when (UsuarioFormValidation.firstMissing(nombre, apellido, fechaNac, dni, direccion, telefono, email)) {
+                UsuarioFormValidation.Field.NOMBRE -> etNombre
+                UsuarioFormValidation.Field.APELLIDO -> etApellido
+                UsuarioFormValidation.Field.FECHA_NACIMIENTO -> etFechaNac
+                UsuarioFormValidation.Field.DNI -> etDni
+                UsuarioFormValidation.Field.DIRECCION -> etDireccion
+                UsuarioFormValidation.Field.TELEFONO -> etTelefono
+                UsuarioFormValidation.Field.EMAIL -> etEmail
+                null -> null
+            }?.let { campo ->
+                campo.error = UsuarioFormText.requiredFields
+                campo.requestFocus()
                 Toast.makeText(this, UsuarioFormText.requiredFields, Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
             if (!UsuarioValidator.dniValido(dni)) {
-                Toast.makeText(this, UsuarioFormText.invalidDni, Toast.LENGTH_LONG).show()
+                etDni.error = UsuarioFormText.invalidDni
                 etDni.requestFocus()
                 return@setOnClickListener
             }
             if (!UsuarioValidator.telefonoValido(telefono)) {
-                Toast.makeText(this, UsuarioFormText.invalidPhone, Toast.LENGTH_LONG).show()
+                etTelefono.error = UsuarioFormText.invalidPhone
                 etTelefono.requestFocus()
                 return@setOnClickListener
             }
             if (!UsuarioValidator.emailValido(email)) {
-                Toast.makeText(this, UsuarioFormText.invalidEmail, Toast.LENGTH_LONG).show()
+                etEmail.error = UsuarioFormText.invalidEmail
                 etEmail.requestFocus()
+                return@setOnClickListener
+            }
+            if (!UsuarioValidator.fechaNacimientoValida(fechaNac)) {
+                etFechaNac.error = UsuarioFormText.invalidBirthDate
+                etFechaNac.requestFocus()
                 return@setOnClickListener
             }
 

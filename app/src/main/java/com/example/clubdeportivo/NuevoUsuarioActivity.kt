@@ -52,7 +52,18 @@ class NuevoUsuarioActivity : AppCompatActivity() {
                 // Validaciones campos vacios
                 listOf(etNombre, etApellido, etFecha, etDNI, etDireccion, etTelefono, etEmail).forEach { it.error = null }
 
-                if (nombre.isEmpty() || apellido.isEmpty() || dni.isEmpty() || fecha.isEmpty() || direccion.isEmpty() || telefono.isEmpty() || email.isEmpty()) {
+                when (UsuarioFormValidation.firstMissing(nombre, apellido, fecha, dni, direccion, telefono, email)) {
+                    UsuarioFormValidation.Field.NOMBRE -> etNombre
+                    UsuarioFormValidation.Field.APELLIDO -> etApellido
+                    UsuarioFormValidation.Field.FECHA_NACIMIENTO -> etFecha
+                    UsuarioFormValidation.Field.DNI -> etDNI
+                    UsuarioFormValidation.Field.DIRECCION -> etDireccion
+                    UsuarioFormValidation.Field.TELEFONO -> etTelefono
+                    UsuarioFormValidation.Field.EMAIL -> etEmail
+                    null -> null
+                }?.let { campo ->
+                    campo.error = UsuarioFormText.requiredFields
+                    campo.requestFocus()
                     Toast.makeText(this, UsuarioFormText.requiredFields, Toast.LENGTH_LONG).show()
                     return@setOnClickListener
                 }
