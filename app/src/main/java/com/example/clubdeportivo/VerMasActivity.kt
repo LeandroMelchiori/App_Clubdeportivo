@@ -69,6 +69,7 @@ class VerMasActivity : AppCompatActivity() {
 
         // Boton editar
         val btnEditar = findViewById<MaterialButton>(R.id.btnEditar)
+        btnEditar.contentDescription = AccessibilityText.editPerson
         btnEditar.setOnClickListener {
             val intent = Intent(this, EditarUsuarioActivity::class.java)
             intent.putExtra("id", cliente.id)
@@ -80,6 +81,7 @@ class VerMasActivity : AppCompatActivity() {
 
         // Boton eliminar
         val btnEliminar: Button = findViewById(R.id.btnEliminar)
+        btnEliminar.contentDescription = AccessibilityText.deletePerson
         btnEliminar.setOnClickListener {
             AlertDialog.Builder(this)
                 .setTitle(DeletePersonDialogText.title)

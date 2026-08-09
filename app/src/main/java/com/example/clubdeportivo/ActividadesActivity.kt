@@ -29,6 +29,7 @@ class ActividadesActivity : AppCompatActivity() {
 
         // --- refs UI ---
         btnAgregar   = findViewById(R.id.btnAgregar)
+        btnAgregar.contentDescription = AccessibilityText.addActivity
         tvBienvenida = findViewById(R.id.tvBienvenida)
         etBuscar     = findViewById(R.id.etBuscar)
         tvEstadoActividades = findViewById(R.id.tvEstadoActividades)

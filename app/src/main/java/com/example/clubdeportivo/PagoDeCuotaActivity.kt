@@ -41,6 +41,7 @@ class PagoDeCuotaActivity : AppCompatActivity() {
         val tvTipoOperacion = findViewById<TextView>(R.id.tvTipoOperacion)
         val tvPrecio = findViewById<TextView>(R.id.tvPrecio)
         val btnPagar = findViewById<MaterialButton>(R.id.btnPagar)
+        btnPagar.contentDescription = AccessibilityText.pay
 
         // Asignar datos a las view
         tvNombre.text = "$noSocio"

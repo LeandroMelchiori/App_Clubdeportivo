@@ -39,6 +39,7 @@ class PagoActividadActivity : AppCompatActivity() {
         tvHoraInicio = findViewById(R.id.tvHorario)
         tvPrecio = findViewById(R.id.tvPrecio)
         btnPagar = findViewById(R.id.btnPagar)
+        btnPagar.contentDescription = AccessibilityText.pay
         rgMedioPago = findViewById(R.id.rgMedioPago)
 
         // Deshabilitados inicialmente

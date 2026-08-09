@@ -16,6 +16,7 @@ class LoginActivity : AppCompatActivity() {
         val etUsuario = findViewById<EditText>(R.id.etUsuario)
         val etContrasena = findViewById<EditText>(R.id.etContrasena)
         val btnLogin = findViewById<MaterialButton>(R.id.btnLogin)
+        btnLogin.contentDescription = AccessibilityText.login
 
         // Logica inicio de sesion
         btnLogin.setOnClickListener {

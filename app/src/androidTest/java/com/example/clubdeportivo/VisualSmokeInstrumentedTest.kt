@@ -9,6 +9,7 @@ import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
+import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.runner.screenshot.Screenshot
 import org.junit.Test
@@ -25,6 +26,7 @@ class VisualSmokeInstrumentedTest {
             onView(withText("CONTRASE\u00d1A:")).check(matches(isDisplayed()))
             onView(withId(R.id.etContrasena)).check(matches(isDisplayed()))
             onView(withId(R.id.btnLogin)).check(matches(isDisplayed()))
+            onView(withText("INGRESAR")).check(matches(isDisplayed()))
             captureScreen("login")
         } finally {
             scenario.close()
@@ -85,6 +87,7 @@ class VisualSmokeInstrumentedTest {
             onView(withText("Bienvenido, QA")).check(matches(isDisplayed()))
             onView(withId(R.id.tvDNI)).check(matches(isDisplayed()))
             onView(withId(R.id.tvHistorialCuenta)).check(matches(isDisplayed()))
+            onView(withContentDescription(AccessibilityText.deletePerson)).check(matches(isDisplayed()))
             onView(withId(R.id.btnEliminar)).perform(click())
             onView(withText(DeletePersonDialogText.title)).check(matches(isDisplayed()))
             captureScreen("ver_mas_usuario")
@@ -256,6 +259,7 @@ class VisualSmokeInstrumentedTest {
         try {
             onView(withId(R.id.tvBienvenida)).check(matches(isDisplayed()))
             onView(withId(R.id.btnAgregar)).check(matches(isDisplayed()))
+            onView(withContentDescription(AccessibilityText.addActivity)).check(matches(isDisplayed()))
             onView(withId(R.id.etBuscar)).check(matches(isDisplayed()))
             onView(withId(R.id.tvEstadoActividades)).check(matches(isDisplayed()))
             onView(withId(R.id.contenedorActividades)).check(matches(isDisplayed()))
