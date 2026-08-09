@@ -203,11 +203,7 @@ class ListadosActivity : AppCompatActivity() {
     }
 
     private fun actualizarEstadoLista(cantidad: Int, tipo: String) {
-        tvEstadoLista.text = if (cantidad == 0) {
-            "Sin registros de $tipo"
-        } else {
-            "Mostrando $cantidad registros de $tipo"
-        }
+        tvEstadoLista.text = EmptyStateText.listado(cantidad, tipo, busquedaActual)
     }
     private fun exportarListadoVisible() {
         val (nombreArchivo, csv) = when {
@@ -252,16 +248,25 @@ class ListadosActivity : AppCompatActivity() {
         }
     }
     private fun filtrarSegunListaActual(texto: String) {
-        busquedaActual = texto
+        busquedaActual = texto.trim()
         when {
-            rvNoSocios.visibility == View.VISIBLE ->
-                noSocioAdapter.filtrarPorNombre(texto)
+            rvNoSocios.visibility == View.VISIBLE -> {
+                noSocioAdapter.filtrarPorNombre(busquedaActual)
+                actualizarEstadoLista(ListadoExportFilter.noSocios(noSociosActuales, busquedaActual).size, "no socios")
+            }
 
-            rvSocios.visibility == View.VISIBLE ->
-                socioAdapter.filtrarPorNombre(texto)
+            rvSocios.visibility == View.VISIBLE -> {
+                socioAdapter.filtrarPorNombre(busquedaActual)
+                actualizarEstadoLista(ListadoExportFilter.socios(sociosActuales, busquedaActual).size, "socios")
+            }
 
-            rvVenc.visibility == View.VISIBLE ->
-                vencimientoAdapter.filtrarPorNombre(texto) // si implementás filtro ahí
+            rvVenc.visibility == View.VISIBLE -> {
+                vencimientoAdapter.filtrarPorNombre(busquedaActual)
+                actualizarEstadoLista(
+                    ListadoExportFilter.vencimientos(vencimientosActuales, busquedaActual, filtroVencimiento).size,
+                    "vencimientos"
+                )
+            }
         }
     }
 }

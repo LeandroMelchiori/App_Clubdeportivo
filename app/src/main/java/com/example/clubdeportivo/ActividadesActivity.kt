@@ -17,6 +17,7 @@ class ActividadesActivity : AppCompatActivity() {
     private lateinit var tvBienvenida: TextView
     private lateinit var btnAgregar: MaterialButton
     private lateinit var etBuscar: SearchView
+    private lateinit var tvEstadoActividades: TextView
     private lateinit var db: DBHelper
     private lateinit var adapter: ActividadCardAdapter
 
@@ -30,6 +31,7 @@ class ActividadesActivity : AppCompatActivity() {
         btnAgregar   = findViewById(R.id.btnAgregar)
         tvBienvenida = findViewById(R.id.tvBienvenida)
         etBuscar     = findViewById(R.id.etBuscar)
+        tvEstadoActividades = findViewById(R.id.tvEstadoActividades)
         rv           = findViewById(R.id.contenedorActividades)
 
         // Recupera el nombre de usuario del intent y lo muestra
@@ -107,10 +109,13 @@ class ActividadesActivity : AppCompatActivity() {
     }
 
     private fun recargarLista(filtro: String?) {
-        val lista = if (filtro.isNullOrBlank())
+        val filtroLimpio = filtro?.trim().orEmpty()
+        val lista = if (filtroLimpio.isBlank()) {
             db.obtenerActividadesPorHorario()
-        else
-            db.buscarActividadesPorNombre(filtro)
+        } else {
+            db.buscarActividadesPorNombre(filtroLimpio)
+        }
         adapter.submitList(lista)
+        tvEstadoActividades.text = EmptyStateText.actividades(lista.size, filtroLimpio)
     }
 }

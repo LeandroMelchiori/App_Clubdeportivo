@@ -255,6 +255,7 @@ class VisualSmokeInstrumentedTest {
             onView(withId(R.id.tvBienvenida)).check(matches(isDisplayed()))
             onView(withId(R.id.btnAgregar)).check(matches(isDisplayed()))
             onView(withId(R.id.etBuscar)).check(matches(isDisplayed()))
+            onView(withId(R.id.tvEstadoActividades)).check(matches(isDisplayed()))
             onView(withId(R.id.contenedorActividades)).check(matches(isDisplayed()))
             onView(withId(R.id.bottomNav)).check(matches(isDisplayed()))
             captureScreen("actividades")
