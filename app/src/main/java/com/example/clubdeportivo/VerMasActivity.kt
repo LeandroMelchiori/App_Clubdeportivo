@@ -78,15 +78,15 @@ class VerMasActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        // Boton Eliminar
+        // Boton eliminar
         val btnEliminar: Button = findViewById(R.id.btnEliminar)
         btnEliminar.setOnClickListener {
             AlertDialog.Builder(this)
-                .setTitle("Eliminar registro")
-                .setMessage("¿Seguro que querés eliminar a esta persona? Esta acción no se puede deshacer.")
-                .setNegativeButton("Cancelar", null)
-                .setPositiveButton("Eliminar") { _, _ ->
-                    val ok = db.eliminarPersonaPorId(cliente.id.toString()) // ← clave
+                .setTitle(DeletePersonDialogText.title)
+                .setMessage(DeletePersonDialogText.message(tvNombreCompleto.text.toString(), cliente.dni))
+                .setNegativeButton(DeletePersonDialogText.cancel, null)
+                .setPositiveButton(DeletePersonDialogText.confirm) { _, _ ->
+                    val ok = db.eliminarPersonaPorId(cliente.id.toString())
                     if (ok) {
                         Toast.makeText(this, "Eliminado correctamente", Toast.LENGTH_SHORT).show()
                         val data = Intent().putExtra("dniEliminado", cliente.dni)

@@ -85,6 +85,8 @@ class VisualSmokeInstrumentedTest {
             onView(withText("Bienvenido, QA")).check(matches(isDisplayed()))
             onView(withId(R.id.tvDNI)).check(matches(isDisplayed()))
             onView(withId(R.id.tvHistorialCuenta)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnEliminar)).perform(click())
+            onView(withText(DeletePersonDialogText.title)).check(matches(isDisplayed()))
             captureScreen("ver_mas_usuario")
         } finally {
             scenario.close()
