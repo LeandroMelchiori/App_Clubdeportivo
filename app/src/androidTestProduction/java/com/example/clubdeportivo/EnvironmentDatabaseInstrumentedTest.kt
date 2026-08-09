@@ -38,6 +38,7 @@ class EnvironmentDatabaseInstrumentedTest {
             ).forEach { table ->
                 assertEquals("$table debe iniciar vacia", 0, helper.countRows(table))
             }
+            assertEquals(1, helper.countRows("club_configuration"))
         }
     }
 

@@ -8,6 +8,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.matcher.ViewMatchers.Visibility
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
@@ -187,16 +188,22 @@ class VisualSmokeInstrumentedTest {
 
 
     @Test
-    fun configuracion_muestraAccionesPrincipales() {
+    fun configuracion_muestraYGuardaDatosDelClub() {
         val intent = Intent(ApplicationProvider.getApplicationContext(), ConfiguracionActivity::class.java)
             .putExtra("usuario", "QA")
         val scenario = ActivityScenario.launch<ConfiguracionActivity>(intent)
         try {
-            onView(withId(R.id.btnCerrarSesion)).check(matches(isDisplayed()))
+            onView(withId(R.id.ivClubLogo)).check(matches(isDisplayed()))
+            onView(withId(R.id.etClubNombre)).check(matches(isDisplayed()))
+            onView(withId(R.id.spClubMoneda)).check(matches(isDisplayed()))
             onView(withId(R.id.bottomNav)).check(matches(isDisplayed()))
-            onView(withId(R.id.btnCerrarSesion)).perform(click())
+            captureScreen("configuracion_identidad")
+            onView(withId(R.id.btnGuardarConfiguracion)).perform(scrollTo(), click())
+            onView(withText(R.string.club_config_saved)).check(matches(isDisplayed()))
+            captureScreen("configuracion_formulario")
+            onView(withId(R.id.btnCerrarSesion)).perform(scrollTo(), click())
             onView(withText(SessionDialogText.logoutMessage)).check(matches(isDisplayed()))
-            captureScreen("configuracion")
+            captureScreen("configuracion_logout")
         } finally {
             scenario.close()
         }

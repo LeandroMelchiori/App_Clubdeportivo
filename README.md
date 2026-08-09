@@ -87,6 +87,7 @@ La base local se crea en `DBHelper.kt`. Tablas principales:
 - `dias_horarios`: horarios activos/inactivos por actividad-profesor.
 - `cuotas`: pagos de cuota de socios.
 - `pagos_actividad`: pagos puntuales de no socios por horario de actividad.
+- `club_configuration`: identidad del club, moneda, cuota, vencimiento, gracia, medios manuales y URI persistente del logo.
 
 Convenciones importantes:
 
@@ -94,6 +95,7 @@ Convenciones importantes:
 - Dias como enteros `0..6`, donde `0 = Domingo`.
 - Horas como minutos desde medianoche.
 - Bajas de clientes y horarios como borrado logico.
+- Esquema actual en version 3, con migraciones incrementales que preservan los datos existentes.
 
 ## Flujos principales
 
@@ -104,6 +106,7 @@ Convenciones importantes:
 5. Pago de cuota registra pago o convierte un no socio en socio.
 6. Pago de actividad registra pagos puntuales de no socios.
 7. Resumen mensual agrupa ingresos por cuotas y actividades.
+8. Configuracion permite guardar identidad, logo y reglas comerciales del club sin integrar cobros reales.
 
 ## Pruebas
 
@@ -111,12 +114,16 @@ Tests unitarios JVM:
 
 - `ClubFormattersTest`: formato de dias, horas y vencimientos.
 - `LoginCredentialsTest`: credenciales validas e invalidas.
+- `ClubConfigurationValidatorTest`: normalizacion, importes locales y reglas de campos.
+- `DatabaseMigrationPlannerTest`: orden y seguridad de las migraciones de esquema.
 
 Tests instrumentados:
 
 - `DBHelperInstrumentedTest`: usa fixtures aislados y verifica pagos, cuenta corriente y solapamientos sin depender del seed demo.
-- `EnvironmentDatabaseInstrumentedTest`: confirma que demo inicia con datos y production con tablas vacias.
-- `VisualSmokeInstrumentedTest`: recorre las pantallas principales, valida la etiqueta demo y genera capturas identificadas por variante.
+- `EnvironmentDatabaseInstrumentedTest`: confirma que demo inicia con datos y production con tablas operativas vacias.
+- `ClubConfigurationInstrumentedTest`: verifica valores iniciales y persistencia completa en SQLite.
+- `ClubConfigurationMigrationInstrumentedTest`: migra de v2 a v3 sin borrar datos.
+- `VisualSmokeInstrumentedTest`: recorre las pantallas principales, valida la etiqueta demo y genera capturas de identidad, formulario y dialogos por variante.
 
 Para obtener evidencia visual, ejecutar:
 

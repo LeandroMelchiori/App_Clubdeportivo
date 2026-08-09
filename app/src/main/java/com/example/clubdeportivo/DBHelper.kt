@@ -15,7 +15,7 @@ package com.example.clubdeportivo
 
     private companion object {
         const val DB_NAME = "app_clubDeportivo.db"
-        const val DB_VERSION = 2
+        const val DB_VERSION = 3
     }
 
     // ----------------------------------- Creacion DB -----------------------------------------
@@ -140,6 +140,8 @@ package com.example.clubdeportivo
             END;
             """.trimIndent())
 
+        createClubConfigurationTable(db)
+        ensureDefaultClubConfiguration(db)
         InitialDataSeeder.seed(db)
     }
 
@@ -148,6 +150,7 @@ package com.example.clubdeportivo
         DatabaseMigrationPlanner.pendingSteps(oldVersion, newVersion).forEach { step ->
             when (step) {
                 2 -> migrateToVersion2(db)
+                3 -> migrateToVersion3(db)
             }
         }
     }
@@ -177,6 +180,112 @@ package com.example.clubdeportivo
               );
             END;
         """.trimIndent())
+    }
+
+    private fun migrateToVersion3(db: SQLiteDatabase) {
+        createClubConfigurationTable(db)
+        ensureDefaultClubConfiguration(db)
+    }
+
+    private fun createClubConfigurationTable(db: SQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS club_configuration (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                name TEXT NOT NULL,
+                address TEXT NOT NULL DEFAULT '',
+                phone TEXT NOT NULL DEFAULT '',
+                email TEXT NOT NULL DEFAULT '',
+                currency TEXT NOT NULL,
+                monthly_fee REAL NOT NULL,
+                due_day INTEGER NOT NULL,
+                grace_days INTEGER NOT NULL,
+                accepts_cash INTEGER NOT NULL,
+                accepts_transfer INTEGER NOT NULL,
+                accepts_card INTEGER NOT NULL,
+                logo_uri TEXT
+            );
+        """.trimIndent())
+    }
+
+    private fun ensureDefaultClubConfiguration(db: SQLiteDatabase) {
+        db.insertWithOnConflict(
+            "club_configuration",
+            null,
+            clubConfigurationValues(ClubConfiguration.DEFAULT),
+            SQLiteDatabase.CONFLICT_IGNORE
+        )
+    }
+
+    fun obtenerConfiguracionClub(): ClubConfiguration {
+        readableDatabase.query(
+            "club_configuration",
+            arrayOf(
+                "name",
+                "address",
+                "phone",
+                "email",
+                "currency",
+                "monthly_fee",
+                "due_day",
+                "grace_days",
+                "accepts_cash",
+                "accepts_transfer",
+                "accepts_card",
+                "logo_uri"
+            ),
+            "id = 1",
+            null,
+            null,
+            null,
+            null
+        ).use { cursor ->
+            if (cursor.moveToFirst()) {
+                return ClubConfiguration(
+                    name = cursor.getString(0),
+                    address = cursor.getString(1),
+                    phone = cursor.getString(2),
+                    email = cursor.getString(3),
+                    currency = ClubCurrency.fromCode(cursor.getString(4)),
+                    monthlyFee = cursor.getDouble(5),
+                    dueDay = cursor.getInt(6),
+                    graceDays = cursor.getInt(7),
+                    acceptsCash = cursor.getInt(8) == 1,
+                    acceptsTransfer = cursor.getInt(9) == 1,
+                    acceptsCard = cursor.getInt(10) == 1,
+                    logoUri = if (cursor.isNull(11)) null else cursor.getString(11)
+                )
+            }
+        }
+
+        val defaultConfiguration = ClubConfiguration.DEFAULT
+        guardarConfiguracionClub(defaultConfiguration)
+        return defaultConfiguration
+    }
+
+    fun guardarConfiguracionClub(configuration: ClubConfiguration): Boolean {
+        val rowId = writableDatabase.insertWithOnConflict(
+            "club_configuration",
+            null,
+            clubConfigurationValues(configuration),
+            SQLiteDatabase.CONFLICT_REPLACE
+        )
+        return rowId != -1L
+    }
+
+    private fun clubConfigurationValues(configuration: ClubConfiguration) = ContentValues().apply {
+        put("id", 1)
+        put("name", configuration.name)
+        put("address", configuration.address)
+        put("phone", configuration.phone)
+        put("email", configuration.email)
+        put("currency", configuration.currency.code)
+        put("monthly_fee", configuration.monthlyFee)
+        put("due_day", configuration.dueDay)
+        put("grace_days", configuration.graceDays)
+        put("accepts_cash", if (configuration.acceptsCash) 1 else 0)
+        put("accepts_transfer", if (configuration.acceptsTransfer) 1 else 0)
+        put("accepts_card", if (configuration.acceptsCard) 1 else 0)
+        putOrNull("logo_uri", configuration.logoUri)
     }
 
     // ----------------------------------------- READ -------------------------------------------

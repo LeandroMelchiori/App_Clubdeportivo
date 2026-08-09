@@ -1,4 +1,35 @@
 <resources>
     <string name="app_name">Club deportivo</string>
     <string name="demo_mode_badge">MODO DEMO</string>
+    <string name="welcome">Bienvenido</string>
+    <string name="welcome_user">Bienvenido, %1$s</string>
+    <string name="profile_icon_description">Icono de perfil</string>
+    <string name="settings_title">Configuracion</string>
+    <string name="club_identity_title">Datos del club</string>
+    <string name="club_logo_description">Logo del club</string>
+    <string name="select_club_logo">Seleccionar logo</string>
+    <string name="club_name_label">Nombre</string>
+    <string name="club_name_hint">Nombre del club</string>
+    <string name="club_address_label">Domicilio</string>
+    <string name="club_address_hint">Domicilio administrativo</string>
+    <string name="club_phone_label">Telefono</string>
+    <string name="club_phone_hint">Telefono de contacto</string>
+    <string name="club_email_label">Email</string>
+    <string name="club_email_hint">contacto@club.com</string>
+    <string name="club_billing_title">Cuotas y vencimientos</string>
+    <string name="club_currency_label">Moneda</string>
+    <string name="monthly_fee_label">Cuota mensual</string>
+    <string name="monthly_fee_hint">Importe de la cuota</string>
+    <string name="due_day_label">Dia de vencimiento</string>
+    <string name="due_day_hint">Del 1 al 28</string>
+    <string name="grace_days_label">Dias de gracia</string>
+    <string name="grace_days_hint">De 0 a 31</string>
+    <string name="payment_methods_label">Medios de pago manuales</string>
+    <string name="payment_cash">Efectivo</string>
+    <string name="payment_transfer">Transferencia</string>
+    <string name="payment_card">Tarjeta</string>
+    <string name="save_club_configuration">Guardar configuracion</string>
+    <string name="club_config_saved">Configuracion guardada</string>
+    <string name="club_config_save_error">No se pudo guardar la configuracion</string>
+    <string name="logout">Cerrar sesion</string>
 </resources>

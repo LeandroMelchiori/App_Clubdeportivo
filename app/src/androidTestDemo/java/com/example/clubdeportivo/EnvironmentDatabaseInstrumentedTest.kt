@@ -31,6 +31,7 @@ class EnvironmentDatabaseInstrumentedTest {
             assertTrue(helper.countRows("profesores") > 0)
             assertTrue(helper.countRows("actividades") > 0)
             assertTrue(helper.countRows("cuotas") > 0)
+            assertTrue(helper.countRows("club_configuration") == 1)
         }
     }
 
