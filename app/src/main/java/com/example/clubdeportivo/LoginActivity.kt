@@ -19,22 +19,22 @@ class LoginActivity : AppCompatActivity() {
 
         // Logica inicio de sesion
         btnLogin.setOnClickListener {
-            val usuario = etUsuario.text.toString()
-            val contrasena = etContrasena.text.toString()
+            val usuario = etUsuario.text.toString().trim()
+            val contrasena = etContrasena.text.toString().trim()
             // Validacion campos en blanco
             if (usuario.isEmpty() || contrasena.isEmpty()) {
-                Toast.makeText(this, "Por favor ingrese usuario y contrasena", Toast.LENGTH_SHORT)
+                Toast.makeText(this, LoginMessages.emptyFields, Toast.LENGTH_SHORT)
                     .show() }
             // Validacion usuario correcto
             else if (LoginCredentials.sonValidas(usuario, contrasena)) {
                 val intent = Intent(this, InicioActivity::class.java)
                 intent.putExtra("usuario", usuario)
                 startActivity(intent)
-                Toast.makeText(this, "Sesion iniciada...", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, LoginMessages.success, Toast.LENGTH_LONG).show()
             }
             // Usuario o contrasena incorrectos
             else {
-                Toast.makeText(this, "Usuario o contrasena incorrectos", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, LoginMessages.invalidCredentials, Toast.LENGTH_SHORT).show()
             }
         }
     }

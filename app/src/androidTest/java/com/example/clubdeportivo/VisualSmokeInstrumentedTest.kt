@@ -22,6 +22,7 @@ class VisualSmokeInstrumentedTest {
         try {
             onView(withText("CLUB DEPORTIVO")).check(matches(isDisplayed()))
             onView(withId(R.id.etUsuario)).check(matches(isDisplayed()))
+            onView(withText("CONTRASE\u00d1A:")).check(matches(isDisplayed()))
             onView(withId(R.id.etContrasena)).check(matches(isDisplayed()))
             onView(withId(R.id.btnLogin)).check(matches(isDisplayed()))
             captureScreen("login")

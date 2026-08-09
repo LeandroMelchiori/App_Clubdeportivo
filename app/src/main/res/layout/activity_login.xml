@@ -46,7 +46,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="14dp"
-        android:text="CONTRASENA:"
+        android:text="CONTRASE&#209;A:"
         android:textColor="@color/black"
         android:textSize="18sp"
         android:textStyle="bold" />
@@ -59,7 +59,7 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="32dp"
         android:background="@drawable/bg_pill_light"
-        android:hint="Contrasena"
+        android:hint="Contrase&#241;a"
         android:importantForAutofill="no"
         android:inputType="textPassword"
         android:paddingLeft="12dp"
