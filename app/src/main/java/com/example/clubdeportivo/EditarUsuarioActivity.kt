@@ -61,32 +61,29 @@ class EditarUsuarioActivity : AppCompatActivity() {
             val direccion = etDireccion.text.toString().trim()
             val email = etEmail.text.toString().trim()
 
-            // Validar campos vacios
-            if (nombre.isEmpty() || apellido.isEmpty() ||fechaNac.isEmpty() || direccion.isEmpty() || telefono.isEmpty() || email.isEmpty()) {
+            // Validar campos obligatorios y formatos compartidos con el alta.
+            if (nombre.isEmpty() || apellido.isEmpty() || fechaNac.isEmpty() || direccion.isEmpty() || telefono.isEmpty() || email.isEmpty()) {
                 Toast.makeText(this, "Todos los campos son obligatorios", Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
-            //  Validar DNI
-            if (!dni.matches(Regex("^\\d{8,9}\$"))) {
-                Toast.makeText(this, "El DNI debe tener 8 o 9 números", Toast.LENGTH_LONG).show()
+            if (!UsuarioValidator.dniValido(dni)) {
+                Toast.makeText(this, "El DNI debe tener 8 o 9 n\u00fameros", Toast.LENGTH_LONG).show()
                 etDni.requestFocus()
                 return@setOnClickListener
             }
-            // Validar teléfono
-            if (!telefono.matches(Regex("^\\d{9,12}\$"))) {
+            if (!UsuarioValidator.telefonoValido(telefono)) {
                 Toast.makeText(this, "Ingrese un n\u00famero de tel\u00e9fono v\u00e1lido", Toast.LENGTH_LONG).show()
                 etTelefono.requestFocus()
                 return@setOnClickListener
             }
-            // Validar email
-            if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                Toast.makeText(this, "Ingrese un correo electrónico válido", Toast.LENGTH_LONG).show()
+            if (!UsuarioValidator.emailValido(email)) {
+                Toast.makeText(this, "Ingrese un correo electr\u00f3nico v\u00e1lido", Toast.LENGTH_LONG).show()
                 etEmail.requestFocus()
                 return@setOnClickListener
             }
 
             AlertDialog.Builder(this)
-                .setTitle("Confirmar edicion")
+                .setTitle("Confirmar edici\u00f3n")
                 .setMessage("¿Confirmás editar al cliente con DNI: $dni?")
                 .setPositiveButton("Sí") { _, _ ->
                     try {
