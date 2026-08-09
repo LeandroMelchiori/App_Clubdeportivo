@@ -65,7 +65,14 @@ class VerMasActivity : AppCompatActivity() {
         tvUltimoPago.text = "\u00daltimo pago: ${cuenta?.ultimoPagoCuota ?: cuenta?.ultimoPagoActividad ?: "Sin registros"}"
         tvProximoVencimiento.text = "Pr\u00f3ximo vencimiento: ${cuenta?.proximoVencimiento ?: "No aplica"}"
         tvDeudaEstimada.text = "Deuda estimada: $${cuenta?.deudaEstimada ?: 0.0}"
-        tvHistorialCuenta.text = CuentaCorrienteFormatter.historial(cuenta?.movimientos.orEmpty())
+        val movimientosCuenta = cuenta?.movimientos.orEmpty()
+        fun mostrarHistorial(filtro: CuentaCorrienteFormatter.Filtro) {
+            tvHistorialCuenta.text = CuentaCorrienteFormatter.historial(movimientosCuenta, filtro)
+        }
+        mostrarHistorial(CuentaCorrienteFormatter.Filtro.TODOS)
+        findViewById<Button>(R.id.btnHistorialTodos).setOnClickListener { mostrarHistorial(CuentaCorrienteFormatter.Filtro.TODOS) }
+        findViewById<Button>(R.id.btnHistorialCuotas).setOnClickListener { mostrarHistorial(CuentaCorrienteFormatter.Filtro.CUOTAS) }
+        findViewById<Button>(R.id.btnHistorialActividades).setOnClickListener { mostrarHistorial(CuentaCorrienteFormatter.Filtro.ACTIVIDADES) }
 
         // Boton editar
         val btnEditar = findViewById<MaterialButton>(R.id.btnEditar)
