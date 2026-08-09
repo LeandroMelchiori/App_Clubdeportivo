@@ -36,6 +36,7 @@ class ListadosActivity : AppCompatActivity() {
     private var sociosActuales: List<DBHelper.SocioCard> = emptyList()
     private var vencimientosActuales: List<DBHelper.VencimientoCard> = emptyList()
     private var filtroVencimiento = VencimientoFilters.Tipo.TODOS
+    private var busquedaActual = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // DB Helper
@@ -211,13 +212,19 @@ class ListadosActivity : AppCompatActivity() {
     private fun exportarListadoVisible() {
         val (nombreArchivo, csv) = when {
             rvSocios.visibility == View.VISIBLE ->
-                "socios_$hoyISO.csv" to CsvExporter.socios(sociosActuales)
+                "socios_$hoyISO.csv" to CsvExporter.socios(
+                    ListadoExportFilter.socios(sociosActuales, busquedaActual)
+                )
 
             rvVenc.visibility == View.VISIBLE ->
-                "vencimientos_$hoyISO.csv" to CsvExporter.vencimientos(vencimientosActuales)
+                "vencimientos_$hoyISO.csv" to CsvExporter.vencimientos(
+                    ListadoExportFilter.vencimientos(vencimientosActuales, busquedaActual, filtroVencimiento)
+                )
 
             else ->
-                "no_socios_$hoyISO.csv" to CsvExporter.noSocios(noSociosActuales)
+                "no_socios_$hoyISO.csv" to CsvExporter.noSocios(
+                    ListadoExportFilter.noSocios(noSociosActuales, busquedaActual)
+                )
         }
         val dir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) ?: filesDir
         File(dir, nombreArchivo).writeText(csv)
@@ -245,6 +252,7 @@ class ListadosActivity : AppCompatActivity() {
         }
     }
     private fun filtrarSegunListaActual(texto: String) {
+        busquedaActual = texto
         when {
             rvNoSocios.visibility == View.VISIBLE ->
                 noSocioAdapter.filtrarPorNombre(texto)
