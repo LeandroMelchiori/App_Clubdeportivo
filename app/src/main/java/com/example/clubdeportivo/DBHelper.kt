@@ -941,7 +941,7 @@ package com.example.clubdeportivo
                 put("monto", monto)
                 put("fechaPago", fechaPago)
                 put("formaPago", formaPago)
-                put("estadoDelPago", 1)  // pagado
+                put("estadoDelPago", PaymentDbRules.cuotaEstadoPagado())  // pagado
                 put("fechaVencimiento", fechaVenc)
             }
             db.insertOrThrow("cuotas", null, cvCuota)
@@ -1045,15 +1045,15 @@ package com.example.clubdeportivo
         fechaPago: String = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
     ): Long {
         val db = writableDatabase
-        val fechaVenc = ClubFormatters.proximoVencimiento(ultimoPago)
+        val fechaVenc = PaymentDbRules.cuotaVencimiento(ultimoPago)
         val cliente = obtenerPersonaPorDni(dni)
-            ?: throw IllegalArgumentException("No existe un cliente activo con ese DNI")
+            ?: throw IllegalArgumentException(PaymentDbRules.activeClientMissing)
         val cv = ContentValues().apply {
             put("idCliente", cliente.id)
             put("monto", monto)
             put("fechaPago", fechaPago)
             put("formaPago", formaPago)
-            put("estadoDelPago", 1)
+            put("estadoDelPago", PaymentDbRules.cuotaEstadoPagado())
             put("fechaVencimiento", fechaVenc)
         }
         return db.insert("cuotas", null, cv)

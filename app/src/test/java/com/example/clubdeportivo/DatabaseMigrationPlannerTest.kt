@@ -21,4 +21,16 @@ class DatabaseMigrationPlannerTest {
             DatabaseMigrationPlanner.pendingSteps(2, 1)
         }
     }
+    @Test
+    fun pendingSteps_deVersionUnoATresSoloEjecutaMigracionesConocidas() {
+        assertEquals(listOf(2), DatabaseMigrationPlanner.pendingSteps(1, 3))
+    }
+
+    @Test
+    fun pendingSteps_rechazaVersionAnteriorInvalida() {
+        assertThrows(IllegalArgumentException::class.java) {
+            DatabaseMigrationPlanner.pendingSteps(0, 2)
+        }
+    }
+
 }

@@ -39,4 +39,12 @@ class VencimientoFiltersTest {
 
         assertEquals(listOf("333"), filtrados.map { it.dni })
     }
+    @Test
+    fun filtrar_noDuplicaNiReordenaResultados() {
+        val repetidos = items + items.first()
+        val filtrados = VencimientoFilters.filtrar(repetidos, VencimientoFilters.Tipo.AL_DIA, hoy)
+
+        assertEquals(listOf("111", "111"), filtrados.map { it.dni })
+    }
+
 }
