@@ -20,13 +20,6 @@ class EditarActividadActivity : AppCompatActivity() {
     private lateinit var etPrecio: EditText
     private lateinit var btnGuardar: MaterialButton
 
-    private fun hhmm(mins: Int) = String.format("%02d:%02d", mins / 60, mins % 60)
-    private fun buildHoras(step: Int = 30): List<Int> = (0..(24 * 60 - step) step step).toList()
-    private fun posMasCercana(horas: List<Int>, valor: Int): Int {
-        val i = horas.indexOf(valor)
-        return if (i >= 0) i else horas.indexOfLast { it <= valor }.coerceAtLeast(0)
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         val db = DBHelper(this)
         super.onCreate(savedInstanceState)
@@ -47,7 +40,7 @@ class EditarActividadActivity : AppCompatActivity() {
         val nombreAct    = intent.getStringExtra("nombre_act") ?: ""
         val profesor     = intent.getStringExtra("profesor") ?: ""
         val diaActual   = intent.getIntExtra("dia", 1)
-        val HorainiActual   = intent.getIntExtra("hora_inicio", 8 * 60)
+        val horaInicioActual = intent.getIntExtra("hora_inicio", 8 * 60)
         val horaFinActual   = intent.getIntExtra("hora_fin", 9 * 60)
         val precioActual = intent.getDoubleExtra("precio", 0.0)
 
@@ -66,18 +59,16 @@ class EditarActividadActivity : AppCompatActivity() {
         spActividad.isEnabled = false; spProfesor.isEnabled = false
         spActividad.isClickable = false; spProfesor.isClickable = false
 
-        // Día actual
-        val dias = listOf("Dom","Lun","Mar","Mié","Jue","Vie","Sáb")
-        spDia.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, dias)
-        spDia.setSelection(diaActual.coerceIn(0,6))
+        // Dia y horas compartidos con el alta de horarios.
+        spDia.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, HorarioFormOptions.diasCortos)
+        spDia.setSelection(diaActual.coerceIn(0, 6))
 
-        // Horas (cada 30’)
-        val horas = buildHoras(30)
-        val labels = horas.map { hhmm(it) }
+        val horas = HorarioFormOptions.minutosCada(30)
+        val labels = HorarioFormOptions.etiquetas(horas)
         spHoraInicio.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, labels)
         spHoraFin.adapter    = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, labels)
-        spHoraInicio.setSelection(posMasCercana(horas, HorainiActual))
-        spHoraFin.setSelection(posMasCercana(horas, horaFinActual))
+        spHoraInicio.setSelection(HorarioFormOptions.posicionMasCercana(horas, horaInicioActual))
+        spHoraFin.setSelection(HorarioFormOptions.posicionMasCercana(horas, horaFinActual))
 
         // Precio
         etPrecio.setText(if (precioActual.isNaN()) "" else String.format("%.2f", precioActual))
@@ -90,7 +81,7 @@ class EditarActividadActivity : AppCompatActivity() {
             val nuevaIni = horas[spHoraInicio.selectedItemPosition]
             val nuevaFin = horas[spHoraFin.selectedItemPosition]
             AlertDialog.Builder(this)
-                .setTitle("Confirmar edicion de actividad")
+                .setTitle("Confirmar edici\u00f3n de actividad")
                 .setMessage("¿Confirmás editar la actividad $nombreAct?")
                 .setPositiveButton("Sí") { _, _ ->
                     try {
@@ -98,7 +89,7 @@ class EditarActividadActivity : AppCompatActivity() {
                             idDiaHorario = dhId,
                             dia = nuevoDia,
                             horaInicio = nuevaIni,
-                            horaFin =nuevaFin
+                            horaFin = nuevaFin
                         )
                         Toast.makeText(this, "Actividad actualizada con \u00e9xito", Toast.LENGTH_SHORT).show()
                         intent = Intent(this, ActividadesActivity::class.java)

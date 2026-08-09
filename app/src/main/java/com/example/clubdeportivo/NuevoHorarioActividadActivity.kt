@@ -32,14 +32,14 @@ class NuevoHorarioActividadActivity : AppCompatActivity() {
         val spProfesor   = findViewById<Spinner>(R.id.spProfesor)
 
         // Adapters
-        spDia.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, DIAS)
+        spDia.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, HorarioFormOptions.diasLargos)
         val actividades = cargarActividades(this)
         spActividad.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, actividades)
         val profesores = cargarProfesores(this)
         spProfesor.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, profesores)
 
         // Adapters para los spinners de hora
-        val slots = buildSlots30min(6, 23) // 06:00 a 23:30
+        val slots = HorarioFormOptions.slots30Min(6, 23) // 06:00 a 23:30
         val adpSlots = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, slots)
         spHoraInicio.adapter = adpSlots
         spHoraFin.adapter    = adpSlots
@@ -63,8 +63,8 @@ class NuevoHorarioActividadActivity : AppCompatActivity() {
             val actividad = spActividad.selectedItem as ActividadItem
             val profesor  = spProfesor.selectedItem as ProfesorItem
             val dia = spDia.selectedItemPosition
-            val hi = hhmmToMin(spHoraInicio.selectedItem as String)
-            val hf = hhmmToMin(spHoraFin.selectedItem as String)
+            val hi = HorarioFormOptions.hhmmToMin(spHoraInicio.selectedItem as String)
+            val hf = HorarioFormOptions.hhmmToMin(spHoraFin.selectedItem as String)
 
             if (hf <= hi) {
                 Toast.makeText(this, "El horario de fin debe ser mayor al de inicio", Toast.LENGTH_LONG).show()
@@ -128,30 +128,6 @@ class NuevoHorarioActividadActivity : AppCompatActivity() {
         }
         db.close()
         return lista
-    }
-
-    // Herramientas
-    private val DIAS = listOf("Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado")
-    private fun buildSlots30min(
-        startHour: Int = 6,
-        endHour: Int = 23,
-        includeEndHalf: Boolean = true
-    ): List<String> {
-        val out = mutableListOf<String>()
-        var m = startHour * 60
-        val last = endHour * 60 + if (includeEndHalf) 30 else 0
-        while (m <= last) {
-            val h = m / 60
-            val mm = m % 60
-            out += String.format("%02d:%02d", h, mm)
-            m += 30
-        }
-        return out
-    }
-
-    private fun hhmmToMin(hhmm: String): Int {
-        val (h, m) = hhmm.split(":").map { it.toInt() }
-        return h * 60 + m
     }
 
     // Modelos de datos

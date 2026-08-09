@@ -177,6 +177,31 @@ class VisualSmokeInstrumentedTest {
     }
 
 
+
+    @Test
+    fun editarActividad_muestraFormularioPrincipal() {
+        val intent = Intent(ApplicationProvider.getApplicationContext(), EditarActividadActivity::class.java)
+            .putExtra("usuario", "QA")
+            .putExtra("dh_id", 1)
+            .putExtra("id_actividad", 1)
+            .putExtra("nombre_act", "Funcional")
+            .putExtra("profesor", "Ana Perez")
+            .putExtra("dia", 1)
+            .putExtra("hora_inicio", 8 * 60)
+            .putExtra("hora_fin", 9 * 60)
+            .putExtra("precio", 5000.0)
+        val scenario = ActivityScenario.launch<EditarActividadActivity>(intent)
+        try {
+            onView(withId(R.id.spActividad)).check(matches(isDisplayed()))
+            onView(withId(R.id.spDia)).check(matches(isDisplayed()))
+            onView(withId(R.id.spHoraInicio)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnIngresar)).check(matches(isDisplayed()))
+            captureScreen("editar_actividad")
+        } finally {
+            scenario.close()
+        }
+    }
+
     private fun captureScreen(name: String) {
         Screenshot.capture().setName(name).process()
     }
