@@ -143,6 +143,21 @@ class VisualSmokeInstrumentedTest {
     }
 
 
+    @Test
+    fun configuracion_muestraAccionesPrincipales() {
+        val intent = Intent(ApplicationProvider.getApplicationContext(), ConfiguracionActivity::class.java)
+            .putExtra("usuario", "QA")
+        val scenario = ActivityScenario.launch<ConfiguracionActivity>(intent)
+        try {
+            onView(withId(R.id.btnCerrarSesion)).check(matches(isDisplayed()))
+            onView(withId(R.id.bottomNav)).check(matches(isDisplayed()))
+            captureScreen("configuracion")
+        } finally {
+            scenario.close()
+        }
+    }
+
+
     private fun captureScreen(name: String) {
         Screenshot.capture().setName(name).process()
     }
