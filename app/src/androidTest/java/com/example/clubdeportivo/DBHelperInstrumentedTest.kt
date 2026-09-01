@@ -34,9 +34,7 @@ class DBHelperInstrumentedTest {
     fun registrarPagoCuota_guardaPagoConIdClienteYVencimiento() {
         val rowId = helper.registrarPagoCuota(
             dni = CLIENT_DNI,
-            monto = 30000.0,
             formaPago = "Efectivo",
-            ultimoPago = "2026-07-31",
             fechaPago = "2026-08-01"
         )
 
