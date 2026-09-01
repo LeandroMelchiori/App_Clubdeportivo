@@ -3,14 +3,11 @@ package com.example.clubdeportivo
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.bottomnavigation.BottomNavigationView
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class EditarUsuarioActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,9 +22,7 @@ class EditarUsuarioActivity : AppCompatActivity() {
 
         // Fecha encabezado
         val tvFecha = findViewById<TextView>(R.id.tvFechaHoy)
-        val formato = SimpleDateFormat("EEEE, d 'de' MMMM", Locale("es", "AR"))
-        val fechaHoy = formato.format(Date())
-        tvFecha.text = fechaHoy.replaceFirstChar { it.uppercase() }
+        tvFecha.text = HeaderDateFormatter.format()
 
         // Recuperar datos del intent
         val id = intent.getIntExtra("id", -1)
@@ -35,23 +30,23 @@ class EditarUsuarioActivity : AppCompatActivity() {
         val esSocio = intent.getBooleanExtra("esSocio", false)
 
         // Inicializar views
-        val etDni = findViewById<TextView>(R.id.etDni)
-        val etNombre = findViewById<TextView>(R.id.etNombre)
-        val etApellido = findViewById<TextView>(R.id.etApellido)
-        val etTelefono = findViewById<TextView>(R.id.etTelefono)
-        val etEmail = findViewById<TextView>(R.id.etEmail)
-        val etDireccion = findViewById<TextView>(R.id.etDireccion)
-        val etFechaNac = findViewById<TextView>(R.id.etFechaNac)
+        val etDni = findViewById<EditText>(R.id.etDni)
+        val etNombre = findViewById<EditText>(R.id.etNombre)
+        val etApellido = findViewById<EditText>(R.id.etApellido)
+        val etTelefono = findViewById<EditText>(R.id.etTelefono)
+        val etEmail = findViewById<EditText>(R.id.etEmail)
+        val etDireccion = findViewById<EditText>(R.id.etDireccion)
+        val etFechaNac = findViewById<EditText>(R.id.etFechaNac)
 
         // Llenar views
         val persona = db.obtenerPersonaPorDni(dni)
-        etNombre.text = persona?.nombre
-        etApellido.text = persona?.apellido
-        etTelefono.text = persona?.telefono
-        etEmail.text = persona?.email
-        etDireccion.text = persona?.direccion
-        etFechaNac.text = persona?.fecha_nac
-        etDni.text = persona?.dni
+        etNombre.setText(persona?.nombre.orEmpty())
+        etApellido.setText(persona?.apellido.orEmpty())
+        etTelefono.setText(persona?.telefono.orEmpty())
+        etEmail.setText(persona?.email.orEmpty())
+        etDireccion.setText(persona?.direccion.orEmpty())
+        etFechaNac.setText(persona?.fecha_nac.orEmpty())
+        etDni.setText(persona?.dni.orEmpty())
 
         // Campo dni deshabilitado
         etDni.isEnabled = false
@@ -67,33 +62,48 @@ class EditarUsuarioActivity : AppCompatActivity() {
             val direccion = etDireccion.text.toString().trim()
             val email = etEmail.text.toString().trim()
 
-            // Validar campos vacios
-            if (nombre.isEmpty() || apellido.isEmpty() ||fechaNac.isEmpty() || direccion.isEmpty() || telefono.isEmpty() || email.isEmpty()) {
-                Toast.makeText(this, "Todos los campos son obligatorios", Toast.LENGTH_LONG).show()
+            listOf(etNombre, etApellido, etFechaNac, etDni, etDireccion, etTelefono, etEmail).forEach { it.error = null }
+
+            // Validar campos obligatorios y formatos compartidos con el alta.
+            when (UsuarioFormValidation.firstMissing(nombre, apellido, fechaNac, dni, direccion, telefono, email)) {
+                UsuarioFormValidation.Field.NOMBRE -> etNombre
+                UsuarioFormValidation.Field.APELLIDO -> etApellido
+                UsuarioFormValidation.Field.FECHA_NACIMIENTO -> etFechaNac
+                UsuarioFormValidation.Field.DNI -> etDni
+                UsuarioFormValidation.Field.DIRECCION -> etDireccion
+                UsuarioFormValidation.Field.TELEFONO -> etTelefono
+                UsuarioFormValidation.Field.EMAIL -> etEmail
+                null -> null
+            }?.let { campo ->
+                campo.error = UsuarioFormText.requiredFields
+                campo.requestFocus()
+                Toast.makeText(this, UsuarioFormText.requiredFields, Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
-            //  Validar DNI
-            if (!dni.matches(Regex("^\\d{8,9}\$"))) {
-                Toast.makeText(this, "El DNI debe tener 8 o 9 números", Toast.LENGTH_LONG).show()
+            if (!UsuarioValidator.dniValido(dni)) {
+                etDni.error = UsuarioFormText.invalidDni
                 etDni.requestFocus()
                 return@setOnClickListener
             }
-            // Validar teléfono
-            if (!telefono.matches(Regex("^\\d{9,12}\$"))) {
-                Toast.makeText(this, "Ingrese numerode telefono valido", Toast.LENGTH_LONG).show()
+            if (!UsuarioValidator.telefonoValido(telefono)) {
+                etTelefono.error = UsuarioFormText.invalidPhone
                 etTelefono.requestFocus()
                 return@setOnClickListener
             }
-            // Validar email
-            if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                Toast.makeText(this, "Ingrese un correo electrónico válido", Toast.LENGTH_LONG).show()
+            if (!UsuarioValidator.emailValido(email)) {
+                etEmail.error = UsuarioFormText.invalidEmail
                 etEmail.requestFocus()
+                return@setOnClickListener
+            }
+            if (!UsuarioValidator.fechaNacimientoValida(fechaNac)) {
+                etFechaNac.error = UsuarioFormText.invalidBirthDate
+                etFechaNac.requestFocus()
                 return@setOnClickListener
             }
 
             AlertDialog.Builder(this)
-                .setTitle("Confirmar edicion")
-                .setMessage("¿Confirmás editar al cliente con DNI: $dni?")
+                .setTitle(UsuarioFormText.confirmEditTitle)
+                .setMessage(UsuarioFormText.confirmEditMessage(dni))
                 .setPositiveButton("Sí") { _, _ ->
                     try {
                         db.actualizarClientePorId(
@@ -108,8 +118,9 @@ class EditarUsuarioActivity : AppCompatActivity() {
                         )
                         val intent = Intent(this, VerMasActivity::class.java)
                         intent.putExtra("dni", dni)
+                        intent.putExtra(SessionExtras.USUARIO, usuario)
                         startActivity(intent)
-                        Toast.makeText(this, "Cliente actualizado con exito", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Cliente actualizado con \u00e9xito", Toast.LENGTH_SHORT).show()
                     } catch (e: IllegalArgumentException) {
                         Toast.makeText(this, e.message ?: "Error al actualizar usuario", Toast.LENGTH_LONG).show()
                     } catch (e: Exception) {
@@ -120,46 +131,6 @@ class EditarUsuarioActivity : AppCompatActivity() {
                 .show()
         }
         // Bottom
-        val bottom = findViewById<BottomNavigationView>(R.id.bottomNav)
-        bottom.selectedItemId = R.id.nav_home
-        bottom.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_pagos -> {
-                    val intent = Intent(this, ResumenMensualActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_activity -> {
-                    val intent = Intent(this, ActividadesActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_settings -> {
-                    val intent = Intent(this, ConfiguracionActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_listas -> {
-                    val intent = Intent(this, ListadosActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_home -> {
-                    val intent = Intent(this, InicioActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-                else -> true
-            }
-        }
+        BottomNavHelper.setup(this, usuario, R.id.nav_home)
     }
 }

@@ -9,10 +9,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.bottomnavigation.BottomNavigationView
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 
 class ActividadesActivity : AppCompatActivity() {
@@ -20,8 +16,8 @@ class ActividadesActivity : AppCompatActivity() {
     private lateinit var rv: RecyclerView
     private lateinit var tvBienvenida: TextView
     private lateinit var btnAgregar: MaterialButton
-    private lateinit var bottom: BottomNavigationView
     private lateinit var etBuscar: SearchView
+    private lateinit var tvEstadoActividades: TextView
     private lateinit var db: DBHelper
     private lateinit var adapter: ActividadCardAdapter
 
@@ -33,9 +29,10 @@ class ActividadesActivity : AppCompatActivity() {
 
         // --- refs UI ---
         btnAgregar   = findViewById(R.id.btnAgregar)
+        btnAgregar.contentDescription = AccessibilityText.addActivity
         tvBienvenida = findViewById(R.id.tvBienvenida)
-        bottom       = findViewById(R.id.bottomNav)
         etBuscar     = findViewById(R.id.etBuscar)
+        tvEstadoActividades = findViewById(R.id.tvEstadoActividades)
         rv           = findViewById(R.id.contenedorActividades)
 
         // Recupera el nombre de usuario del intent y lo muestra
@@ -44,9 +41,7 @@ class ActividadesActivity : AppCompatActivity() {
 
         // Fecha encabezado
         val tvFecha = findViewById<TextView>(R.id.tvFecha)
-        val formato = SimpleDateFormat("EEEE, d 'de' MMMM", Locale("es", "AR"))
-        val fechaHoy = formato.format(Date())
-        tvFecha.text = fechaHoy.replaceFirstChar { it.uppercase() }
+        tvFecha.text = HeaderDateFormatter.format()
 
         // Agregar horario
         btnAgregar.setOnClickListener {
@@ -55,6 +50,7 @@ class ActividadesActivity : AppCompatActivity() {
             startActivity(intent)
         }
         adapter = ActividadCardAdapter(
+            currency = db.obtenerConfiguracionClub().currency,
             onEditar = { act ->
                 startActivity(
                     Intent(this, EditarActividadActivity::class.java).apply {
@@ -73,7 +69,7 @@ class ActividadesActivity : AppCompatActivity() {
             onEliminar = { act ->
                 androidx.appcompat.app.AlertDialog.Builder(this)
                     .setTitle("Eliminar actividad")
-                    .setMessage("Se eliminará \"${act.nombre}\" en el horario del ${act.etiquetaHorario} ¿Continuar?")
+                    .setMessage(ActividadDisplayFormatter.mensajeEliminar(act.nombre, act.etiquetaHorario))
                     .setPositiveButton("Eliminar") { _, _ ->
                         val ok = db.darDeBajaHorario(act.idDiaHorario)
                         if (ok) {
@@ -90,7 +86,6 @@ class ActividadesActivity : AppCompatActivity() {
         )
 
         rv.layoutManager = LinearLayoutManager(this)
-        rv.setHasFixedSize(true)
         rv.adapter = adapter
 
         // Carga inicial
@@ -111,45 +106,17 @@ class ActividadesActivity : AppCompatActivity() {
         })
 
         // Bottom
-        bottom.selectedItemId = R.id.nav_activity
-        bottom.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_pagos -> {
-                    val intent = Intent(this, ResumenMensualActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_settings -> {
-                    val intent = Intent(this, ConfiguracionActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_listas -> {
-                    val intent = Intent(this, ListadosActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_home -> {
-                    val intent = Intent(this, InicioActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-                else -> true
-            }
-        }
+        BottomNavHelper.setup(this, usuario, R.id.nav_activity)
     }
+
     private fun recargarLista(filtro: String?) {
-        val lista = if (filtro.isNullOrBlank())
+        val filtroLimpio = filtro?.trim().orEmpty()
+        val lista = if (filtroLimpio.isBlank()) {
             db.obtenerActividadesPorHorario()
-        else
-            db.buscarActividadesPorNombre(filtro)
+        } else {
+            db.buscarActividadesPorNombre(filtroLimpio)
+        }
         adapter.submitList(lista)
+        tvEstadoActividades.text = EmptyStateText.actividades(lista.size, filtroLimpio)
     }
 }

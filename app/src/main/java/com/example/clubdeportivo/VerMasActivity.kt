@@ -8,8 +8,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.android.material.button.MaterialButton
 
 class VerMasActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,6 +16,7 @@ class VerMasActivity : AppCompatActivity() {
 
         // DB Helper
         val db = DBHelper(this)
+        val configuration = db.obtenerConfiguracionClub()
 
         // Recupera el nombre de usuario del intent y lo muestra
         val usuario = intent.getStringExtra("usuario") ?: "Usuario"
@@ -31,6 +30,12 @@ class VerMasActivity : AppCompatActivity() {
             Toast.makeText(this, "Error al cargar el cliente", Toast.LENGTH_LONG).show()
         }
         val cliente = db.obtenerPersonaPorDni(dniUsuario)
+        if (cliente == null) {
+            Toast.makeText(this, "Error al cargar el cliente", Toast.LENGTH_LONG).show()
+            startActivity(Intent(this, ListadosActivity::class.java).putExtra(SessionExtras.USUARIO, usuario))
+            finish()
+            return
+        }
 
         //Inicializar vistas
         val tvNombreCompleto = findViewById<TextView>(R.id.tvNombreUsuario)
@@ -40,45 +45,70 @@ class VerMasActivity : AppCompatActivity() {
         val tvTelefono = findViewById<TextView>(R.id.tvTelefono)
         val tvFechaNacimiento = findViewById<TextView>(R.id.tvFechaNacimiento)
         val tvIdTipoSocio = findViewById<TextView>(R.id.tvIdTipoSocio)
-
+        val tvEstadoCuenta = findViewById<TextView>(R.id.tvEstadoCuenta)
+        val tvUltimoPago = findViewById<TextView>(R.id.tvUltimoPago)
+        val tvProximoVencimiento = findViewById<TextView>(R.id.tvProximoVencimiento)
+        val tvDeudaEstimada = findViewById<TextView>(R.id.tvDeudaEstimada)
+        val tvHistorialCuenta = findViewById<TextView>(R.id.tvHistorialCuenta)
 
         // Reemplaza datos en las view
-        tvNombreCompleto.text = "${cliente?.nombre}, ${cliente?.apellido} "
-        tvDNI.text = "DNI: ${cliente!!.dni}"
-        tvTelefono.text = "Telefono: ${cliente?.telefono}"
-        tvDireccion.text = "Domicilio: ${cliente?.direccion}"
-        tvFechaNacimiento.text = "Fecha de nacimiento: ${cliente?.fecha_nac}"
-        tvEmail.text = "Email: ${cliente?.email}"
-        if (cliente.esSocio) {
-            tvIdTipoSocio.text = "Socio nº: ${cliente.id}"
-        } else {
-        tvIdTipoSocio.text = "NoSocio nª: ${cliente.id}"}
+        tvNombreCompleto.text = PersonaDisplayFormatter.nombreCompleto(cliente.nombre, cliente.apellido)
+        tvDNI.text = PersonaDisplayFormatter.etiqueta("DNI", cliente.dni)
+        tvTelefono.text = PersonaDisplayFormatter.etiqueta("Tel\u00e9fono", cliente.telefono)
+        tvDireccion.text = PersonaDisplayFormatter.etiqueta("Domicilio", cliente.direccion)
+        tvFechaNacimiento.text = PersonaDisplayFormatter.etiqueta("Fecha de nacimiento", cliente.fecha_nac)
+        tvEmail.text = PersonaDisplayFormatter.etiqueta("Email", cliente.email)
+        tvIdTipoSocio.text = PersonaDisplayFormatter.tipoSocio(cliente.id, cliente.esSocio)
+
+        val cuenta = db.obtenerCuentaCorriente(cliente.dni)
+        tvEstadoCuenta.text = "Estado: ${cuenta?.estado ?: "Sin datos"} - ${cuenta?.detalleEstado ?: ""}"
+        tvUltimoPago.text = "\u00daltimo pago: ${cuenta?.ultimoPagoCuota ?: cuenta?.ultimoPagoActividad ?: "Sin registros"}"
+        tvProximoVencimiento.text = "Pr\u00f3ximo vencimiento: ${cuenta?.proximoVencimiento ?: "No aplica"}"
+        tvDeudaEstimada.text = getString(
+            R.string.estimated_debt,
+            MoneyFormatter.format(cuenta?.deudaEstimada ?: 0.0, configuration.currency)
+        )
+        val movimientosCuenta = cuenta?.movimientos.orEmpty()
+        fun mostrarHistorial(filtro: CuentaCorrienteFormatter.Filtro) {
+            tvHistorialCuenta.text = CuentaCorrienteFormatter.historial(
+                movimientosCuenta,
+                configuration.currency,
+                filtro
+            )
+        }
+        mostrarHistorial(CuentaCorrienteFormatter.Filtro.TODOS)
+        findViewById<Button>(R.id.btnHistorialTodos).setOnClickListener { mostrarHistorial(CuentaCorrienteFormatter.Filtro.TODOS) }
+        findViewById<Button>(R.id.btnHistorialCuotas).setOnClickListener { mostrarHistorial(CuentaCorrienteFormatter.Filtro.CUOTAS) }
+        findViewById<Button>(R.id.btnHistorialActividades).setOnClickListener { mostrarHistorial(CuentaCorrienteFormatter.Filtro.ACTIVIDADES) }
 
         // Boton editar
-        val btnEditar = findViewById<MaterialButton>(R.id.btnEditar)
+        val btnEditar = findViewById<Button>(R.id.btnEditar)
+        btnEditar.contentDescription = AccessibilityText.editPerson
         btnEditar.setOnClickListener {
             val intent = Intent(this, EditarUsuarioActivity::class.java)
-            intent.putExtra("id", cliente!!.id)
+            intent.putExtra("id", cliente.id)
             intent.putExtra("dni", cliente.dni)
             intent.putExtra("esSocio", cliente.esSocio)
+            intent.putExtra(SessionExtras.USUARIO, usuario)
             startActivity(intent)
         }
 
-        // Boton Eliminar
+        // Boton eliminar
         val btnEliminar: Button = findViewById(R.id.btnEliminar)
+        btnEliminar.contentDescription = AccessibilityText.deletePerson
         btnEliminar.setOnClickListener {
             AlertDialog.Builder(this)
-                .setTitle("Eliminar registro")
-                .setMessage("¿Seguro que querés eliminar a esta persona? Esta acción no se puede deshacer.")
-                .setNegativeButton("Cancelar", null)
-                .setPositiveButton("Eliminar") { _, _ ->
-                    val ok = db.eliminarPersonaPorId(cliente!!.id.toString()) // ← clave
+                .setTitle(DeletePersonDialogText.title)
+                .setMessage(DeletePersonDialogText.message(tvNombreCompleto.text.toString(), cliente.dni))
+                .setNegativeButton(DeletePersonDialogText.cancel, null)
+                .setPositiveButton(DeletePersonDialogText.confirm) { _, _ ->
+                    val ok = db.eliminarPersonaPorId(cliente.id.toString())
                     if (ok) {
                         Toast.makeText(this, "Eliminado correctamente", Toast.LENGTH_SHORT).show()
                         val data = Intent().putExtra("dniEliminado", cliente.dni)
                         setResult(Activity.RESULT_OK, data)
                         intent = Intent(this, ListadosActivity::class.java)
-                        intent.putExtra("usuario", usuario)
+                        intent.putExtra(SessionExtras.USUARIO, usuario)
                         startActivity(intent)
                     } else {
                         Toast.makeText(this, "No se pudo eliminar", Toast.LENGTH_LONG).show()
@@ -89,47 +119,6 @@ class VerMasActivity : AppCompatActivity() {
         }
 
         // Bottom
-        val bottom = findViewById<BottomNavigationView>(R.id.bottomNav)
-        bottom.selectedItemId = R.id.nav_listas
-        bottom.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_pagos -> {
-                    val intent = Intent(this, ResumenMensualActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_activity -> {
-                    val intent = Intent(this, ActividadesActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_settings -> {
-                    val intent = Intent(this, ConfiguracionActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_listas -> {
-                    val intent = Intent(this, ListadosActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_home -> {
-                    val intent = Intent(this, InicioActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                else -> true
-            }
-        }
+        BottomNavHelper.setup(this, usuario, R.id.nav_listas)
     }
 }

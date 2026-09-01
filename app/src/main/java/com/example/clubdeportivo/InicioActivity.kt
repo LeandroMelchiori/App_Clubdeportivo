@@ -7,12 +7,8 @@ import android.widget.TextView
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
-import java.text.SimpleDateFormat
 import java.time.LocalDate
-import java.util.Date
-import java.util.Locale
 
 class InicioActivity : AppCompatActivity() {
     data class ActividadHoy(
@@ -30,9 +26,12 @@ class InicioActivity : AppCompatActivity() {
 
         // Dia de la semana
         val db = DBHelper(this)
+        val configuration = db.obtenerConfiguracionClub()
         val diaHoy = LocalDate.now().dayOfWeek.value % 7  // Lunes=1 ... Domingo=7 → ajustamos a 0–6
 
         val actividades = db.obtenerActividadesDelDia(diaHoy) // devuelve List<ActividadHoy>
+        val hoy = LocalDate.now()
+        val metricas = db.obtenerMetricasInicio(hoy.toString(), diaHoy, hoy.year, hoy.monthValue)
 
         // Recupera el nombre de usuario del intent y lo muestra
         val usuario = intent.getStringExtra("usuario") ?: "Usuario"
@@ -41,11 +40,10 @@ class InicioActivity : AppCompatActivity() {
 
         // Fecha encabezado
         val tvFecha = findViewById<TextView>(R.id.tvFecha)
-        val formato = SimpleDateFormat("EEEE, d 'de' MMMM", Locale("es", "AR"))
-        val fechaHoy = formato.format(Date())
-        tvFecha.text = fechaHoy.replaceFirstChar { it.uppercase() }
+        tvFecha.text = HeaderDateFormatter.format()
 
         // Renderiza la lista de actividades del día
+        renderMetricas(metricas, configuration.currency)
         renderActividadesHoy(actividades, usuario)
 
         // Boton nuevo usuario
@@ -57,46 +55,30 @@ class InicioActivity : AppCompatActivity() {
         }
 
         // Bottom
-        val bottom = findViewById<BottomNavigationView>(R.id.bottomNav)
-        bottom.selectedItemId = R.id.nav_home
-        bottom.setOnItemSelectedListener { item ->
-        when (item.itemId) {
-            R.id.nav_pagos -> {
-                val intent = Intent(this, ResumenMensualActivity::class.java)
-                intent.putExtra("usuario", usuario)
-                startActivity(intent)
-                true
-                }
-
-                R.id.nav_activity -> {
-                    val intent = Intent(this, ActividadesActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_settings -> {
-                    val intent = Intent(this, ConfiguracionActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_listas -> {
-                    val intent = Intent(this, ListadosActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-                else -> true
-            }
-        }
+        BottomNavHelper.setup(this, usuario, R.id.nav_home)
     }
 
     // Renderiza la lista de actividades del día con el item de tarjeta
+    private fun renderMetricas(metricas: DBHelper.MetricasInicio, currency: ClubCurrency) {
+        findViewById<TextView>(R.id.tvSociosActivos).text = "Socios: ${metricas.sociosActivos}"
+        findViewById<TextView>(R.id.tvNoSociosActivos).text = "No socios: ${metricas.noSociosActivos}"
+        findViewById<TextView>(R.id.tvVencidos).text = "Vencidos: ${metricas.vencidos}"
+        findViewById<TextView>(R.id.tvIngresosMes).text = getString(
+            R.string.dashboard_income,
+            DashboardFormatters.monto(metricas.ingresosMes, currency)
+        )
+        findViewById<TextView>(R.id.tvActividadesHoyMetrica).text = "Hoy: ${metricas.actividadesHoy}"
+    }
+
     private fun renderActividadesHoy(actividades: List<ActividadHoy>, usuario: String) {
         val contenedor = findViewById<LinearLayout>(R.id.contenedorActividadesHoy)
+        val tvEstado = findViewById<TextView>(R.id.tvEstadoActividadesHoy)
         contenedor.removeAllViews()
+        tvEstado.text = if (actividades.isEmpty()) {
+            "Sin actividades programadas para hoy"
+        } else {
+            "Actividades programadas: ${actividades.size}"
+        }
 
         val inflater = LayoutInflater.from(this)
 
@@ -111,7 +93,6 @@ class InicioActivity : AppCompatActivity() {
                 intent = Intent(this, PagoActividadActivity::class.java)
                 intent.putExtra("idActividad", act.id)
                 intent.putExtra("nombreActividad", act.nombre)
-                intent.putExtra("precioActividad", act.precio)
                 intent.putExtra("diaActividad", act.dia)
                 intent.putExtra("horaInicio", act.horaInicio)
                 intent.putExtra("usuario", usuario)

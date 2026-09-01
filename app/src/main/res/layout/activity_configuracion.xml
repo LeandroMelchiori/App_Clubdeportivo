@@ -5,134 +5,303 @@
     android:layout_height="match_parent"
     android:background="@color/bg_dark">
 
-    <!-- Contenido -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/bottomNav"
-        android:background="@color/card_dark"
-        android:fillViewport="true"
-        android:paddingLeft="20dp"
-        android:paddingTop="50dp"
-        android:paddingRight="20dp">
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:background="@color/card_dark">
+            android:paddingStart="20dp"
+            android:paddingTop="28dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="32dp">
 
-            <!-- Encabezado (igual al de las otras pantallas) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <!-- Texto bienvenida -->
                 <TextView
                     android:id="@+id/tvBienvenida"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Bienvenido"
+                    android:text="@string/welcome"
                     android:textColor="@color/blue_accent"
-                    android:textSize="32sp"
+                    android:textSize="28sp"
                     android:textStyle="bold" />
 
                 <ImageView
                     android:layout_width="28dp"
                     android:layout_height="28dp"
-                    android:contentDescription="perfil"
+                    android:contentDescription="@string/profile_icon_description"
                     android:src="@drawable/ic_person"
                     app:tint="@color/text_primary" />
-
             </LinearLayout>
 
             <TextView
                 android:id="@+id/tvFecha"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Jueves, 28 de Septiembre"
+                android:layout_marginTop="4dp"
                 android:textColor="@color/text_secondary"
-                android:textSize="24sp" />
+                android:textSize="18sp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:layout_marginBottom="18dp"
-                android:text="Configuración"
+                android:layout_marginTop="24dp"
+                android:text="@string/settings_title"
                 android:textColor="@color/text_primary"
                 android:textSize="24sp"
                 android:textStyle="bold" />
 
-            <!-- Tarjeta azul con el formulario -->
-            <com.google.android.material.card.MaterialCardView
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="@string/club_identity_title"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/ivClubLogo"
+                android:layout_width="88dp"
+                android:layout_height="88dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="14dp"
+                android:contentDescription="@string/club_logo_description"
+                android:scaleType="centerCrop"
+                android:src="@mipmap/ic_launcher" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSeleccionarLogo"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="10dp"
+                android:text="@string/select_club_logo"
+                android:textAllCaps="false"
+                app:backgroundTint="@color/blue_start"
+                app:cornerRadius="8dp" />
+
+            <TextView
+                style="@style/ClubFormLabel"
+                android:labelFor="@id/etClubNombre"
+                android:text="@string/club_name_label" />
+
+            <EditText
+                android:id="@+id/etClubNombre"
+                style="@style/ClubFormInput"
+                android:hint="@string/club_name_hint"
+                android:inputType="textCapWords"
+                android:maxLength="80" />
+
+            <TextView
+                style="@style/ClubFormLabel"
+                android:labelFor="@id/etClubDireccion"
+                android:text="@string/club_address_label" />
+
+            <EditText
+                android:id="@+id/etClubDireccion"
+                style="@style/ClubFormInput"
+                android:hint="@string/club_address_hint"
+                android:inputType="textPostalAddress"
+                android:maxLength="160" />
+
+            <TextView
+                style="@style/ClubFormLabel"
+                android:labelFor="@id/etClubTelefono"
+                android:text="@string/club_phone_label" />
+
+            <EditText
+                android:id="@+id/etClubTelefono"
+                style="@style/ClubFormInput"
+                android:hint="@string/club_phone_hint"
+                android:inputType="phone"
+                android:maxLength="20" />
+
+            <TextView
+                style="@style/ClubFormLabel"
+                android:labelFor="@id/etClubEmail"
+                android:text="@string/club_email_label" />
+
+            <EditText
+                android:id="@+id/etClubEmail"
+                style="@style/ClubFormInput"
+                android:hint="@string/club_email_hint"
+                android:inputType="textEmailAddress"
+                android:maxLength="120" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:text="@string/club_billing_title"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                style="@style/ClubFormLabel"
+                android:labelFor="@id/spClubMoneda"
+                android:text="@string/club_currency_label" />
+
+            <Spinner
+                android:id="@+id/spClubMoneda"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_input_gray"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp" />
+
+            <TextView
+                style="@style/ClubFormLabel"
+                android:labelFor="@id/etCuotaMensual"
+                android:text="@string/monthly_fee_label" />
+
+            <EditText
+                android:id="@+id/etCuotaMensual"
+                style="@style/ClubFormInput"
+                android:hint="@string/monthly_fee_hint"
+                android:inputType="numberDecimal" />
+
+            <TextView
+                style="@style/ClubFormLabel"
+                android:labelFor="@id/etDiaVencimiento"
+                android:text="@string/due_day_label" />
+
+            <EditText
+                android:id="@+id/etDiaVencimiento"
+                style="@style/ClubFormInput"
+                android:hint="@string/due_day_hint"
+                android:inputType="number"
+                android:maxLength="2" />
+
+            <TextView
+                style="@style/ClubFormLabel"
+                android:labelFor="@id/etDiasGracia"
+                android:text="@string/grace_days_label" />
+
+            <EditText
+                android:id="@+id/etDiasGracia"
+                style="@style/ClubFormInput"
+                android:hint="@string/grace_days_hint"
+                android:inputType="number"
+                android:maxLength="2" />
+
+            <TextView
+                style="@style/ClubFormLabel"
+                android:text="@string/payment_methods_label" />
+
+            <CheckBox
+                android:id="@+id/cbEfectivo"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="@string/payment_cash"
+                android:textColor="@color/text_primary" />
+
+            <CheckBox
+                android:id="@+id/cbTransferencia"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="@string/payment_transfer"
+                android:textColor="@color/text_primary" />
+
+            <CheckBox
+                android:id="@+id/cbTarjeta"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="@string/payment_card"
+                android:textColor="@color/text_primary" />
+
+            <TextView
+                android:id="@+id/tvErrorMediosPago"
+                android:accessibilityLiveRegion="polite"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/red"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvEstadoConfiguracion"
+                android:accessibilityLiveRegion="polite"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:layout_marginBottom="12dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp" />
-
-            <!-- Botón “Configuración” -->
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnNuevo"
-                android:layout_width="350dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:layout_marginBottom="10dp"
-                android:gravity="start"
-                android:minWidth="0dp"
-                android:minHeight="0dp"
-                android:paddingVertical="16dp"
-                android:text="Nuevo administrador"
-                android:textAllCaps="false"
-                android:textColor="@color/text_primary"
-                android:textSize="24sp"
-                app:backgroundTint="@color/blue_start"
-                app:cornerRadius="18dp" />
+                android:gravity="center"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnEditar"
-                android:layout_width="350dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:layout_marginBottom="10dp"
-                android:gravity="start"
-                android:minWidth="0dp"
-                android:minHeight="0dp"
-                android:paddingVertical="16dp"
-                android:text="Editar administrador"
+                android:id="@+id/btnGuardarConfiguracion"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="16dp"
+                android:text="@string/save_club_configuration"
                 android:textAllCaps="false"
+                android:textColor="@color/black"
+                app:backgroundTint="@color/blue_accent"
+                app:cornerRadius="8dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:text="@string/administration_title"
                 android:textColor="@color/text_primary"
-                android:textSize="24sp"
-                app:backgroundTint="@color/blue_start"
-                app:cornerRadius="18dp" />
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGestionProfesores"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="12dp"
+                android:text="@string/manage_professors"
+                android:textAllCaps="false"
+                android:textColor="@color/black"
+                app:backgroundTint="@color/white_button"
+                app:cornerRadius="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGestionActividades"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="10dp"
+                android:text="@string/manage_activity_catalog"
+                android:textAllCaps="false"
+                android:textColor="@color/black"
+                app:backgroundTint="@color/white_button"
+                app:cornerRadius="8dp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="32dp"
+                android:layout_marginBottom="20dp"
+                android:background="@color/border_dim" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnCerrarSesion"
-                android:layout_width="350dp"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="120dp"
-                android:layout_marginBottom="10dp"
-                android:minWidth="0dp"
-                android:minHeight="0dp"
-                android:paddingVertical="16dp"
-                android:text="Cerrar Sesión"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="@string/logout"
                 android:textAllCaps="false"
                 android:textColor="@color/text_primary"
-                android:textSize="24sp"
-                app:backgroundTint="#CA504B"
-                app:cornerRadius="18dp" />
-
+                app:backgroundTint="@color/red_user"
+                app:cornerRadius="8dp" />
         </LinearLayout>
     </ScrollView>
 
-    <!-- Bottom bar -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"

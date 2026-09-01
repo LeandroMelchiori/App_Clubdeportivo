@@ -10,7 +10,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -51,35 +50,49 @@ class NuevoUsuarioActivity : AppCompatActivity() {
                 val email     = etEmail.text.toString().trim()
 
                 // Validaciones campos vacios
+                listOf(etNombre, etApellido, etFecha, etDNI, etDireccion, etTelefono, etEmail).forEach { it.error = null }
 
-                if (nombre.isEmpty() || apellido.isEmpty() || dni.isEmpty() || fecha.isEmpty() || direccion.isEmpty() || telefono.isEmpty() || email.isEmpty()) {
-                    Toast.makeText(this, "Todos los campos son obligatorios", Toast.LENGTH_LONG).show()
+                when (UsuarioFormValidation.firstMissing(nombre, apellido, fecha, dni, direccion, telefono, email)) {
+                    UsuarioFormValidation.Field.NOMBRE -> etNombre
+                    UsuarioFormValidation.Field.APELLIDO -> etApellido
+                    UsuarioFormValidation.Field.FECHA_NACIMIENTO -> etFecha
+                    UsuarioFormValidation.Field.DNI -> etDNI
+                    UsuarioFormValidation.Field.DIRECCION -> etDireccion
+                    UsuarioFormValidation.Field.TELEFONO -> etTelefono
+                    UsuarioFormValidation.Field.EMAIL -> etEmail
+                    null -> null
+                }?.let { campo ->
+                    campo.error = UsuarioFormText.requiredFields
+                    campo.requestFocus()
+                    Toast.makeText(this, UsuarioFormText.requiredFields, Toast.LENGTH_LONG).show()
                     return@setOnClickListener
                 }
 
-                //  Validar DNI
-                if (!dni.matches(Regex("^\\d{8,9}\$"))) {
-                    Toast.makeText(this, "El DNI debe tener 8 o 9 números", Toast.LENGTH_LONG).show()
+                if (!UsuarioValidator.dniValido(dni)) {
+                    etDNI.error = UsuarioFormText.invalidDni
                     etDNI.requestFocus()
                     return@setOnClickListener
                 }
 
-                // Validar teléfono
-                if (!telefono.matches(Regex("^\\d{9,12}\$"))) {
-                    Toast.makeText(this, "Ingrese numerode telefono valido", Toast.LENGTH_LONG).show()
+                if (!UsuarioValidator.telefonoValido(telefono)) {
+                    etTelefono.error = UsuarioFormText.invalidPhone
                     etTelefono.requestFocus()
                     return@setOnClickListener
                 }
 
-                // 4) Validar email
-                if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                    Toast.makeText(this, "Ingrese un correo electrónico válido", Toast.LENGTH_LONG).show()
+                if (!UsuarioValidator.emailValido(email)) {
+                    etEmail.error = UsuarioFormText.invalidEmail
                     etEmail.requestFocus()
                     return@setOnClickListener
                 }
 
-                // Normaliza la fecha de nacimiento
-                val fechaISO = normalizarFecha(fecha)
+                val fechaISO = UsuarioValidator.normalizarFechaNacimiento(fecha)
+                if (fechaISO == null) {
+                    etFecha.error = UsuarioFormText.invalidBirthDate
+                    etFecha.requestFocus()
+                    return@setOnClickListener
+                }
+
                 // Fecha hoy
                 val hoyISO = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
                 // Tabla
@@ -90,7 +103,7 @@ class NuevoUsuarioActivity : AppCompatActivity() {
                     put("dni", dni.trim())
                     put("nombre", nombre.trim())
                     put("apellido", apellido.trim())
-                    fechaISO?.let { put("fecha_nac", it) }
+                    put("fecha_nac", fechaISO)
                     put("direccion", direccion)
                     put("telefono", telefono.trim())
                     put("email", email.trim())
@@ -106,12 +119,12 @@ class NuevoUsuarioActivity : AppCompatActivity() {
                 }
 
                 AlertDialog.Builder(this)
-                    .setTitle("Confirmar registro")
-                    .setMessage("¿Confirmás registro nuevo usuario?")
+                    .setTitle(UsuarioFormText.confirmCreateTitle)
+                    .setMessage(UsuarioFormText.confirmCreateMessage)
                     .setPositiveButton("Sí") { _, _ ->
                         try {
                             val rowId = db.insertOrThrow(tabla, null, values)  // usa insertOrThrow para ver el error real
-                            startActivity(Intent(this, InicioActivity::class.java))
+                            startActivity(Intent(this, InicioActivity::class.java).putExtra(SessionExtras.USUARIO, usuario))
                             Toast.makeText(this, "Registro exitoso (ID $rowId)", Toast.LENGTH_LONG).show()
 
                             // Limpieza de campos
@@ -136,60 +149,9 @@ class NuevoUsuarioActivity : AppCompatActivity() {
             }
 
         // Bottom
-        val bottom = findViewById<BottomNavigationView>(R.id.bottomNav)
-        bottom.selectedItemId = R.id.nav_home
-        bottom.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_pagos -> {
-                    val intent = Intent(this, ResumenMensualActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_activity -> {
-                    val intent = Intent(this, ActividadesActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_settings -> {
-                    val intent = Intent(this, ConfiguracionActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_home -> {
-                    val intent = Intent(this, InicioActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_listas -> {
-                    val intent = Intent(this, ListadosActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-                else -> true
-            }
-        }
+        BottomNavHelper.setup(this, usuario, R.id.nav_home)
     }
 
-    // Metodo para normalizar la fecha
-    private fun normalizarFecha(input: String): String? {
-        if (input.isBlank()) return null
-        return try {
-            val inFmt  = SimpleDateFormat("dd/MM/yyyy", Locale("es", "AR"))
-            val outFmt = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-            outFmt.format(inFmt.parse(input)!!)
-        } catch (_: Exception) {
-            null
-        }
-    }
 
     // Metodo para chequear si el DNI ya está registrado
     private fun existeDni(db: SQLiteDatabase, tabla: String, dni: String): Boolean {

@@ -7,6 +7,18 @@
     android:gravity="center"
     android:orientation="vertical" >
 
+    <TextView
+        android:id="@+id/tvEnvironmentBadge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/bg_pill_red"
+        android:text="@string/demo_mode_badge"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
     <!-- Encabezado -->
     <TextView
         android:layout_width="match_parent"
@@ -29,9 +41,11 @@
 
     <EditText
         android:id="@+id/etUsuario"
-        android:layout_width="300dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
         android:layout_marginTop="8dp"
+        android:layout_marginEnd="32dp"
         android:background="@drawable/bg_pill_light"
         android:hint="USUARIO"
         android:importantForAutofill="no"
@@ -39,23 +53,25 @@
         android:paddingLeft="12dp"
         android:paddingRight="12dp" />
 
-    <!-- Contraseña -->
+    <!-- Contrasena -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="14dp"
-        android:text="CONTRASEÑA:"
+        android:text="CONTRASE&#209;A:"
         android:textColor="@color/black"
         android:textSize="18sp"
         android:textStyle="bold" />
 
     <EditText
-        android:id="@+id/etContraseña"
-        android:layout_width="300dp"
+        android:id="@+id/etContrasena"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
         android:layout_marginTop="8dp"
+        android:layout_marginEnd="32dp"
         android:background="@drawable/bg_pill_light"
-        android:hint="xxxxxx"
+        android:hint="Contrase&#241;a"
         android:importantForAutofill="no"
         android:inputType="textPassword"
         android:paddingLeft="12dp"

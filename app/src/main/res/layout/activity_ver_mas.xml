@@ -147,7 +147,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
-                        android:text="Telefono: "
+                        android:text="Tel&#233;fono: "
                         android:textColor="@color/black"
                         android:textSize="20sp" />
 
@@ -160,6 +160,116 @@
                         android:text="Heber hace el manual gato"
                         android:textColor="@color/black"
                         android:textSize="20sp" />
+
+                    <TextView
+                        android:id="@+id/tvTituloCuenta"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:text="Cuenta corriente"
+                        android:textColor="@color/black"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvEstadoCuenta"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Estado:"
+                        android:textColor="@color/black"
+                        android:textSize="18sp" />
+
+                    <TextView
+                        android:id="@+id/tvUltimoPago"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="&#218;ltimo pago:"
+                        android:textColor="@color/black"
+                        android:textSize="18sp" />
+
+                    <TextView
+                        android:id="@+id/tvProximoVencimiento"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Pr&#243;ximo vencimiento:"
+                        android:textColor="@color/black"
+                        android:textSize="18sp" />
+
+                    <TextView
+                        android:id="@+id/tvDeudaEstimada"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Deuda estimada:"
+                        android:textColor="@color/black"
+                        android:textSize="18sp" />
+
+
+
+                    <TextView
+                        android:id="@+id/tvTituloHistorialCuenta"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:text="&#218;ltimos movimientos"
+                        android:textColor="@color/black"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:id="@+id/panelFiltrosHistorial"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btnHistorialTodos"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_chip_blue"
+                            android:padding="0dp"
+                            android:text="Todos"
+                            android:textColor="@color/black"
+                            android:textSize="12sp" />
+
+                        <Button
+                            android:id="@+id/btnHistorialCuotas"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_chip_blue"
+                            android:padding="0dp"
+                            android:text="Cuotas"
+                            android:textColor="@color/black"
+                            android:textSize="12sp" />
+
+                        <Button
+                            android:id="@+id/btnHistorialActividades"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_chip_blue"
+                            android:padding="0dp"
+                            android:text="Actividades"
+                            android:textColor="@color/black"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvHistorialCuenta"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Sin movimientos registrados"
+                        android:textColor="@color/black"
+                        android:textSize="16sp" />
 
                     <!-- Botones -->
                     <LinearLayout
@@ -175,7 +285,7 @@
                         <Button
                             android:id="@+id/btnEditar"
                             android:layout_width="100dp"
-                            android:layout_height="40dp"
+                            android:layout_height="48dp"
                             android:layout_marginHorizontal="20dp"
                             android:background="@drawable/bg_chip_blue"
                             android:padding="0dp"
@@ -188,7 +298,7 @@
                         <Button
                             android:id="@+id/btnEliminar"
                             android:layout_width="100dp"
-                            android:layout_height="40dp"
+                            android:layout_height="48dp"
                             android:layout_marginHorizontal="20dp"
                             android:background="@drawable/bg_chip_blue"
                             android:padding="0dp"

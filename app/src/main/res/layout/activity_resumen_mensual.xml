@@ -111,7 +111,7 @@
                                 android:background="@android:color/transparent"
                                 android:padding="8dp"
                                 android:src="@drawable/outline_arrow_back_ios_24"
-                                android:tint="@color/black"
+                                app:tint="@color/black"
                                 android:contentDescription="Mes anterior"
                                 android:scaleType="centerInside" />
 
@@ -134,7 +134,7 @@
                                 android:background="@android:color/transparent"
                                 android:padding="8dp"
                                 android:src="@drawable/outline_arrow_forward_ios_24"
-                                android:tint="@color/black"
+                                app:tint="@color/black"
                                 android:contentDescription="Mes siguiente"
                                 android:scaleType="centerInside" />
 
@@ -173,7 +173,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="8dp"
-                            android:text="Monto cuotas: $0"
+                            android:text="Monto cuotas: --"
                             android:textColor="@color/black"
                             android:textSize="18sp" />
 
@@ -182,7 +182,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="8dp"
-                            android:text="Monto Actividades: $0"
+                            android:text="Monto actividades: --"
                             android:textColor="@color/black"
                             android:textSize="18sp" />
 
@@ -191,7 +191,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="16dp"
-                            android:text="Ingresos Totales: $0"
+                            android:text="Ingresos totales: --"
                             android:textColor="@color/black"
                             android:textSize="18sp" />
 

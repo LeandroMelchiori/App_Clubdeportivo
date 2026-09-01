@@ -2,13 +2,13 @@ package com.example.clubdeportivo
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Environment
 import android.widget.ImageButton
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.bottomnavigation.BottomNavigationView
-import java.text.SimpleDateFormat
+import java.io.File
 import java.util.Calendar
-import java.util.Locale
 
 class ResumenMensualActivity : AppCompatActivity() {
 
@@ -21,6 +21,7 @@ class ResumenMensualActivity : AppCompatActivity() {
         setContentView(R.layout.activity_resumen_mensual)
 
         db = DBHelper(this)
+        val configuration = db.obtenerConfiguracionClub()
 
         // --------- Usuario ----------
         val usuario = intent.getStringExtra("usuario") ?: "Usuario"
@@ -34,8 +35,7 @@ class ResumenMensualActivity : AppCompatActivity() {
         anioActual = calendar.get(Calendar.YEAR)
 
         val tvFecha = findViewById<TextView>(R.id.tvFecha)
-        val formatoFecha = SimpleDateFormat("EEEE, d 'de' MMMM", Locale("es", "AR"))
-        tvFecha.text = formatoFecha.format(calendar.time)
+        tvFecha.text = HeaderDateFormatter.format(calendar.time)
 
         // --------- Referencias a los TextView del resumen ----------
         val tvMes = findViewById<TextView>(R.id.tvMes)
@@ -47,6 +47,7 @@ class ResumenMensualActivity : AppCompatActivity() {
         val tvIngresosTotales = findViewById<TextView>(R.id.tvIngresosTotales)
         val btnMesAnterior = findViewById<ImageButton>(R.id.btnMesAnterior)
         val btnMesSiguiente = findViewById<ImageButton>(R.id.btnMesSiguiente)
+        val btnDescargar = findViewById<TextView>(R.id.btnDescargar)
 
         fun nombreMes(mes: Int): String {
             val meses = arrayOf(
@@ -64,9 +65,18 @@ class ResumenMensualActivity : AppCompatActivity() {
             tvNoSocios.text = "No Socios : ${resumen.cantNoSocios}"
             tvSocios.text = "Socios: ${resumen.cantSocios}"
             tvTotalClientes.text = "Total clientes: ${resumen.totalClientes}"
-            tvMontoCuotas.text = "Monto cuotas: $${resumen.montoCuotas}"
-            tvMontoActividades.text = "Monto Actividades: $${resumen.montoActividades}"
-            tvIngresosTotales.text = "Ingresos Totales: $${resumen.ingresosTotales}"
+            tvMontoCuotas.text = getString(
+                R.string.summary_quota_amount,
+                MoneyFormatter.format(resumen.montoCuotas, configuration.currency)
+            )
+            tvMontoActividades.text = getString(
+                R.string.summary_activity_amount,
+                MoneyFormatter.format(resumen.montoActividades, configuration.currency)
+            )
+            tvIngresosTotales.text = getString(
+                R.string.summary_total_income,
+                MoneyFormatter.format(resumen.ingresosTotales, configuration.currency)
+            )
         }
         cargarMes()
 
@@ -81,6 +91,19 @@ class ResumenMensualActivity : AppCompatActivity() {
                 anioActual--
             }
             cargarMes()
+        }
+
+        btnDescargar.setOnClickListener {
+            val resumen = db.obtenerResumenPagosMes(anioActual, mesActual)
+            val csv = CsvExporter.resumenMensual(
+                nombreMes(mesActual),
+                resumen,
+                configuration.currency
+            )
+            val dir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) ?: filesDir
+            val file = File(dir, "resumen_${anioActual}_${String.format("%02d", mesActual)}.csv")
+            file.writeText(csv)
+            Toast.makeText(this, "CSV guardado: ${file.name}", Toast.LENGTH_LONG).show()
         }
 
         btnMesSiguiente.setOnClickListener {
@@ -101,40 +124,6 @@ class ResumenMensualActivity : AppCompatActivity() {
 
 
         // --------- Bottom nav ----------
-        val bottom = findViewById<BottomNavigationView>(R.id.bottomNav)
-        bottom.selectedItemId = R.id.nav_pagos
-        bottom.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_activity -> {
-                    val intent = Intent(this, ActividadesActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_settings -> {
-                    val intent = Intent(this, ConfiguracionActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_listas -> {
-                    val intent = Intent(this, ListadosActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_home -> {
-                    val intent = Intent(this, InicioActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                else -> true
-            }
-        }
+        BottomNavHelper.setup(this, usuario, R.id.nav_pagos)
     }
 }

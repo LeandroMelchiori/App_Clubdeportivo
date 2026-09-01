@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 
 class ActividadCardAdapter(
+    private val currency: ClubCurrency,
     private val onEditar: (DBHelper.ActividadCard) -> Unit,
     private val onEliminar: (DBHelper.ActividadCard) -> Unit
 ) : ListAdapter<DBHelper.ActividadCard, ActividadCardAdapter.VH>(DIFF) {
@@ -48,9 +49,12 @@ class ActividadCardAdapter(
     override fun onBindViewHolder(h: VH, position: Int) {
         val item = getItem(position)
         h.tvNombre.text = item.nombre
-        h.tvProfesores.text = item.profesor ?: "—"
-        h.tvHorarios.text = item.etiquetaHorario ?: "—"
-        h.tvPrecio.text = "Precio: $${"%.2f".format(item.precio)}"
+        h.tvProfesores.text = ActividadDisplayFormatter.textoOpcional(item.profesor)
+        h.tvHorarios.text = ActividadDisplayFormatter.textoOpcional(item.etiquetaHorario)
+        h.tvPrecio.text = h.itemView.context.getString(
+            R.string.price_amount,
+            MoneyFormatter.format(item.precio, currency)
+        )
         h.btnEditar.setOnClickListener { onEditar(item) }
         h.btnEliminar.setOnClickListener { onEliminar(item) }
     }

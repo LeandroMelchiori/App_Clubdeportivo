@@ -9,16 +9,17 @@ import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import java.time.LocalDate
-import java.time.temporal.ChronoUnit
 
 class VencimientoAdapter(
+    usuario: String = SessionExtras.DEFAULT_USUARIO,
     private val onAccion: (DBHelper.VencimientoCard) -> Unit = {},
     private val onVerMas: (DBHelper.VencimientoCard) -> Unit = {},
     // Podés usar un layout propio (p.ej. R.layout.item_vencimiento).
     // Mientras tanto reutilizo el de no socio que ya tenés.
     private val layoutRes: Int = R.layout.item_nosocio
 ) : ListAdapter<DBHelper.VencimientoCard, VencimientoAdapter.VH>(DIFF) {
+    private val usuarioSesion = SessionExtras.nombreUsuario(usuario)
+
     companion object {
         private val DIFF = object : DiffUtil.ItemCallback<DBHelper.VencimientoCard>() {
             override fun areItemsTheSame(
@@ -38,6 +39,7 @@ class VencimientoAdapter(
         val tvUltimoPago: TextView = view.findViewById(R.id.tvUltimoPago)
         val btnAccion: Button = view.findViewById(R.id.btnAccion)
         val btnVerMas: Button = view.findViewById(R.id.btnVerMas)
+        val vEstado: View = view.findViewById(R.id.vEstado)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
@@ -48,20 +50,18 @@ class VencimientoAdapter(
     override fun onBindViewHolder(h: VH, position: Int) {
         val item = getItem(position)
 
-        // Calcular diferencia de días entre hoy y la fecha de vencimiento
-        val hoy = LocalDate.now()
-        val fv = LocalDate.parse(item.fechaVenc)   // viene en formato "yyyy-MM-dd"
-        val diff = ChronoUnit.DAYS.between(fv, hoy)  // fv -> hoy
-        val estadoTexto = when {
-            diff == 0L -> "Vence hoy"
-            diff > 0L  -> "Debe hace $diff días"
-            else       -> "Vence en ${-diff} días"   // implementacion a futuro
-        }
+        val estado = VencimientoCalculator.clasificar(item.fechaVenc)
 
-        // Rellenar la vista
-        h.tvEstado.text = estadoTexto
+        h.tvEstado.text = estado.texto
         h.tvNombre.text = "${item.nombre} ${item.apellido}"
-        h.tvUltimoPago.text = "Venc.: ${item.fechaVenc}"
+        h.tvUltimoPago.text = "Venc.: ${item.fechaVenc} | ${estado.categoria}"
+        h.vEstado.setBackgroundResource(
+            when (estado.categoria) {
+                "Al dia" -> R.drawable.bg_pill_green
+                "Por vencer" -> R.drawable.bg_pill_light
+                else -> R.drawable.bg_pill_red
+            }
+        )
         h.btnAccion.text = "Pagar"
         h.btnVerMas.text = "Ver más"
 
@@ -70,14 +70,15 @@ class VencimientoAdapter(
             c.startActivity(Intent(c, PagoDeCuotaActivity::class.java).apply {
                 putExtra("dni", item.dni)
                 putExtra("nombre", "${item.apellido}, ${item.nombre}")
-                putExtra("tipoOperacion", "Cuota mensual - 10% Recargo")
                 putExtra("ultimoPago", item.ultimoPago)
-                putExtra("precio", "33000")
                 putExtra("esSocio", true)
+                putExtra(SessionExtras.USUARIO, usuarioSesion)
             })
         }
         h.btnVerMas.setOnClickListener { val c = h.itemView.context
-            c.startActivity(Intent(c, VerMasActivity::class.java).putExtra("dni", item.dni)) }
+            c.startActivity(Intent(c, VerMasActivity::class.java)
+                .putExtra("dni", item.dni)
+                .putExtra(SessionExtras.USUARIO, usuarioSesion)) }
     }
 
     private var fullList: List<DBHelper.VencimientoCard> = emptyList()

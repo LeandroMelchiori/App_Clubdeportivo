@@ -2,7 +2,9 @@ package com.example.clubdeportivo
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
@@ -13,32 +15,32 @@ class LoginActivity : AppCompatActivity() {
         setContentView(R.layout.activity_login)
 
         // Variables
+        findViewById<TextView>(R.id.tvEnvironmentBadge).visibility =
+            if (BuildConfig.DEMO_MODE) View.VISIBLE else View.GONE
+
         val etUsuario = findViewById<EditText>(R.id.etUsuario)
-        val etContraseña = findViewById<EditText>(R.id.etContraseña)
+        val etContrasena = findViewById<EditText>(R.id.etContrasena)
         val btnLogin = findViewById<MaterialButton>(R.id.btnLogin)
+        btnLogin.contentDescription = AccessibilityText.login
 
         // Logica inicio de sesion
         btnLogin.setOnClickListener {
-            val usuario = etUsuario.text.toString()
-            val contraseña = etContraseña.text.toString()
+            val usuario = etUsuario.text.toString().trim()
+            val contrasena = etContrasena.text.toString().trim()
             // Validacion campos en blanco
-            if (usuario.isEmpty() || contraseña.isEmpty()) {
-                Toast.makeText(this, "Por favor ingrese usuario y contraseña", Toast.LENGTH_SHORT)
+            if (usuario.isEmpty() || contrasena.isEmpty()) {
+                Toast.makeText(this, LoginMessages.emptyFields, Toast.LENGTH_SHORT)
                     .show() }
             // Validacion usuario correcto
-            else if (usuario == "admin" && contraseña == "admin"
-                || usuario == "charlie" && contraseña == "charlie"
-                || usuario == "sacha" && contraseña == "sacha"
-                || usuario == "javo" && contraseña == "javo"
-                || usuario == "heber" && contraseña == "heber") {
+            else if (LoginCredentials.sonValidas(usuario, contrasena)) {
                 val intent = Intent(this, InicioActivity::class.java)
                 intent.putExtra("usuario", usuario)
                 startActivity(intent)
-                Toast.makeText(this, "Sesion iniciada...", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, LoginMessages.success, Toast.LENGTH_LONG).show()
             }
-            // Usuario o contraseña incorrectos
+            // Usuario o contrasena incorrectos
             else {
-                Toast.makeText(this, "Usuario o contraseña incorrectos", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, LoginMessages.invalidCredentials, Toast.LENGTH_SHORT).show()
             }
         }
     }

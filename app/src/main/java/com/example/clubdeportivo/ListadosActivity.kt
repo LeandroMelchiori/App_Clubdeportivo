@@ -3,19 +3,19 @@ package com.example.clubdeportivo
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Environment
 import android.view.View
 import android.widget.Button
 import android.widget.SearchView
 import android.widget.TextView
+import android.widget.LinearLayout
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.bottomnavigation.BottomNavigationView
-import java.text.SimpleDateFormat
+import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Date
-import java.util.Locale
 
 class ListadosActivity : AppCompatActivity() {
     private lateinit var db: DBHelper
@@ -25,10 +25,18 @@ class ListadosActivity : AppCompatActivity() {
     private lateinit var rvVenc: RecyclerView
     private lateinit var tvNombreLista: TextView
     private lateinit var tvFecha: TextView
+    private lateinit var tvResumenVencimientos: TextView
+    private lateinit var tvEstadoLista: TextView
+    private lateinit var panelFiltrosVencimientos: LinearLayout
     private lateinit var noSocioAdapter: NoSocioAdapter
     private lateinit var socioAdapter: SocioAdapter
     private lateinit var vencimientoAdapter: VencimientoAdapter
     private lateinit var verMasLauncher: androidx.activity.result.ActivityResultLauncher<Intent>
+    private var noSociosActuales: List<DBHelper.NoSocioCard> = emptyList()
+    private var sociosActuales: List<DBHelper.SocioCard> = emptyList()
+    private var vencimientosActuales: List<DBHelper.VencimientoCard> = emptyList()
+    private var filtroVencimiento = VencimientoFilters.Tipo.TODOS
+    private var busquedaActual = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // DB Helper
@@ -50,20 +58,21 @@ class ListadosActivity : AppCompatActivity() {
         rvVenc     = findViewById(R.id.rvVencimientos)
         tvNombreLista = findViewById(R.id.tvNombreLista)
         tvFecha = findViewById(R.id.tvFecha)
+        tvResumenVencimientos = findViewById(R.id.tvResumenVencimientos)
+        tvEstadoLista = findViewById(R.id.tvEstadoLista)
+        panelFiltrosVencimientos = findViewById(R.id.panelFiltrosVencimientos)
 
 
-        // Fecha actual
-        val hoy = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
+        // Fecha actual usada para vencimientos y refrescos.
+        hoyISO = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
 
         // Recupera el nombre de usuario del intent y lo muestra
-        val usuario = intent.getStringExtra("usuario") ?: "Usuario"
+        val usuario = SessionExtras.nombreUsuario(intent.getStringExtra(SessionExtras.USUARIO))
         val tvBienvenida = findViewById<TextView>(R.id.tvBienvenida)
         tvBienvenida.text = "Bienvenido, $usuario"
 
         // Fecha encabezado
-        val formato = SimpleDateFormat("EEEE, d 'de' MMMM", Locale("es", "AR"))
-        val fechaHoy = formato.format(Date())
-        tvFecha.text = fechaHoy.replaceFirstChar { it.uppercase() }
+        tvFecha.text = HeaderDateFormatter.format()
 
 
         rvNoSocios.layoutManager = LinearLayoutManager(this)
@@ -71,9 +80,9 @@ class ListadosActivity : AppCompatActivity() {
         rvVenc.layoutManager     = LinearLayoutManager(this)
 
         //  crear instancias
-        noSocioAdapter = NoSocioAdapter()
-        socioAdapter   = SocioAdapter()
-        vencimientoAdapter    = VencimientoAdapter()
+        noSocioAdapter = NoSocioAdapter(usuario)
+        socioAdapter   = SocioAdapter(usuario)
+        vencimientoAdapter    = VencimientoAdapter(usuario)
 
         // Asignar adapters
         rvNoSocios.adapter = noSocioAdapter
@@ -86,12 +95,18 @@ class ListadosActivity : AppCompatActivity() {
         // Listados
         renderNoSocios(db.obtenerNoSocios())
         renderSocios(db.obtenerSocios())
-        renderVencimientos(db.obtenerVencimientos(hoy))
+        renderVencimientos(db.obtenerVencimientos(hoyISO))
+        renderResumenVencimientos()
 
         // Botones listas
         val botonVencimiento: Button = findViewById(R.id.btnListVencimientos)
         val botonSocios: Button = findViewById(R.id.btnListSocios)
         val botonNoSocios: Button = findViewById(R.id.btnListNoSocios)
+        val botonExportar: Button = findViewById(R.id.btnExportarListados)
+        val botonFiltroTodos: Button = findViewById(R.id.btnFiltroVencTodos)
+        val botonFiltroAlDia: Button = findViewById(R.id.btnFiltroVencAlDia)
+        val botonFiltroPorVencer: Button = findViewById(R.id.btnFiltroVencPorVencer)
+        val botonFiltroVencidos: Button = findViewById(R.id.btnFiltroVencVencidos)
 
         // Lista por defecto
         botonNoSocios.setTextColor(Color.WHITE);
@@ -116,13 +131,17 @@ class ListadosActivity : AppCompatActivity() {
         // onClick
         botonVencimiento.setOnClickListener {
             mostrar(rvVenc)
+            panelFiltrosVencimientos.visibility = View.VISIBLE
             botonNoSocios.setTextColor(Color.BLACK);
             botonSocios.setTextColor(Color.BLACK);
             botonVencimiento.setTextColor(Color.WHITE)
             tvNombreLista.text = "Listado Vencimientos"
+            aplicarFiltroVencimientos(filtroVencimiento)
+            renderResumenVencimientos()
         }
         botonSocios.setOnClickListener {
             mostrar(rvSocios)
+            panelFiltrosVencimientos.visibility = View.GONE
             botonNoSocios.setTextColor(Color.BLACK);
             botonSocios.setTextColor(Color.WHITE);
             botonVencimiento.setTextColor(Color.BLACK)
@@ -130,47 +149,21 @@ class ListadosActivity : AppCompatActivity() {
         }
         botonNoSocios.setOnClickListener {
             mostrar(rvNoSocios)
+            panelFiltrosVencimientos.visibility = View.GONE
             botonNoSocios.setTextColor(Color.WHITE);
             botonSocios.setTextColor(Color.BLACK);
             botonVencimiento.setTextColor(Color.BLACK)
             tvNombreLista.text = "Listado No Socios"
         }
 
+        botonFiltroTodos.setOnClickListener { aplicarFiltroVencimientos(VencimientoFilters.Tipo.TODOS) }
+        botonFiltroAlDia.setOnClickListener { aplicarFiltroVencimientos(VencimientoFilters.Tipo.AL_DIA) }
+        botonFiltroPorVencer.setOnClickListener { aplicarFiltroVencimientos(VencimientoFilters.Tipo.POR_VENCER) }
+        botonFiltroVencidos.setOnClickListener { aplicarFiltroVencimientos(VencimientoFilters.Tipo.VENCIDO) }
+        botonExportar.setOnClickListener { exportarListadoVisible() }
+
         // Bottom
-        val bottom = findViewById<BottomNavigationView>(R.id.bottomNav)
-        bottom.selectedItemId = R.id.nav_listas
-        bottom.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_pagos -> {
-                    val intent = Intent(this, ResumenMensualActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_activity -> {
-                    val intent = Intent(this, ActividadesActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_settings -> {
-                    val intent = Intent(this, ConfiguracionActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_home -> {
-                    val intent = Intent(this, InicioActivity::class.java)
-                    intent.putExtra("usuario", usuario)
-                    startActivity(intent)
-                    true
-                }
-                else -> true
-            }
-        }
+        BottomNavHelper.setup(this, usuario, R.id.nav_listas)
     }
     fun mostrar(rv: RecyclerView) {
         rvNoSocios.visibility = View.GONE
@@ -178,9 +171,62 @@ class ListadosActivity : AppCompatActivity() {
         rvVenc.visibility     = View.GONE
         rv.visibility         = View.VISIBLE
     }
-    private fun renderNoSocios(lista: List<DBHelper.NoSocioCard>) = noSocioAdapter.submitList(lista)
-    private fun renderSocios(lista: List<DBHelper.SocioCard>)     = socioAdapter.submitList(lista)
-    private fun renderVencimientos(lista: List<DBHelper.VencimientoCard>) = vencimientoAdapter.submitList(lista)
+    private fun renderResumenVencimientos() {
+        val resumen = db.obtenerResumenVencimientos(hoyISO)
+        tvResumenVencimientos.text = "Al dia: ${resumen.alDia} | Por vencer: ${resumen.porVencer} | Vencidos: ${resumen.vencidos}"
+    }
+    private fun renderNoSocios(lista: List<DBHelper.NoSocioCard>) {
+        noSociosActuales = lista
+        noSocioAdapter.submitList(lista)
+        actualizarEstadoLista(lista.size, "no socios")
+    }
+    private fun renderSocios(lista: List<DBHelper.SocioCard>) {
+        sociosActuales = lista
+        socioAdapter.submitList(lista)
+        actualizarEstadoLista(lista.size, "socios")
+    }
+    private fun renderVencimientos(lista: List<DBHelper.VencimientoCard>) {
+        vencimientosActuales = lista
+        aplicarFiltroVencimientos(filtroVencimiento)
+    }
+    private fun aplicarFiltroVencimientos(tipo: VencimientoFilters.Tipo) {
+        filtroVencimiento = tipo
+        val filtrados = VencimientoFilters.filtrar(vencimientosActuales, tipo)
+        vencimientoAdapter.submitList(filtrados)
+        val etiqueta = when (tipo) {
+            VencimientoFilters.Tipo.TODOS -> "vencimientos"
+            VencimientoFilters.Tipo.AL_DIA -> "vencimientos al dia"
+            VencimientoFilters.Tipo.POR_VENCER -> "vencimientos por vencer"
+            VencimientoFilters.Tipo.VENCIDO -> "vencimientos vencidos"
+        }
+        actualizarEstadoLista(filtrados.size, etiqueta)
+    }
+
+    private fun actualizarEstadoLista(cantidad: Int, tipo: String) {
+        tvEstadoLista.text = EmptyStateText.listado(cantidad, tipo, busquedaActual)
+    }
+    private fun exportarListadoVisible() {
+        val (nombreArchivo, csv) = when {
+            rvSocios.visibility == View.VISIBLE ->
+                "socios_$hoyISO.csv" to CsvExporter.socios(
+                    ListadoExportFilter.socios(sociosActuales, busquedaActual)
+                )
+
+            rvVenc.visibility == View.VISIBLE ->
+                "vencimientos_$hoyISO.csv" to CsvExporter.vencimientos(
+                    ListadoExportFilter.vencimientos(vencimientosActuales, busquedaActual, filtroVencimiento)
+                )
+
+            else ->
+                "no_socios_$hoyISO.csv" to CsvExporter.noSocios(
+                    ListadoExportFilter.noSocios(noSociosActuales, busquedaActual)
+                )
+        }
+        val dir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) ?: filesDir
+        File(dir, nombreArchivo).writeText(csv)
+        Toast.makeText(this, "CSV guardado: $nombreArchivo", Toast.LENGTH_LONG).show()
+    }
+
     private fun refreshVisibleList() {
         val rvSocios        = findViewById<RecyclerView>(R.id.rvSocios)
         val rvNoSocios      = findViewById<RecyclerView>(R.id.rvNoSocios)
@@ -192,23 +238,35 @@ class ListadosActivity : AppCompatActivity() {
             rvNoSocios.visibility == View.VISIBLE ->
                 renderNoSocios(db.obtenerNoSocios())
 
-            rvVencimientos.visibility == View.VISIBLE ->
+            rvVencimientos.visibility == View.VISIBLE -> {
                 renderVencimientos(db.obtenerVencimientos(hoyISO))
+                renderResumenVencimientos()
+            }
 
             else ->
                 renderNoSocios(db.obtenerNoSocios()) // fallback
         }
     }
     private fun filtrarSegunListaActual(texto: String) {
+        busquedaActual = texto.trim()
         when {
-            rvNoSocios.visibility == View.VISIBLE ->
-                noSocioAdapter.filtrarPorNombre(texto)
+            rvNoSocios.visibility == View.VISIBLE -> {
+                noSocioAdapter.filtrarPorNombre(busquedaActual)
+                actualizarEstadoLista(ListadoExportFilter.noSocios(noSociosActuales, busquedaActual).size, "no socios")
+            }
 
-            rvSocios.visibility == View.VISIBLE ->
-                socioAdapter.filtrarPorNombre(texto)
+            rvSocios.visibility == View.VISIBLE -> {
+                socioAdapter.filtrarPorNombre(busquedaActual)
+                actualizarEstadoLista(ListadoExportFilter.socios(sociosActuales, busquedaActual).size, "socios")
+            }
 
-            rvVenc.visibility == View.VISIBLE ->
-                vencimientoAdapter.filtrarPorNombre(texto) // si implementás filtro ahí
+            rvVenc.visibility == View.VISIBLE -> {
+                vencimientoAdapter.filtrarPorNombre(busquedaActual)
+                actualizarEstadoLista(
+                    ListadoExportFilter.vencimientos(vencimientosActuales, busquedaActual, filtroVencimiento).size,
+                    "vencimientos"
+                )
+            }
         }
     }
 }

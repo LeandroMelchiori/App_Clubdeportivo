@@ -101,6 +101,16 @@
                 android:textColor="@color/bg_dark"
                 android:textColorHint="#7A7A7A" />
 
+            <TextView
+                android:id="@+id/tvEstadoActividades"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:padding="8dp"
+                android:text="Todav&#237;a no hay actividades cargadas"
+                android:textColor="@color/text_secondary"
+                android:textSize="15sp" />
+
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/contenedorActividades"
                 android:layout_width="match_parent"

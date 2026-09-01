@@ -42,6 +42,10 @@
         <activity android:name=".PagoDeCuotaActivity" android:exported="false"/>
         <activity android:name=".ListadosActivity" android:exported="false"/>
         <activity android:name=".VerMasActivity" android:exported="false"/>
+        <activity android:name=".ProfesoresActivity" android:exported="false"/>
+        <activity android:name=".FormularioProfesorActivity" android:exported="false"/>
+        <activity android:name=".CatalogoActividadesActivity" android:exported="false"/>
+        <activity android:name=".FormularioCatalogoActividadActivity" android:exported="false"/>
 
 
     </application>
