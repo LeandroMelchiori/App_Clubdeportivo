@@ -986,6 +986,121 @@ package com.example.clubdeportivo
         }
         return writableDatabase.insert("pagos_actividad", null, cv)
     }
+    // ----------------------------------------- Profesores y Actividades (CRUD) -----------------------------------------
+    fun insertarProfesor(p: Profesor): Long {
+        val cv = ContentValues().apply {
+            put("dni", p.dni)
+            put("nombre", p.nombre)
+            put("apellido", p.apellido)
+            put("fecha_nac", p.fechaNac)
+            put("telefono", p.telefono)
+            put("direccion", p.direccion)
+            put("fecha_inscripcion", p.fechaInscripcion)
+            put("ficha_medica", if (p.fichaMedica) 1 else 0)
+            put("email", p.email)
+            put("activo", if (p.activo) 1 else 0)
+            put("titulo", p.titulo)
+        }
+        return writableDatabase.insert("profesores", null, cv)
+    }
+
+    fun actualizarProfesor(p: Profesor): Int {
+        val cv = ContentValues().apply {
+            put("nombre", p.nombre)
+            put("apellido", p.apellido)
+            put("fecha_nac", p.fechaNac)
+            put("telefono", p.telefono)
+            put("direccion", p.direccion)
+            put("fecha_inscripcion", p.fechaInscripcion)
+            put("ficha_medica", if (p.fichaMedica) 1 else 0)
+            put("email", p.email)
+            put("activo", if (p.activo) 1 else 0)
+            put("titulo", p.titulo)
+        }
+        return writableDatabase.update("profesores", cv, "dni = ?", arrayOf(p.dni))
+    }
+
+    fun obtenerProfesor(dni: String): Profesor? =
+        obtenerProfesores().firstOrNull { it.dni == dni }
+
+    fun obtenerProfesores(): List<Profesor> {
+        val list = mutableListOf<Profesor>()
+        readableDatabase.rawQuery("SELECT * FROM profesores ORDER BY nombre ASC", null).use { c ->
+            while (c.moveToNext()) {
+                list.add(
+                    Profesor(
+                        dni = c.getString(c.getColumnIndexOrThrow("dni")),
+                        nombre = c.getString(c.getColumnIndexOrThrow("nombre")),
+                        apellido = c.getString(c.getColumnIndexOrThrow("apellido")),
+                        fechaNac = c.getString(c.getColumnIndexOrThrow("fecha_nac")),
+                        telefono = c.getString(c.getColumnIndexOrThrow("telefono")),
+                        direccion = c.getString(c.getColumnIndexOrThrow("direccion")),
+                        fechaInscripcion = c.getString(c.getColumnIndexOrThrow("fecha_inscripcion")),
+                        fichaMedica = c.getInt(c.getColumnIndexOrThrow("ficha_medica")) == 1,
+                        email = c.getString(c.getColumnIndexOrThrow("email")),
+                        activo = c.getInt(c.getColumnIndexOrThrow("activo")) == 1,
+                        titulo = c.getStringOrNull("titulo")
+                    )
+                )
+            }
+        }
+        return list
+    }
+
+    fun darDeBajaProfesor(dni: String): Boolean {
+        val cv = ContentValues().apply { put("activo", 0) }
+        return writableDatabase.update("profesores", cv, "dni = ?", arrayOf(dni)) > 0
+    }
+
+    fun insertarCatalogoActividad(a: CatalogoActividad): Long {
+        val cv = ContentValues().apply {
+            put("nombre", a.nombre)
+            put("precio", a.precio)
+        }
+        return writableDatabase.insert("actividades", null, cv)
+    }
+
+    fun actualizarCatalogoActividad(a: CatalogoActividad): Int {
+        val cv = ContentValues().apply {
+            put("nombre", a.nombre)
+            put("precio", a.precio)
+        }
+        return writableDatabase.update("actividades", cv, "id_actividad = ?", arrayOf(a.id.toString()))
+    }
+
+    fun obtenerCatalogoActividad(id: Long): CatalogoActividad? =
+        obtenerCatalogoActividades().firstOrNull { it.id == id }
+
+    fun obtenerCatalogoActividades(): List<CatalogoActividad> {
+        val list = mutableListOf<CatalogoActividad>()
+        readableDatabase.rawQuery("SELECT * FROM actividades ORDER BY nombre ASC", null).use { c ->
+            while (c.moveToNext()) {
+                list.add(
+                    CatalogoActividad(
+                        id = c.getLong(c.getColumnIndexOrThrow("id_actividad")),
+                        nombre = c.getString(c.getColumnIndexOrThrow("nombre")),
+                        precio = c.getDouble(c.getColumnIndexOrThrow("precio"))
+                    )
+                )
+            }
+        }
+        return list
+    }
+
+    fun eliminarCatalogoActividad(id: Long): Boolean {
+        val assignments = android.database.DatabaseUtils.longForQuery(
+            readableDatabase,
+            "SELECT COUNT(*) FROM actividad_profesor WHERE actividad_id = ?",
+            arrayOf(id.toString())
+        )
+        if (assignments > 0L) return false
+        return writableDatabase.delete(
+            "actividades",
+            "id_actividad = ?",
+            arrayOf(id.toString())
+        ) > 0
+    }
+
     // ----------------------------------------- Delete -----------------------------------------
     // Borrado logico del padrón para evitar conflicto con tabla de pagos
     fun darDeBajaHorario(dhId: Int, motivo: String? = null): Boolean {
@@ -1273,6 +1388,26 @@ package com.example.clubdeportivo
         val montoCuotas: Double,
         val montoActividades: Double,
         val ingresosTotales: Double
+    )
+
+    data class Profesor(
+        val dni: String,
+        val nombre: String,
+        val apellido: String,
+        val fechaNac: String,
+        val telefono: String,
+        val direccion: String,
+        val fechaInscripcion: String,
+        val fichaMedica: Boolean,
+        val email: String,
+        val activo: Boolean,
+        val titulo: String?
+    )
+
+    data class CatalogoActividad(
+        val id: Long,
+        val nombre: String,
+        val precio: Double
     )
 
     // Herramientas

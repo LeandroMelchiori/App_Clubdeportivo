@@ -201,6 +201,9 @@ class VisualSmokeInstrumentedTest {
             onView(withId(R.id.btnGuardarConfiguracion)).perform(scrollTo(), click())
             onView(withText(R.string.club_config_saved)).check(matches(isDisplayed()))
             captureScreen("configuracion_formulario")
+            onView(withId(R.id.btnGestionProfesores)).perform(scrollTo())
+                .check(matches(isDisplayed()))
+            onView(withId(R.id.btnGestionActividades)).check(matches(isDisplayed()))
             onView(withId(R.id.btnCerrarSesion)).perform(scrollTo(), click())
             onView(withText(SessionDialogText.logoutMessage)).check(matches(isDisplayed()))
             captureScreen("configuracion_logout")
@@ -289,6 +292,96 @@ class VisualSmokeInstrumentedTest {
             captureScreen("actividades")
         } finally {
             scenario.close()
+        }
+    }
+
+    @Test
+    fun profesores_muestraListadoYAccionDeAlta() {
+        ensureCatalogManagementData()
+        val scenario = ActivityScenario.launch(ProfesoresActivity::class.java)
+        try {
+            onView(withId(R.id.tvTitulo)).check(matches(withText("Profesores")))
+            onView(withId(R.id.rvProfesores)).check(matches(isDisplayed()))
+            onView(withId(R.id.fabNuevoProfesor)).check(matches(isDisplayed()))
+            captureScreen("profesores")
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun catalogoActividades_muestraListadoYAccionDeAlta() {
+        ensureCatalogManagementData()
+        val scenario = ActivityScenario.launch(CatalogoActividadesActivity::class.java)
+        try {
+            onView(withId(R.id.tvTitulo)).check(matches(withText("Catalogo de actividades")))
+            onView(withId(R.id.rvCatalogo)).check(matches(isDisplayed()))
+            onView(withId(R.id.fabNuevaActividad)).check(matches(isDisplayed()))
+            captureScreen("catalogo_actividades")
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun formularioProfesor_muestraDatosProfesionalesYAcciones() {
+        val scenario = ActivityScenario.launch(FormularioProfesorActivity::class.java)
+        try {
+            onView(withId(R.id.tvTituloFormulario)).check(matches(withText("Nuevo profesor")))
+            onView(withId(R.id.etDni)).check(matches(isDisplayed()))
+            onView(withId(R.id.etNombre)).check(matches(isDisplayed()))
+            onView(withId(R.id.etFechaNacimiento)).perform(scrollTo())
+                .check(matches(isDisplayed()))
+            captureScreen("formulario_profesor_datos")
+            onView(withId(R.id.btnGuardar)).perform(scrollTo())
+                .check(matches(isDisplayed()))
+            onView(withId(R.id.btnCancelar)).check(matches(isDisplayed()))
+            captureScreen("formulario_profesor_acciones")
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun formularioCatalogo_muestraDatosYAcciones() {
+        val scenario = ActivityScenario.launch(FormularioCatalogoActividadActivity::class.java)
+        try {
+            onView(withId(R.id.tvTituloFormulario)).check(matches(withText("Nueva actividad")))
+            onView(withId(R.id.etNombreActividad)).check(matches(isDisplayed()))
+            onView(withId(R.id.etPrecio)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnGuardar)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnCancelar)).check(matches(isDisplayed()))
+            captureScreen("formulario_catalogo")
+        } finally {
+            scenario.close()
+        }
+    }
+
+    private fun ensureCatalogManagementData() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        DBHelper(context).use { helper ->
+            if (helper.obtenerProfesor("30123456") == null) {
+                helper.insertarProfesor(
+                    DBHelper.Profesor(
+                        dni = "30123456",
+                        nombre = "Laura",
+                        apellido = "Gomez",
+                        fechaNac = "1991-05-20",
+                        telefono = "3415551000",
+                        direccion = "Calle 10",
+                        fechaInscripcion = "2026-09-01",
+                        fichaMedica = true,
+                        email = "laura@example.com",
+                        activo = true,
+                        titulo = "Entrenadora"
+                    )
+                )
+            }
+            if (helper.obtenerCatalogoActividades().none { it.nombre == "Pilates visual" }) {
+                helper.insertarCatalogoActividad(
+                    DBHelper.CatalogoActividad(-1L, "Pilates visual", 8500.0)
+                )
+            }
         }
     }
 

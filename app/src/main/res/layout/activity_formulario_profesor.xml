@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_dark"
+    android:clipToPadding="false"
+    android:fillViewport="true"
+    android:paddingStart="20dp"
+    android:paddingTop="24dp"
+    android:paddingEnd="20dp"
+    android:paddingBottom="32dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvTituloFormulario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/new_professor_title"
+            android:textColor="@color/text_primary"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <TextView
+            style="@style/ClubFormLabel"
+            android:labelFor="@id/etDni"
+            android:text="@string/dni_label" />
+
+        <EditText
+            android:id="@+id/etDni"
+            style="@style/ClubFormInput"
+            android:importantForAutofill="no"
+            android:inputType="number"
+            android:maxLength="9" />
+
+        <TextView
+            style="@style/ClubFormLabel"
+            android:labelFor="@id/etNombre"
+            android:text="@string/name_label" />
+
+        <EditText
+            android:id="@+id/etNombre"
+            style="@style/ClubFormInput"
+            android:importantForAutofill="no"
+            android:inputType="textCapWords"
+            android:maxLength="80" />
+
+        <TextView
+            style="@style/ClubFormLabel"
+            android:labelFor="@id/etApellido"
+            android:text="@string/last_name_label" />
+
+        <EditText
+            android:id="@+id/etApellido"
+            style="@style/ClubFormInput"
+            android:importantForAutofill="no"
+            android:inputType="textCapWords"
+            android:maxLength="80" />
+
+        <TextView
+            style="@style/ClubFormLabel"
+            android:labelFor="@id/etFechaNacimiento"
+            android:text="@string/birth_date_label" />
+
+        <EditText
+            android:id="@+id/etFechaNacimiento"
+            style="@style/ClubFormInput"
+            android:importantForAutofill="no"
+            android:inputType="date"
+            android:maxLength="10" />
+
+        <TextView
+            style="@style/ClubFormLabel"
+            android:labelFor="@id/etTitulo"
+            android:text="@string/professional_title_label" />
+
+        <EditText
+            android:id="@+id/etTitulo"
+            style="@style/ClubFormInput"
+            android:importantForAutofill="no"
+            android:inputType="textCapSentences"
+            android:maxLength="100" />
+
+        <TextView
+            style="@style/ClubFormLabel"
+            android:labelFor="@id/etTelefono"
+            android:text="@string/phone_label" />
+
+        <EditText
+            android:id="@+id/etTelefono"
+            style="@style/ClubFormInput"
+            android:importantForAutofill="no"
+            android:inputType="phone"
+            android:maxLength="20" />
+
+        <TextView
+            style="@style/ClubFormLabel"
+            android:labelFor="@id/etEmail"
+            android:text="@string/email_label" />
+
+        <EditText
+            android:id="@+id/etEmail"
+            style="@style/ClubFormInput"
+            android:importantForAutofill="no"
+            android:inputType="textEmailAddress"
+            android:maxLength="120" />
+
+        <TextView
+            style="@style/ClubFormLabel"
+            android:labelFor="@id/etDireccion"
+            android:text="@string/address_label" />
+
+        <EditText
+            android:id="@+id/etDireccion"
+            style="@style/ClubFormInput"
+            android:importantForAutofill="no"
+            android:inputType="textPostalAddress"
+            android:maxLength="160" />
+
+        <CheckBox
+            android:id="@+id/cbFichaMedica"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="16dp"
+            android:text="@string/medical_record_current"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            app:buttonTint="@color/blue_accent" />
+
+        <CheckBox
+            android:id="@+id/cbActivo"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:checked="true"
+            android:text="@string/professor_active"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            app:buttonTint="@color/blue_accent" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancelar"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="@string/action_cancel"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary"
+                app:backgroundTint="@color/card_dark"
+                app:cornerRadius="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGuardar"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:text="@string/action_save"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary"
+                app:backgroundTint="@color/blue_start"
+                app:cornerRadius="8dp" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

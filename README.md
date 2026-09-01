@@ -107,6 +107,7 @@ Convenciones importantes:
 6. Pago de actividad registra pagos puntuales de no socios.
 7. Resumen mensual agrupa ingresos por cuotas y actividades.
 8. Configuracion permite guardar identidad, logo y reglas comerciales del club sin integrar cobros reales.
+9. Administracion permite crear, editar y dar de baja profesores, ademas de mantener el catalogo y los precios de actividades.
 
 ## Pruebas
 
@@ -116,14 +117,15 @@ Tests unitarios JVM:
 - `LoginCredentialsTest`: credenciales validas e invalidas.
 - `ClubConfigurationValidatorTest`: normalizacion, importes locales y reglas de campos.
 - `DatabaseMigrationPlannerTest`: orden y seguridad de las migraciones de esquema.
+- `CatalogManagementValidatorTest`: identidad, contacto, fechas e importes regionales de profesores y actividades.
 
 Tests instrumentados:
 
-- `DBHelperInstrumentedTest`: usa fixtures aislados y verifica pagos, cuenta corriente y solapamientos sin depender del seed demo.
+- `DBHelperInstrumentedTest`: usa fixtures aislados y verifica pagos, cuenta corriente, solapamientos y CRUD protegido de profesores/actividades sin depender del seed demo.
 - `EnvironmentDatabaseInstrumentedTest`: confirma que demo inicia con datos y production con tablas operativas vacias.
 - `ClubConfigurationInstrumentedTest`: verifica valores iniciales y persistencia completa en SQLite.
 - `ClubConfigurationMigrationInstrumentedTest`: migra de v2 a v3 sin borrar datos.
-- `VisualSmokeInstrumentedTest`: recorre las pantallas principales, valida la etiqueta demo y genera capturas de identidad, formulario y dialogos por variante.
+- `VisualSmokeInstrumentedTest`: recorre las pantallas principales y genera capturas por variante, incluidos los listados y formularios de profesores y actividades.
 
 Para obtener evidencia visual, ejecutar:
 

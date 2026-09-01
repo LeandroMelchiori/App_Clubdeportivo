@@ -59,6 +59,12 @@ class ConfiguracionActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.btnGuardarConfiguracion).setOnClickListener {
             saveConfiguration()
         }
+        findViewById<MaterialButton>(R.id.btnGestionProfesores).setOnClickListener {
+            startActivity(Intent(this, ProfesoresActivity::class.java))
+        }
+        findViewById<MaterialButton>(R.id.btnGestionActividades).setOnClickListener {
+            startActivity(Intent(this, CatalogoActividadesActivity::class.java))
+        }
         setupLogout()
         BottomNavHelper.setup(
             this,

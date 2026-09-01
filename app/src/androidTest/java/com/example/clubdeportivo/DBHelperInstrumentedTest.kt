@@ -79,6 +79,50 @@ class DBHelperInstrumentedTest {
         assertTrue(cuenta!!.movimientos.isNotEmpty())
     }
 
+    @Test
+    fun profesores_permiteAltaEdicionYBajaLogica() {
+        val professor = DBHelper.Profesor(
+            dni = "30123456",
+            nombre = "Laura",
+            apellido = "Gomez",
+            fechaNac = "1991-05-20",
+            telefono = "3415551000",
+            direccion = "Calle 10",
+            fechaInscripcion = "2026-09-01",
+            fichaMedica = true,
+            email = "laura@example.com",
+            activo = true,
+            titulo = "Entrenadora"
+        )
+
+        assertTrue(helper.insertarProfesor(professor) > 0L)
+        assertEquals("Laura", helper.obtenerProfesor(professor.dni)?.nombre)
+        assertEquals(1, helper.actualizarProfesor(professor.copy(nombre = "Laurita")))
+        assertEquals("Laurita", helper.obtenerProfesor(professor.dni)?.nombre)
+        assertTrue(helper.darDeBajaProfesor(professor.dni))
+        assertEquals(false, helper.obtenerProfesor(professor.dni)?.activo)
+    }
+
+    @Test
+    fun catalogo_permiteCrudYProtegeActividadesAsignadas() {
+        val activityId = helper.insertarCatalogoActividad(
+            DBHelper.CatalogoActividad(-1L, "Pilates", 8500.0)
+        )
+
+        assertTrue(activityId > 0L)
+        assertEquals(8500.0, helper.obtenerCatalogoActividad(activityId)?.precio ?: 0.0, 0.0)
+        assertEquals(
+            1,
+            helper.actualizarCatalogoActividad(
+                DBHelper.CatalogoActividad(activityId, "Pilates reformer", 9000.0)
+            )
+        )
+        assertEquals("Pilates reformer", helper.obtenerCatalogoActividad(activityId)?.nombre)
+        assertTrue(helper.eliminarCatalogoActividad(activityId))
+        assertEquals(null, helper.obtenerCatalogoActividad(activityId))
+        assertEquals(false, helper.eliminarCatalogoActividad(1L))
+    }
+
     private fun prepararDatosDePrueba() {
         helper.writableDatabase.apply {
             beginTransaction()
