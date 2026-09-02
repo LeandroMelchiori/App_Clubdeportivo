@@ -1,6 +1,6 @@
 # Club deportivo
 
-Aplicación Android nativa para la administración de finanzas y personal en clubes deportivos
+Aplicación Android nativa para la administración de finanzas y personal en clubes deportivos...
 
 ## Stack
 
