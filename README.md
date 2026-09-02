@@ -1,6 +1,6 @@
 # Club deportivo
 
-Aplicacion Android nativa para administrar un club deportivo: clientes, socios, no socios, actividades, profesores, horarios, pagos de cuotas, pagos por actividad y resumen mensual de ingresos.
+Aplicacion android nativa para la administracion de clubes deportivos
 
 ## Stack
 
