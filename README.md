@@ -55,14 +55,6 @@ Desde la raiz del proyecto en Windows:
 
 `connectedAndroidTest` requiere un emulador o dispositivo conectado.
 
-## Credenciales temporales de prueba
-
-El login actual acepta usuarios temporales donde usuario y contrasena coinciden. Esta autenticacion debe reemplazarse antes de una entrega profesional:
-
-- `admin` / `admin`
-- `sacha` / `sacha`
-La validacion vive en `LoginCredentials.kt` y tiene tests unitarios.
-
 ## Estructura
 
 - `app/src/main/java/com/example/clubdeportivo/`: Activities, adapters, helpers y reglas simples.
