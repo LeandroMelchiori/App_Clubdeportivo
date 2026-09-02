@@ -60,11 +60,7 @@ Desde la raiz del proyecto en Windows:
 El login actual acepta usuarios temporales donde usuario y contrasena coinciden. Esta autenticacion debe reemplazarse antes de una entrega profesional:
 
 - `admin` / `admin`
-- `charlie` / `charlie`
 - `sacha` / `sacha`
-- `javo` / `javo`
-- `heber` / `heber`
-
 La validacion vive en `LoginCredentials.kt` y tiene tests unitarios.
 
 ## Estructura
