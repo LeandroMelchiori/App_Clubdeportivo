@@ -129,6 +129,7 @@ Luego revisar los artefactos generados por Android Test Orchestrator/runner en e
 ## Notas para desarrollo
 
 - Mantener la arquitectura actual salvo que se planifique una refactorizacion mayor.
+- Con `targetSdk` 36 la app se dibuja detras de las barras del sistema. Las pantallas sin `BottomNavigationView` deben llamar a `SystemBarInsets.applyTo(this)` despues de `setContentView`.
 - Evitar introducir Compose, Room, Hilt o Navigation Component sin decision explicita.
 - Revisar `AGENTS.md` y `CLAUDE.md` antes de cambios grandes.
 - Si se modifica el esquema de SQLite, subir version de DB y definir migracion en `onUpgrade`.
