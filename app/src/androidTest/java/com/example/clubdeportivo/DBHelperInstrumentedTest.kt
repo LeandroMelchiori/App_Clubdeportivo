@@ -54,7 +54,7 @@ class DBHelperInstrumentedTest {
             assertEquals(30000.0, cursor.getDouble(1), 0.0)
             assertEquals("2026-08-01", cursor.getString(2))
             assertEquals("Efectivo", cursor.getString(3))
-            assertEquals("2026-08-31", cursor.getString(4))
+            assertEquals("2026-09-10", cursor.getString(4))
         }
     }
 

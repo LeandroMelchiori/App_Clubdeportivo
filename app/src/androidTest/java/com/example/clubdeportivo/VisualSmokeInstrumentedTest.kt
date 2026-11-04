@@ -72,6 +72,7 @@ class VisualSmokeInstrumentedTest {
             .putExtra("usuario", "QA")
         val scenario = ActivityScenario.launch<ListadosActivity>(intent)
         try {
+            onView(withId(R.id.rvNoSocios)).check(matches(isDisplayed()))
             onView(withId(R.id.btnListVencimientos)).check(matches(isDisplayed()))
             onView(withId(R.id.btnListVencimientos)).perform(click())
             onView(withId(R.id.panelFiltrosVencimientos)).check(matches(isDisplayed()))
@@ -83,7 +84,7 @@ class VisualSmokeInstrumentedTest {
             onView(withId(R.id.tvResumenVencimientos)).check(matches(isDisplayed()))
             onView(withId(R.id.tvEstadoLista)).check(matches(isDisplayed()))
             onView(withId(R.id.btnExportarListados)).check(matches(isDisplayed()))
-            onView(withId(R.id.rvNoSocios)).check(matches(isDisplayed()))
+            onView(withId(R.id.rvVencimientos)).check(matches(isDisplayed()))
             captureScreen("listados")
         } finally {
             scenario.close()
@@ -105,7 +106,8 @@ class VisualSmokeInstrumentedTest {
             onView(withId(R.id.btnHistorialTodos)).check(matches(isDisplayed()))
             onView(withId(R.id.btnHistorialCuotas)).check(matches(isDisplayed()))
             onView(withId(R.id.btnHistorialActividades)).check(matches(isDisplayed()))
-            onView(withContentDescription(AccessibilityText.deletePerson)).check(matches(isDisplayed()))
+            onView(withContentDescription(AccessibilityText.deletePerson)).perform(scrollTo())
+                .check(matches(isDisplayed()))
             onView(withId(R.id.btnEliminar)).perform(click())
             onView(withText(DeletePersonDialogText.title)).check(matches(isDisplayed()))
             captureScreen("ver_mas_usuario")
@@ -181,7 +183,7 @@ class VisualSmokeInstrumentedTest {
             onView(withId(R.id.spActividad)).check(matches(isDisplayed()))
             onView(withId(R.id.spProfesor)).check(matches(isDisplayed()))
             onView(withId(R.id.spDia)).check(matches(isDisplayed()))
-            onView(withId(R.id.btnIngresar)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnIngresar)).perform(scrollTo()).check(matches(isDisplayed()))
             captureScreen("nuevo_horario")
         } finally {
             scenario.close()
@@ -197,7 +199,7 @@ class VisualSmokeInstrumentedTest {
         try {
             onView(withId(R.id.ivClubLogo)).check(matches(isDisplayed()))
             onView(withId(R.id.etClubNombre)).check(matches(isDisplayed()))
-            onView(withId(R.id.spClubMoneda)).check(matches(isDisplayed()))
+            onView(withId(R.id.spClubMoneda)).perform(scrollTo()).check(matches(isDisplayed()))
             onView(withId(R.id.bottomNav)).check(matches(isDisplayed()))
             captureScreen("configuracion_identidad")
             onView(withId(R.id.btnGuardarConfiguracion)).perform(scrollTo(), click())
@@ -205,7 +207,8 @@ class VisualSmokeInstrumentedTest {
             captureScreen("configuracion_formulario")
             onView(withId(R.id.btnGestionProfesores)).perform(scrollTo())
                 .check(matches(isDisplayed()))
-            onView(withId(R.id.btnGestionActividades)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnGestionActividades)).perform(scrollTo())
+                .check(matches(isDisplayed()))
             onView(withId(R.id.btnImportarClientes)).perform(scrollTo())
                 .check(matches(isDisplayed()))
             onView(withId(R.id.btnCerrarSesion)).perform(scrollTo(), click())
@@ -227,7 +230,7 @@ class VisualSmokeInstrumentedTest {
             onView(withText("Fecha de nacimiento:")).check(matches(isDisplayed()))
             onView(withId(R.id.etNombre)).check(matches(isDisplayed()))
             onView(withId(R.id.etDNI)).check(matches(isDisplayed()))
-            onView(withId(R.id.btnRegistrar)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnRegistrar)).perform(scrollTo()).check(matches(isDisplayed()))
             captureScreen("nuevo_usuario")
         } finally {
             scenario.close()
@@ -246,7 +249,7 @@ class VisualSmokeInstrumentedTest {
             onView(withText("Fecha de nacimiento:")).check(matches(isDisplayed()))
             onView(withId(R.id.etNombre)).check(matches(isDisplayed()))
             onView(withId(R.id.etDni)).check(matches(isDisplayed()))
-            onView(withId(R.id.btnConfirmar)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnConfirmar)).perform(scrollTo()).check(matches(isDisplayed()))
             captureScreen("editar_usuario")
         } finally {
             scenario.close()
@@ -272,7 +275,7 @@ class VisualSmokeInstrumentedTest {
             onView(withId(R.id.spActividad)).check(matches(isDisplayed()))
             onView(withId(R.id.spDia)).check(matches(isDisplayed()))
             onView(withId(R.id.spHoraInicio)).check(matches(isDisplayed()))
-            onView(withId(R.id.btnIngresar)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnIngresar)).perform(scrollTo()).check(matches(isDisplayed()))
             captureScreen("editar_actividad")
         } finally {
             scenario.close()
