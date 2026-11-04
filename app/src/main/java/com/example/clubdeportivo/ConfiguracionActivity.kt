@@ -65,6 +65,9 @@ class ConfiguracionActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.btnGestionActividades).setOnClickListener {
             startActivity(Intent(this, CatalogoActividadesActivity::class.java))
         }
+        findViewById<MaterialButton>(R.id.btnImportarClientes).setOnClickListener {
+            startActivity(Intent(this, ImportarClientesActivity::class.java))
+        }
         setupLogout()
         BottomNavHelper.setup(
             this,

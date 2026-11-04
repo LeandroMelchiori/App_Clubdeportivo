@@ -1,6 +1,8 @@
 package com.example.clubdeportivo
 
 import android.content.Context
+import android.database.DatabaseUtils
+import android.database.sqlite.SQLiteConstraintException
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.After
@@ -122,6 +124,64 @@ class DBHelperInstrumentedTest {
         assertEquals(null, helper.obtenerCatalogoActividad(activityId))
         assertEquals(false, helper.eliminarCatalogoActividad(1L))
     }
+
+    @Test
+    fun importarClientes_guardaNoSociosActivosConFechaDeInscripcion() {
+        val imported = helper.importarClientes(
+            listOf(clienteImportado("30111222", "ana@club.com"), clienteImportado("30111223", "eva@club.com")),
+            fechaInscripcion = "2026-11-04"
+        )
+
+        assertEquals(2, imported)
+        helper.readableDatabase.rawQuery(
+            """
+                SELECT esSocio, activo, carnet, ficha_medica, fecha_inscripcion, fecha_nac
+                FROM clientes
+                WHERE dni = ?
+            """.trimIndent(),
+            arrayOf("30111222")
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(0, cursor.getInt(0))
+            assertEquals(1, cursor.getInt(1))
+            assertEquals(0, cursor.getInt(2))
+            assertEquals(1, cursor.getInt(3))
+            assertEquals("2026-11-04", cursor.getString(4))
+            assertEquals("1990-04-05", cursor.getString(5))
+        }
+        val identities = helper.obtenerIdentidadesClientes()
+        assertTrue(identities.dnis.containsAll(listOf(CLIENT_DNI, "30111222", "30111223")))
+        assertTrue("eva@club.com" in identities.emails)
+    }
+
+    @Test
+    fun importarClientes_noGuardaNadaSiUnaFilaFalla() {
+        assertThrows(SQLiteConstraintException::class.java) {
+            helper.importarClientes(
+                listOf(clienteImportado("30111222", "ana@club.com"), clienteImportado(CLIENT_DNI, "otro@club.com")),
+                fechaInscripcion = "2026-11-04"
+            )
+        }
+
+        assertEquals(
+            0L,
+            DatabaseUtils.longForQuery(
+                helper.readableDatabase,
+                "SELECT COUNT(*) FROM clientes WHERE dni = ?",
+                arrayOf("30111222")
+            )
+        )
+    }
+
+    private fun clienteImportado(dni: String, email: String) = ClientCsvImport.Client(
+        dni = dni,
+        name = "Ana",
+        lastName = "Perez",
+        birthDate = "1990-04-05",
+        phone = "3415551111",
+        address = "Calle 1",
+        email = email
+    )
 
     private fun prepararDatosDePrueba() {
         helper.writableDatabase.apply {

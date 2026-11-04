@@ -13,6 +13,8 @@
     <color name="blue_end">#005C99</color>
     <color name="blue_accent">#00A7FF</color>
     <color name="red">#E35555</color>
+    <!-- Rojo aclarado para texto de error sobre tarjetas oscuras (contraste AA). -->
+    <color name="error_on_dark">#FF8A80</color>
 
     <color name="border_dim">#33FFFFFF</color>
 

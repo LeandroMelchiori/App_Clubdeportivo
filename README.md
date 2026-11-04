@@ -96,6 +96,7 @@ Convenciones importantes:
 7. Resumen mensual agrupa ingresos por cuotas y actividades.
 8. Configuracion permite guardar identidad, logo y reglas comerciales del club sin integrar cobros reales.
 9. Administracion permite crear, editar y dar de baja profesores, ademas de mantener el catalogo y los precios de actividades.
+10. Importar clientes desde CSV muestra una previsualizacion con validacion por fila y resumen de errores, y pide confirmacion antes de guardar. Acepta archivos separados por coma o punto y coma (UTF-8 o Windows-1252), hasta 1 MB y 2000 filas. Las filas validas se guardan juntas en una sola transaccion como no socios activos; las filas con errores no se importan.
 
 ## Pruebas
 
@@ -106,14 +107,16 @@ Tests unitarios JVM:
 - `ClubConfigurationValidatorTest`: normalizacion, importes locales y reglas de campos.
 - `DatabaseMigrationPlannerTest`: orden y seguridad de las migraciones de esquema.
 - `CatalogManagementValidatorTest`: identidad, contacto, fechas e importes regionales de profesores y actividades.
+- `CsvParserTest`: comillas, saltos de linea, separador `;` de Excel, lineas vacias y codificacion Windows-1252.
+- `ClientCsvImportTest`: columnas obligatorias, normalizacion de DNI, telefono, fecha y email, errores por fila y duplicados contra la base y dentro del archivo.
 
 Tests instrumentados:
 
-- `DBHelperInstrumentedTest`: usa fixtures aislados y verifica pagos, cuenta corriente, solapamientos y CRUD protegido de profesores/actividades sin depender del seed demo.
+- `DBHelperInstrumentedTest`: usa fixtures aislados y verifica pagos, cuenta corriente, solapamientos, CRUD protegido de profesores/actividades e importacion de clientes todo o nada sin depender del seed demo.
 - `EnvironmentDatabaseInstrumentedTest`: confirma que demo inicia con datos y production con tablas operativas vacias.
 - `ClubConfigurationInstrumentedTest`: verifica valores iniciales y persistencia completa en SQLite.
 - `ClubConfigurationMigrationInstrumentedTest`: migra de v2 a v3 sin borrar datos.
-- `VisualSmokeInstrumentedTest`: recorre las pantallas principales y genera capturas por variante, incluidos los listados y formularios de profesores y actividades.
+- `VisualSmokeInstrumentedTest`: recorre las pantallas principales y genera capturas por variante, incluidos los listados y formularios de profesores y actividades y la previsualizacion, el filtro de errores y la confirmacion de la importacion CSV.
 
 Para obtener evidencia visual, ejecutar:
 

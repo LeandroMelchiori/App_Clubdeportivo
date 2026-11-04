@@ -1305,8 +1305,54 @@ package com.example.clubdeportivo
         }
     }
 
+    // Importacion CSV
+    fun obtenerIdentidadesClientes(): IdentidadesClientes {
+        val dnis = mutableSetOf<String>()
+        val emails = mutableSetOf<String>()
+        readableDatabase.rawQuery("SELECT dni, email FROM clientes", null).use { c ->
+            while (c.moveToNext()) {
+                dnis.add(c.getString(0))
+                c.getStringOrNull("email")?.let { emails.add(it.trim().lowercase()) }
+            }
+        }
+        return IdentidadesClientes(dnis, emails)
+    }
+
+    // Todo o nada: si una fila falla no queda una importacion a medias.
+    fun importarClientes(clientes: List<ClientCsvImport.Client>, fechaInscripcion: String): Int {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            clientes.forEach { cliente ->
+                val cv = ContentValues().apply {
+                    put("dni", cliente.dni)
+                    put("nombre", cliente.name)
+                    put("apellido", cliente.lastName)
+                    put("fecha_nac", cliente.birthDate)
+                    put("telefono", cliente.phone)
+                    put("direccion", cliente.address)
+                    put("email", cliente.email)
+                    put("fecha_inscripcion", fechaInscripcion)
+                    put("ficha_medica", 1)
+                    put("esSocio", 0)
+                    put("activo", 1)
+                    put("carnet", 0)
+                }
+                db.insertOrThrow("clientes", null, cv)
+            }
+            db.setTransactionSuccessful()
+            return clientes.size
+        } finally {
+            db.endTransaction()
+        }
+    }
+
     // ----------------------------------------- Utilidades -----------------------------------------
     // Modelos de datos
+    data class IdentidadesClientes(
+        val dnis: Set<String>,
+        val emails: Set<String>
+    )
     data class NoSocioCard(
         val nombre: String,
         val apellido: String,

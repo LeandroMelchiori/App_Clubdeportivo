@@ -46,6 +46,7 @@
         <activity android:name=".FormularioProfesorActivity" android:exported="false"/>
         <activity android:name=".CatalogoActividadesActivity" android:exported="false"/>
         <activity android:name=".FormularioCatalogoActividadActivity" android:exported="false"/>
+        <activity android:name=".ImportarClientesActivity" android:exported="false"/>
 
 
     </application>

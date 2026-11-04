@@ -283,6 +283,17 @@
                 app:backgroundTint="@color/white_button"
                 app:cornerRadius="8dp" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnImportarClientes"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="10dp"
+                android:text="@string/import_clients"
+                android:textAllCaps="false"
+                android:textColor="@color/black"
+                app:backgroundTint="@color/white_button"
+                app:cornerRadius="8dp" />
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
