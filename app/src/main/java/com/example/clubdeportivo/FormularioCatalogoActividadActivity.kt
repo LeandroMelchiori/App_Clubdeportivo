@@ -15,6 +15,7 @@ class FormularioCatalogoActividadActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_formulario_catalogo)
+        SystemBarInsets.applyTo(this)
 
         dbHelper = DBHelper(this)
         val nameInput = findViewById<EditText>(R.id.etNombreActividad)

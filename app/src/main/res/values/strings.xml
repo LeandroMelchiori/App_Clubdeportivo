@@ -78,4 +78,24 @@
     <string name="professor_status_active">Estado: Activo</string>
     <string name="professor_status_inactive">Estado: Inactivo</string>
     <string name="activity_base_price">Precio base: %1$s</string>
+    <string name="import_clients">Importar clientes desde CSV</string>
+    <string name="import_clients_title">Importar clientes</string>
+    <string name="import_clients_format_title">Cómo preparar el archivo</string>
+    <string name="import_clients_format_body">La primera fila debe tener estas columnas: dni, nombre, apellido, fecha_nacimiento, telefono, direccion y email.\n\nUsa fechas DD/MM/AAAA, por ejemplo 05/04/1990. Se aceptan archivos separados por coma o por punto y coma, como los que guarda Excel.\n\nLos clientes se registran como no socios. Para hacerlos socios, registra su primera cuota desde Listados.</string>
+    <string name="import_clients_select_file">Seleccionar archivo CSV</string>
+    <string name="import_clients_select_other_file">Elegir otro archivo</string>
+    <string name="import_clients_download_template">Descargar plantilla</string>
+    <string name="import_clients_template_saved">Plantilla guardada</string>
+    <string name="import_clients_template_error">No se pudo guardar la plantilla</string>
+    <string name="import_clients_unnamed_file">Archivo CSV</string>
+    <string name="import_clients_read_error">No se pudo leer el archivo. Verifica que sea un CSV y vuelve a intentarlo.</string>
+    <string name="import_clients_too_large">El archivo supera 1 MB. Divídelo en partes más chicas.</string>
+    <string name="import_clients_filter_all">Todas (%1$d)</string>
+    <string name="import_clients_filter_errors">Con errores (%1$d)</string>
+    <string name="import_clients_no_errors">No hay filas con errores</string>
+    <string name="import_clients_confirm_title">Confirmar importación</string>
+    <string name="import_clients_confirm_action">Importar</string>
+    <string name="import_clients_failed">No se pudo importar. No se guardó ningún cliente; vuelve a cargar el archivo.</string>
+    <string name="import_row_ready">Lista</string>
+    <string name="import_row_has_errors">Con errores</string>
 </resources>

@@ -18,6 +18,7 @@ class CatalogoActividadesActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_catalogo_actividades)
+        SystemBarInsets.applyTo(this)
 
         dbHelper = DBHelper(this)
 

@@ -17,6 +17,7 @@ class FormularioProfesorActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_formulario_profesor)
+        SystemBarInsets.applyTo(this)
 
         dbHelper = DBHelper(this)
         val dniInput = findViewById<EditText>(R.id.etDni)

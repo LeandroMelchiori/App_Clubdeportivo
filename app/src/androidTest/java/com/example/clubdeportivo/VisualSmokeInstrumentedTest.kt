@@ -3,6 +3,7 @@ package com.example.clubdeportivo
 import android.content.ContentValues
 import android.content.Intent
 import android.database.sqlite.SQLiteDatabase
+import android.net.Uri
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onView
@@ -17,6 +18,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.runner.screenshot.Screenshot
+import java.io.File
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -70,6 +72,7 @@ class VisualSmokeInstrumentedTest {
             .putExtra("usuario", "QA")
         val scenario = ActivityScenario.launch<ListadosActivity>(intent)
         try {
+            onView(withId(R.id.rvNoSocios)).check(matches(isDisplayed()))
             onView(withId(R.id.btnListVencimientos)).check(matches(isDisplayed()))
             onView(withId(R.id.btnListVencimientos)).perform(click())
             onView(withId(R.id.panelFiltrosVencimientos)).check(matches(isDisplayed()))
@@ -81,7 +84,7 @@ class VisualSmokeInstrumentedTest {
             onView(withId(R.id.tvResumenVencimientos)).check(matches(isDisplayed()))
             onView(withId(R.id.tvEstadoLista)).check(matches(isDisplayed()))
             onView(withId(R.id.btnExportarListados)).check(matches(isDisplayed()))
-            onView(withId(R.id.rvNoSocios)).check(matches(isDisplayed()))
+            onView(withId(R.id.rvVencimientos)).check(matches(isDisplayed()))
             captureScreen("listados")
         } finally {
             scenario.close()
@@ -103,7 +106,8 @@ class VisualSmokeInstrumentedTest {
             onView(withId(R.id.btnHistorialTodos)).check(matches(isDisplayed()))
             onView(withId(R.id.btnHistorialCuotas)).check(matches(isDisplayed()))
             onView(withId(R.id.btnHistorialActividades)).check(matches(isDisplayed()))
-            onView(withContentDescription(AccessibilityText.deletePerson)).check(matches(isDisplayed()))
+            onView(withContentDescription(AccessibilityText.deletePerson)).perform(scrollTo())
+                .check(matches(isDisplayed()))
             onView(withId(R.id.btnEliminar)).perform(click())
             onView(withText(DeletePersonDialogText.title)).check(matches(isDisplayed()))
             captureScreen("ver_mas_usuario")
@@ -179,7 +183,7 @@ class VisualSmokeInstrumentedTest {
             onView(withId(R.id.spActividad)).check(matches(isDisplayed()))
             onView(withId(R.id.spProfesor)).check(matches(isDisplayed()))
             onView(withId(R.id.spDia)).check(matches(isDisplayed()))
-            onView(withId(R.id.btnIngresar)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnIngresar)).perform(scrollTo()).check(matches(isDisplayed()))
             captureScreen("nuevo_horario")
         } finally {
             scenario.close()
@@ -195,7 +199,7 @@ class VisualSmokeInstrumentedTest {
         try {
             onView(withId(R.id.ivClubLogo)).check(matches(isDisplayed()))
             onView(withId(R.id.etClubNombre)).check(matches(isDisplayed()))
-            onView(withId(R.id.spClubMoneda)).check(matches(isDisplayed()))
+            onView(withId(R.id.spClubMoneda)).perform(scrollTo()).check(matches(isDisplayed()))
             onView(withId(R.id.bottomNav)).check(matches(isDisplayed()))
             captureScreen("configuracion_identidad")
             onView(withId(R.id.btnGuardarConfiguracion)).perform(scrollTo(), click())
@@ -203,7 +207,10 @@ class VisualSmokeInstrumentedTest {
             captureScreen("configuracion_formulario")
             onView(withId(R.id.btnGestionProfesores)).perform(scrollTo())
                 .check(matches(isDisplayed()))
-            onView(withId(R.id.btnGestionActividades)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnGestionActividades)).perform(scrollTo())
+                .check(matches(isDisplayed()))
+            onView(withId(R.id.btnImportarClientes)).perform(scrollTo())
+                .check(matches(isDisplayed()))
             onView(withId(R.id.btnCerrarSesion)).perform(scrollTo(), click())
             onView(withText(SessionDialogText.logoutMessage)).check(matches(isDisplayed()))
             captureScreen("configuracion_logout")
@@ -223,7 +230,7 @@ class VisualSmokeInstrumentedTest {
             onView(withText("Fecha de nacimiento:")).check(matches(isDisplayed()))
             onView(withId(R.id.etNombre)).check(matches(isDisplayed()))
             onView(withId(R.id.etDNI)).check(matches(isDisplayed()))
-            onView(withId(R.id.btnRegistrar)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnRegistrar)).perform(scrollTo()).check(matches(isDisplayed()))
             captureScreen("nuevo_usuario")
         } finally {
             scenario.close()
@@ -242,7 +249,7 @@ class VisualSmokeInstrumentedTest {
             onView(withText("Fecha de nacimiento:")).check(matches(isDisplayed()))
             onView(withId(R.id.etNombre)).check(matches(isDisplayed()))
             onView(withId(R.id.etDni)).check(matches(isDisplayed()))
-            onView(withId(R.id.btnConfirmar)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnConfirmar)).perform(scrollTo()).check(matches(isDisplayed()))
             captureScreen("editar_usuario")
         } finally {
             scenario.close()
@@ -268,7 +275,7 @@ class VisualSmokeInstrumentedTest {
             onView(withId(R.id.spActividad)).check(matches(isDisplayed()))
             onView(withId(R.id.spDia)).check(matches(isDisplayed()))
             onView(withId(R.id.spHoraInicio)).check(matches(isDisplayed()))
-            onView(withId(R.id.btnIngresar)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnIngresar)).perform(scrollTo()).check(matches(isDisplayed()))
             captureScreen("editar_actividad")
         } finally {
             scenario.close()
@@ -354,6 +361,57 @@ class VisualSmokeInstrumentedTest {
             captureScreen("formulario_catalogo")
         } finally {
             scenario.close()
+        }
+    }
+
+    @Test
+    fun importarClientes_muestraFormatoYAcciones() {
+        val scenario = ActivityScenario.launch(ImportarClientesActivity::class.java)
+        try {
+            onView(withId(R.id.tvTitulo)).check(matches(withText("Importar clientes")))
+            onView(withId(R.id.tvFormatoArchivo)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnSeleccionarArchivo)).perform(scrollTo())
+                .check(matches(isDisplayed()))
+            onView(withId(R.id.btnDescargarPlantilla)).check(matches(isDisplayed()))
+            onView(withId(R.id.cardResumen)).check(matches(withEffectiveVisibility(Visibility.GONE)))
+            captureScreen("importar_clientes")
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun importarClientes_previsualizaFilasValidasErroresYConfirmacion() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val file = File(context.cacheDir, "clientes_visual.csv").apply {
+            writeText(
+                "dni;nombre;apellido;fecha_nacimiento;telefono;direccion;email\n" +
+                    "39000001;Lucia;Fernandez;12/03/1994;3415552001;Mitre 100;lucia.visual@example.com\n" +
+                    "39000002;Tomas;Rios;28/09/1988;3415552002;Oroño 450;tomas.visual@example.com\n" +
+                    "12;Sofia;;31/02/1990;123;Belgrano 20;sofia-sin-arroba\n"
+            )
+        }
+        val intent = Intent(context, ImportarClientesActivity::class.java).setData(Uri.fromFile(file))
+        val scenario = ActivityScenario.launch<ImportarClientesActivity>(intent)
+        try {
+            onView(withId(R.id.tvArchivo)).check(matches(withText("clientes_visual.csv")))
+            onView(withId(R.id.tvResumen))
+                .check(matches(withText("2 filas listas para importar · 1 fila con errores")))
+            onView(withId(R.id.rvFilasImportacion)).check(matches(isDisplayed()))
+            onView(withId(R.id.btnImportar)).check(matches(withText("Importar 2 clientes")))
+            captureScreen("importar_clientes_previsualizacion")
+
+            onView(withId(R.id.btnFiltroErrores)).perform(click())
+            onView(withText("Fila 4")).check(matches(isDisplayed()))
+            captureScreen("importar_clientes_errores")
+
+            onView(withId(R.id.btnImportar)).perform(click())
+            onView(withText(R.string.import_clients_confirm_title)).check(matches(isDisplayed()))
+            captureScreen("importar_clientes_confirmacion")
+            onView(withText(R.string.action_cancel)).perform(click())
+        } finally {
+            scenario.close()
+            file.delete()
         }
     }
 
