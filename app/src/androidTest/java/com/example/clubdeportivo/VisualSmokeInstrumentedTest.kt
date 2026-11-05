@@ -101,6 +101,7 @@ class VisualSmokeInstrumentedTest {
         val scenario = ActivityScenario.launch<VerMasActivity>(intent)
         try {
             onView(withText("Bienvenido, QA")).check(matches(isDisplayed()))
+            onView(withId(R.id.tvFecha)).check(matches(withText(HeaderDateFormatter.format())))
             onView(withId(R.id.tvDNI)).check(matches(isDisplayed()))
             onView(withId(R.id.tvHistorialCuenta)).check(matches(isDisplayed()))
             onView(withId(R.id.btnHistorialTodos)).check(matches(isDisplayed()))
