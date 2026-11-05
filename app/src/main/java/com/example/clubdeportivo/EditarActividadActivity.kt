@@ -24,6 +24,7 @@ class EditarActividadActivity : AppCompatActivity() {
         val db = DBHelper(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editar_actividad)
+        SystemBarInsets.applyTopTo(this)
 
         // --- refs UI ---
         spActividad  = findViewById(R.id.spActividad)

@@ -13,6 +13,7 @@ class VerMasActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_ver_mas)
+        SystemBarInsets.applyTopTo(this)
 
         // DB Helper
         val db = DBHelper(this)

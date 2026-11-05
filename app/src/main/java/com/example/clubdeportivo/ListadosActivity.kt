@@ -51,6 +51,7 @@ class ListadosActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_listados)
+        SystemBarInsets.applyTopTo(this)
 
         // Views
         rvNoSocios = findViewById(R.id.rvNoSocios)

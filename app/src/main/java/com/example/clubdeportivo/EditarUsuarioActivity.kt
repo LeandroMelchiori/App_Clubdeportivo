@@ -14,6 +14,7 @@ class EditarUsuarioActivity : AppCompatActivity() {
         val db = DBHelper(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editar_usuario)
+        SystemBarInsets.applyTopTo(this)
 
         // Recupera el nombre de usuario del intent y lo muestra
         val usuario = intent.getStringExtra("usuario") ?: "Usuario"
