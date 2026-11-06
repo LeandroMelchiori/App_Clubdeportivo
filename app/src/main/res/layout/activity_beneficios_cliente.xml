@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_dark"
+    android:clipToPadding="false"
+    android:fillViewport="true"
+    android:paddingStart="20dp"
+    android:paddingTop="24dp"
+    android:paddingEnd="20dp"
+    android:paddingBottom="32dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvTituloFormulario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/client_benefits_title"
+            android:textColor="@color/text_primary"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvClienteBeneficios"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="16sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/client_discount_title"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            style="@style/ClubFormLabel"
+            android:labelFor="@id/spDescuentoCliente"
+            android:text="@string/client_discount_label" />
+
+        <Spinner
+            android:id="@+id/spDescuentoCliente"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:background="@drawable/bg_input_gray"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp" />
+
+        <TextView
+            android:id="@+id/tvSinDescuentos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/client_discount_empty"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/client_scholarship_title"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <CheckBox
+            android:id="@+id/cbTieneBeca"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:minHeight="48dp"
+            android:text="@string/client_has_scholarship"
+            android:textColor="@color/text_primary" />
+
+        <LinearLayout
+            android:id="@+id/llBeca"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                style="@style/ClubFormLabel"
+                android:labelFor="@id/etPorcentajeBeca"
+                android:text="@string/scholarship_percent_label" />
+
+            <EditText
+                android:id="@+id/etPorcentajeBeca"
+                style="@style/ClubFormInput"
+                android:hint="@string/scholarship_percent_hint"
+                android:inputType="number"
+                android:maxLength="3" />
+
+            <TextView
+                style="@style/ClubFormLabel"
+                android:labelFor="@id/spAlcanceBeca"
+                android:text="@string/benefit_scope_label" />
+
+            <Spinner
+                android:id="@+id/spAlcanceBeca"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_input_gray"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp" />
+
+            <TextView
+                style="@style/ClubFormLabel"
+                android:labelFor="@id/etMotivoBeca"
+                android:text="@string/scholarship_reason_label" />
+
+            <EditText
+                android:id="@+id/etMotivoBeca"
+                style="@style/ClubFormInput"
+                android:hint="@string/scholarship_reason_hint"
+                android:inputType="textCapSentences"
+                android:maxLength="120" />
+
+            <TextView
+                style="@style/ClubFormLabel"
+                android:labelFor="@id/etBecaHasta"
+                android:text="@string/scholarship_until_label" />
+
+            <EditText
+                android:id="@+id/etBecaHasta"
+                style="@style/ClubFormInput"
+                android:hint="@string/scholarship_until_hint"
+                android:inputType="date"
+                android:maxLength="10" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancelar"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="@string/action_cancel"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary"
+                app:backgroundTint="@color/card_dark"
+                app:cornerRadius="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGuardar"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:text="@string/action_save"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary"
+                app:backgroundTint="@color/blue_start"
+                app:cornerRadius="8dp" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

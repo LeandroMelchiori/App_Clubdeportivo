@@ -1,7 +1,9 @@
 package com.example.clubdeportivo
 
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.database.sqlite.SQLiteDatabase
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onData
@@ -19,7 +21,10 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.runner.screenshot.Screenshot
+import java.time.LocalDate
+import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.`is`
+import org.hamcrest.Matchers.startsWith
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -132,7 +137,94 @@ class CobrosVisualInstrumentedTest {
         }
     }
 
+    @Test
+    fun beneficios_asignaDescuentoYBecaDesdeVerMas() {
+        val memberId = ensureMember(BENEFITS_DNI, "Marta", "Becada")
+        val discountId = ensureVisualDiscount()
+        DBHelper(context).use { it.guardarBeneficiosCliente(memberId, null, null) }
+        val until = LocalDate.now().plusMonths(2)
+        val scenario = ActivityScenario.launch<VerMasActivity>(
+            Intent(context, VerMasActivity::class.java)
+                .putExtra("usuario", "QA")
+                .putExtra("dni", BENEFITS_DNI)
+        )
+        try {
+            onView(withId(R.id.tvBeneficios)).perform(scrollTo())
+                .check(matches(withText("Beneficios: ninguno")))
+            onView(withId(R.id.btnBeneficios)).perform(scrollTo(), click())
+
+            onView(withId(R.id.tvClienteBeneficios))
+                .check(matches(withText("Becada, Marta - DNI $BENEFITS_DNI")))
+            onView(withId(R.id.spDescuentoCliente)).perform(click())
+            onData(startsWith("Visual familiar")).perform(click())
+            onView(withId(R.id.cbTieneBeca)).perform(click())
+            onView(withId(R.id.btnGuardar)).perform(scrollTo(), click())
+            onView(withId(R.id.etPorcentajeBeca))
+                .check(matches(hasErrorText("Ingresa un porcentaje entre 1 y 100")))
+            onView(withId(R.id.etPorcentajeBeca)).perform(scrollTo(), replaceText("50"), closeSoftKeyboard())
+            onView(withId(R.id.spAlcanceBeca)).perform(scrollTo(), click())
+            onData(`is`(ChargeScope.FEE.label)).perform(click())
+            onView(withId(R.id.etMotivoBeca))
+                .perform(scrollTo(), replaceText("Deportista federado"), closeSoftKeyboard())
+            onView(withId(R.id.etBecaHasta)).perform(scrollTo(), replaceText(until.toString()), closeSoftKeyboard())
+            captureScreen("beneficios_cliente")
+            onView(withId(R.id.btnGuardar)).perform(scrollTo(), click())
+
+            onView(withId(R.id.tvBeneficios)).perform(scrollTo())
+                .check(matches(withText(containsString("Beca 50 % (Cuota) hasta $until"))))
+                .check(matches(withText(containsString("Descuento Visual familiar"))))
+            onView(withId(R.id.btnBeneficios)).perform(scrollTo())
+            captureScreen("ver_mas_beneficios")
+
+            val benefits = DBHelper(context).use { it.obtenerBeneficiosCliente(memberId) }
+            assertEquals(discountId, benefits.discount?.id)
+            assertEquals(Scholarship(50, ChargeScope.FEE, "Deportista federado", until), benefits.scholarship)
+        } finally {
+            scenario.close()
+            DBHelper(context).use { helper ->
+                helper.guardarBeneficiosCliente(memberId, null, null)
+                helper.writableDatabase.execSQL("DELETE FROM descuentos WHERE nombre LIKE 'Visual %'")
+            }
+        }
+    }
+
+    private fun ensureMember(dni: String, nombre: String, apellido: String): Int =
+        DBHelper(context).use { helper ->
+            val values = ContentValues().apply {
+                put("nombre", nombre)
+                put("apellido", apellido)
+                put("dni", dni)
+                put("fecha_nac", "1985-04-12")
+                put("telefono", "3415550101")
+                put("direccion", "San Martin 900")
+                put("fecha_inscripcion", "2026-01-10")
+                put("ficha_medica", 1)
+                put("email", "$dni@example.com")
+                put("esSocio", 1)
+                put("activo", 1)
+                put("carnet", 1)
+            }
+            helper.writableDatabase.insertWithOnConflict(
+                "clientes",
+                null,
+                values,
+                SQLiteDatabase.CONFLICT_IGNORE
+            )
+            requireNotNull(helper.obtenerPersonaPorDni(dni)?.id)
+        }
+
+    private fun ensureVisualDiscount(): Long = DBHelper(context).use { helper ->
+        helper.obtenerDescuentos().firstOrNull { it.name == "Visual familiar" }?.id
+            ?: helper.insertarDescuento(
+                Discount(-1L, "Visual familiar", AdjustmentType.PERCENT, 15.0, ChargeScope.BOTH)
+            )
+    }
+
     private fun captureScreen(name: String) {
         Screenshot.capture().setName("${BuildConfig.FLAVOR}_$name").process()
+    }
+
+    private companion object {
+        const val BENEFITS_DNI = "40999002"
     }
 }
