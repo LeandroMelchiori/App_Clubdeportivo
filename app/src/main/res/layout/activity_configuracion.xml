@@ -392,6 +392,17 @@
                 app:cornerRadius="8dp" />
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGestionDescuentos"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="10dp"
+                android:text="@string/manage_discounts"
+                android:textAllCaps="false"
+                android:textColor="@color/black"
+                app:backgroundTint="@color/white_button"
+                app:cornerRadius="8dp" />
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnImportarClientes"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"

@@ -12,6 +12,7 @@ import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.Visibility
+import androidx.test.espresso.matcher.ViewMatchers.hasErrorText
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
 import androidx.test.espresso.matcher.ViewMatchers.withId
@@ -82,6 +83,52 @@ class CobrosVisualInstrumentedTest {
             )
         } finally {
             scenario.close()
+        }
+    }
+
+    @Test
+    fun descuentos_creaEditaYMuestraElCatalogo() {
+        DBHelper(context).use { helper ->
+            helper.writableDatabase.execSQL("DELETE FROM descuentos WHERE nombre LIKE 'Visual %'")
+        }
+        val configuracion = ActivityScenario.launch<ConfiguracionActivity>(
+            Intent(context, ConfiguracionActivity::class.java).putExtra("usuario", "QA")
+        )
+        try {
+            onView(withId(R.id.btnGestionDescuentos)).perform(scrollTo(), click())
+            onView(withId(R.id.tvTitulo)).check(matches(withText(R.string.discounts_title)))
+            onView(withId(R.id.fabNuevoDescuento)).perform(click())
+
+            onView(withId(R.id.tvTituloFormulario)).check(matches(withText(R.string.new_discount_title)))
+            onView(withId(R.id.btnGuardar)).perform(click())
+            onView(withId(R.id.etNombreDescuento))
+                .check(matches(hasErrorText("Ingresa el nombre del descuento")))
+            onView(withId(R.id.etNombreDescuento)).perform(replaceText("Visual familiar"), closeSoftKeyboard())
+            onView(withId(R.id.etValorDescuento)).perform(replaceText("150"), closeSoftKeyboard())
+            onView(withId(R.id.btnGuardar)).perform(click())
+            onView(withId(R.id.etValorDescuento))
+                .check(matches(hasErrorText("El porcentaje no puede superar 100")))
+            onView(withId(R.id.etValorDescuento)).perform(replaceText("15"), closeSoftKeyboard())
+            onView(withId(R.id.spAlcanceDescuento)).perform(click())
+            onData(`is`(ChargeScope.FEE.label)).perform(click())
+            captureScreen("descuento_formulario")
+            onView(withId(R.id.btnGuardar)).perform(click())
+
+            onView(withText("Visual familiar")).check(matches(isDisplayed()))
+            onView(withText("15 % - Cuota")).check(matches(isDisplayed()))
+            captureScreen("descuentos_catalogo")
+
+            val saved = DBHelper(context).use { helper ->
+                helper.obtenerDescuentos().single { it.name == "Visual familiar" }
+            }
+            assertEquals(AdjustmentType.PERCENT, saved.type)
+            assertEquals(15.0, saved.value, 0.0)
+            assertEquals(ChargeScope.FEE, saved.scope)
+        } finally {
+            configuracion.close()
+            DBHelper(context).use { helper ->
+                helper.writableDatabase.execSQL("DELETE FROM descuentos WHERE nombre LIKE 'Visual %'")
+            }
         }
     }
 

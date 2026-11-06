@@ -76,6 +76,9 @@ class ConfiguracionActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.btnGestionActividades).setOnClickListener {
             startActivity(Intent(this, CatalogoActividadesActivity::class.java))
         }
+        findViewById<MaterialButton>(R.id.btnGestionDescuentos).setOnClickListener {
+            startActivity(Intent(this, DescuentosActivity::class.java))
+        }
         findViewById<MaterialButton>(R.id.btnImportarClientes).setOnClickListener {
             startActivity(Intent(this, ImportarClientesActivity::class.java))
         }

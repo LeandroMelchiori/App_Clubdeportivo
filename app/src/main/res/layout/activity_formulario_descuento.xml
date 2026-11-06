@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_dark"
+    android:clipToPadding="false"
+    android:fillViewport="true"
+    android:paddingStart="20dp"
+    android:paddingTop="24dp"
+    android:paddingEnd="20dp"
+    android:paddingBottom="32dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvTituloFormulario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/new_discount_title"
+            android:textColor="@color/text_primary"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <TextView
+            style="@style/ClubFormLabel"
+            android:labelFor="@id/etNombreDescuento"
+            android:text="@string/discount_name_label" />
+
+        <EditText
+            android:id="@+id/etNombreDescuento"
+            style="@style/ClubFormInput"
+            android:hint="@string/discount_name_hint"
+            android:inputType="textCapSentences"
+            android:maxLength="60" />
+
+        <TextView
+            style="@style/ClubFormLabel"
+            android:labelFor="@id/spTipoDescuento"
+            android:text="@string/discount_type_label" />
+
+        <Spinner
+            android:id="@+id/spTipoDescuento"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:background="@drawable/bg_input_gray"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp" />
+
+        <TextView
+            style="@style/ClubFormLabel"
+            android:labelFor="@id/etValorDescuento"
+            android:text="@string/discount_value_label" />
+
+        <EditText
+            android:id="@+id/etValorDescuento"
+            style="@style/ClubFormInput"
+            android:hint="@string/discount_value_hint"
+            android:inputType="numberDecimal" />
+
+        <TextView
+            style="@style/ClubFormLabel"
+            android:labelFor="@id/spAlcanceDescuento"
+            android:text="@string/benefit_scope_label" />
+
+        <Spinner
+            android:id="@+id/spAlcanceDescuento"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:background="@drawable/bg_input_gray"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp" />
+
+        <CheckBox
+            android:id="@+id/cbDescuentoActivo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:checked="true"
+            android:minHeight="48dp"
+            android:text="@string/discount_active"
+            android:textColor="@color/text_primary" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancelar"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="@string/action_cancel"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary"
+                app:backgroundTint="@color/card_dark"
+                app:cornerRadius="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGuardar"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:text="@string/action_save"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary"
+                app:backgroundTint="@color/blue_start"
+                app:cornerRadius="8dp" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>
