@@ -34,7 +34,9 @@ class EnvironmentDatabaseInstrumentedTest {
                 "cuotas",
                 "pagos_actividad",
                 "actividad_profesor",
-                "dias_horarios"
+                "dias_horarios",
+                "descuentos",
+                "cliente_beneficios"
             ).forEach { table ->
                 assertEquals("$table debe iniciar vacia", 0, helper.countRows(table))
             }

@@ -215,6 +215,21 @@ internal object InitialDataSeeder {
                 WHERE actividad_id = 3 AND profesor_dni = '20888999';
                 """.trimIndent())
 
+            // --------- DESCUENTOS Y BENEFICIOS ---------
+            db.execSQL("""
+                INSERT OR IGNORE INTO descuentos (id_descuento, nombre, tipo, valor, alcance, activo) VALUES
+                (1, 'Grupo familiar', '${AdjustmentType.PERCENT.code}', 15, '${ChargeScope.BOTH.code}', 1),
+                (2, 'Jubilados', '${AdjustmentType.FIXED.code}', 5000, '${ChargeScope.FEE.code}', 1);
+                """.trimIndent())
+
+            // Cliente 2: descuento por grupo familiar. Cliente 4: beca del 50 % en la cuota.
+            db.execSQL("""
+                INSERT OR IGNORE INTO cliente_beneficios
+                (id_cliente, id_descuento, beca_porcentaje, beca_alcance, beca_motivo, beca_hasta) VALUES
+                (2, 1, NULL, NULL, NULL, NULL),
+                (4, NULL, 50, '${ChargeScope.FEE.code}', 'Deportista federado', NULL);
+                """.trimIndent())
+
             db.setTransactionSuccessful()
         } finally {
             db.endTransaction()
