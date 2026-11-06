@@ -6,18 +6,18 @@ import java.time.temporal.ChronoUnit
 object CuentaCorrienteCalculator {
     fun evaluarSocio(
         proximoVencimientoIso: String?,
-        monthlyFee: Double,
+        importeAdeudado: Double,
         hoy: LocalDate = LocalDate.now()
     ): EstadoCuenta {
-        require(monthlyFee > 0.0 && monthlyFee.isFinite()) { "La cuota mensual debe ser valida" }
+        require(importeAdeudado >= 0.0 && importeAdeudado.isFinite()) { "El importe adeudado debe ser valido" }
         if (proximoVencimientoIso.isNullOrBlank()) {
-            return EstadoCuenta("Sin pagos", "Sin vencimiento", monthlyFee)
+            return EstadoCuenta("Sin pagos", "Sin vencimiento", importeAdeudado)
         }
 
         val vencimiento = LocalDate.parse(proximoVencimientoIso)
         val dias = ChronoUnit.DAYS.between(hoy, vencimiento)
         return when {
-            dias < 0 -> EstadoCuenta("Vencido", "Vencio hace ${-dias} dias", monthlyFee)
+            dias < 0 -> EstadoCuenta("Vencido", "Vencio hace ${-dias} dias", importeAdeudado)
             dias <= 7 -> EstadoCuenta("Por vencer", "Vence en $dias dias", 0.0)
             else -> EstadoCuenta("Al dia", "Vence en $dias dias", 0.0)
         }

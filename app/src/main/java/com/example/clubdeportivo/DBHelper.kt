@@ -765,10 +765,8 @@ package com.example.clubdeportivo
         val movimientos = obtenerMovimientosCuenta(db, persona.id.toString())
 
         val estado = if (persona.esSocio) {
-            CuentaCorrienteCalculator.evaluarSocio(
-                proximoVencimiento,
-                obtenerConfiguracionClub().monthlyFee
-            )
+            val cobroHoy = calcularCobroCuota(obtenerConfiguracionClub(), persona, LocalDate.now())
+            CuentaCorrienteCalculator.evaluarSocio(proximoVencimiento, cobroHoy.total)
         } else {
             CuentaCorrienteCalculator.evaluarNoSocio(ultimoPagoActividad != null)
         }
@@ -790,7 +788,7 @@ package com.example.clubdeportivo
         val movimientos = mutableListOf<MovimientoCuenta>()
         db.rawQuery(
             """
-                SELECT fechaPago, IFNULL(monto, 0), formaPago
+                SELECT fechaPago, IFNULL(monto, 0), formaPago, detalle_ajustes
                 FROM cuotas
                 WHERE idCliente = ?
                 ORDER BY fechaPago DESC, idCuota DESC
@@ -803,13 +801,14 @@ package com.example.clubdeportivo
                     tipo = "Cuota",
                     fecha = c.getString(0),
                     monto = c.getDouble(1),
-                    detalle = c.getString(2)
+                    detalle = c.getString(2),
+                    ajustes = c.getStringOrNull("detalle_ajustes")
                 )
             }
         }
         db.rawQuery(
             """
-                SELECT p.fecha_pago, IFNULL(p.monto, 0), a.nombre
+                SELECT p.fecha_pago, IFNULL(p.monto, 0), a.nombre, p.detalle_ajustes
                 FROM pagos_actividad p
                 LEFT JOIN actividades a ON a.id_actividad = p.id_actividad
                 WHERE p.idCliente = ?
@@ -823,7 +822,8 @@ package com.example.clubdeportivo
                     tipo = "Actividad",
                     fecha = c.getString(0),
                     monto = c.getDouble(1),
-                    detalle = if (!c.isNull(2)) c.getString(2) else "Sin actividad"
+                    detalle = if (!c.isNull(2)) c.getString(2) else "Sin actividad",
+                    ajustes = c.getStringOrNull("detalle_ajustes")
                 )
             }
         }
@@ -1697,7 +1697,8 @@ package com.example.clubdeportivo
         val tipo: String,
         val fecha: String,
         val monto: Double,
-        val detalle: String
+        val detalle: String,
+        val ajustes: String? = null
     )
     data class ResumenPagosMes(
         val anio: Int,

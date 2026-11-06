@@ -27,7 +27,8 @@ object CuentaCorrienteFormatter {
     ): String {
         if (movimientos.isEmpty()) return "Sin movimientos registrados"
         return movimientos.joinToString("\n") { item ->
-            "${item.fecha} - ${item.tipo}: ${MoneyFormatter.format(item.monto, currency)} ${item.detalle}".trimEnd()
+            val linea = "${item.fecha} - ${item.tipo}: ${MoneyFormatter.format(item.monto, currency)} ${item.detalle}".trimEnd()
+            item.ajustes?.let { "$linea ($it)" } ?: linea
         }
     }
 }

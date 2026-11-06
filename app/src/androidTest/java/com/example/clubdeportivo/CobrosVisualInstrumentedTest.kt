@@ -323,6 +323,50 @@ class CobrosVisualInstrumentedTest {
         }
     }
 
+    @Test
+    fun verMas_muestraDeudaConRecargoYAjustesEnElHistorial() {
+        val memberId = ensureMember(LATE_DNI, "Diego", "Moroso")
+        val discountId = ensureVisualDiscount()
+        val latePayment = LocalDate.now().minusMonths(3)
+        DBHelper(context).use { helper ->
+            helper.guardarConfiguracionClub(
+                originalConfiguration.copy(billingRules = BillingRules(lateFeeValue = 10.0))
+            )
+            helper.guardarBeneficiosCliente(memberId, discountId, null)
+        }
+        resetFees(memberId, LocalDate.now().minusMonths(4))
+        DBHelper(context).use { it.registrarPagoCuota(LATE_DNI, "Efectivo", latePayment.toString()) }
+        val scenario = ActivityScenario.launch<VerMasActivity>(
+            Intent(context, VerMasActivity::class.java)
+                .putExtra("usuario", "QA")
+                .putExtra("dni", LATE_DNI)
+        )
+        try {
+            onView(withId(R.id.tvDeudaEstimada)).perform(scrollTo())
+                .check(matches(withText("Deuda estimada: ARS 28.050,00")))
+            onView(withId(R.id.tvHistorialCuenta)).perform(scrollTo()).check(
+                matches(
+                    withText(
+                        containsString(
+                            "$latePayment - Cuota: ARS 28.050,00 Efectivo " +
+                                "(descuento Visual familiar, recargo por mora)"
+                        )
+                    )
+                )
+            )
+            onView(withId(R.id.btnBeneficios)).perform(scrollTo())
+            captureScreen("ver_mas_deuda_con_recargo")
+            onView(withId(R.id.tvHistorialCuenta)).perform(scrollTo())
+            captureScreen("ver_mas_historial_ajustes")
+        } finally {
+            scenario.close()
+            DBHelper(context).use { helper ->
+                helper.guardarBeneficiosCliente(memberId, null, null)
+                helper.writableDatabase.execSQL("DELETE FROM descuentos WHERE nombre LIKE 'Visual %'")
+            }
+        }
+    }
+
     private fun launchFeePayment(dni: String, name: String, isMember: Boolean) =
         ActivityScenario.launch<PagoDeCuotaActivity>(
             Intent(context, PagoDeCuotaActivity::class.java)
