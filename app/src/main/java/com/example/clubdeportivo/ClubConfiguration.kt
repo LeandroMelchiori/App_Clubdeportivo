@@ -26,7 +26,8 @@ data class ClubConfiguration(
     val acceptsCash: Boolean,
     val acceptsTransfer: Boolean,
     val acceptsCard: Boolean,
-    val logoUri: String?
+    val logoUri: String?,
+    val billingRules: BillingRules = BillingRules.DEFAULT
 ) {
     companion object {
         val DEFAULT = ClubConfiguration(
@@ -41,7 +42,8 @@ data class ClubConfiguration(
             acceptsCash = true,
             acceptsTransfer = true,
             acceptsCard = true,
-            logoUri = null
+            logoUri = null,
+            billingRules = BillingRules.DEFAULT
         )
     }
 }
