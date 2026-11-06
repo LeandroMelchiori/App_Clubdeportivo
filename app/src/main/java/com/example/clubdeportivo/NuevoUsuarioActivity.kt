@@ -29,6 +29,7 @@ class NuevoUsuarioActivity : AppCompatActivity() {
         val usuario = intent.getStringExtra("usuario") ?: "Usuario"
         val tvBienvenida = findViewById<TextView>(R.id.tvBienvenida)
         tvBienvenida.text = "Bienvenido, $usuario"
+        findViewById<TextView>(R.id.tvFechaHoy).text = HeaderDateFormatter.format()
 
         // Inputs
         val etNombre     = findViewById<EditText>(R.id.etNombre)
