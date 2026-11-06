@@ -46,6 +46,7 @@ class ConfiguracionActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_configuracion)
+        SystemBarInsets.applyTopTo(this)
 
         dbHelper = DBHelper(this)
         bindViews()

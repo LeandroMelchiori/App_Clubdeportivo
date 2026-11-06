@@ -17,6 +17,7 @@ class PagoDeCuotaActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_pago_cuota)
+        SystemBarInsets.applyTopTo(this)
 
         db = DBHelper(this)
         configuration = db.obtenerConfiguracionClub()

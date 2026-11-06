@@ -19,6 +19,7 @@ class ResumenMensualActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_resumen_mensual)
+        SystemBarInsets.applyTopTo(this)
 
         db = DBHelper(this)
         val configuration = db.obtenerConfiguracionClub()

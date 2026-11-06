@@ -22,6 +22,7 @@ class PagoActividadActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_inscribir_actividad)
+        SystemBarInsets.applyTopTo(this)
 
         db = DBHelper(this)
         configuration = db.obtenerConfiguracionClub()

@@ -21,6 +21,7 @@ class NuevoUsuarioActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_nuevo_usuario)
+        SystemBarInsets.applyTopTo(this)
 
         db = DBHelper(this).writableDatabase
 

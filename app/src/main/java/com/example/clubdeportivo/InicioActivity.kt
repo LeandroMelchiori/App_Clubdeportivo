@@ -23,6 +23,7 @@ class InicioActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_inicio)
+        SystemBarInsets.applyTopTo(this)
 
         // Dia de la semana
         val db = DBHelper(this)
