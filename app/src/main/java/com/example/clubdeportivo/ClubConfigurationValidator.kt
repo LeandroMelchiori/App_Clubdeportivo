@@ -10,7 +10,9 @@ object ClubConfigurationValidator {
         MONTHLY_FEE,
         DUE_DAY,
         GRACE_DAYS,
-        PAYMENT_METHODS
+        PAYMENT_METHODS,
+        LATE_FEE_VALUE,
+        LATE_FEE_MAX_MONTHS
     }
 
     data class Draft(
@@ -25,7 +27,14 @@ object ClubConfigurationValidator {
         val acceptsCash: Boolean,
         val acceptsTransfer: Boolean,
         val acceptsCard: Boolean,
-        val logoUri: String?
+        val logoUri: String?,
+        val lateFeeTypeCode: String = BillingRules.DEFAULT.lateFeeType.code,
+        val lateFeeValue: String = "0",
+        val lateFeeFrequencyCode: String = BillingRules.DEFAULT.lateFeeFrequency.code,
+        val lateFeeMaxMonths: String = BillingRules.DEFAULT.lateFeeMaxMonths.toString(),
+        val benefitStackingCode: String = BillingRules.DEFAULT.benefitStacking.code,
+        val scholarshipWaivesLateFee: Boolean = BillingRules.DEFAULT.scholarshipWaivesLateFee,
+        val lateLosesDiscount: Boolean = BillingRules.DEFAULT.lateLosesDiscount
     )
 
     data class Result(
@@ -70,6 +79,20 @@ object ClubConfigurationValidator {
             return invalid(Field.PAYMENT_METHODS, "Selecciona al menos un medio de pago")
         }
 
+        val lateFeeType = AdjustmentType.fromCode(draft.lateFeeTypeCode)
+        val lateFeeFrequency = LateFeeFrequency.fromCode(draft.lateFeeFrequencyCode)
+        val lateFeeValue = parseMoney(draft.lateFeeValue)
+        if (lateFeeValue == null || !lateFeeValue.isFinite() || lateFeeValue < 0.0) {
+            return invalid(Field.LATE_FEE_VALUE, "Ingresa un recargo valido (0 lo desactiva)")
+        }
+        if (lateFeeType == AdjustmentType.PERCENT && lateFeeValue > 100.0) {
+            return invalid(Field.LATE_FEE_VALUE, "El recargo porcentual no puede superar 100")
+        }
+        val maxMonths = draft.lateFeeMaxMonths.trim().toIntOrNull()?.takeIf { it in 1..12 }
+        if (lateFeeFrequency == LateFeeFrequency.MONTHLY && maxMonths == null) {
+            return invalid(Field.LATE_FEE_MAX_MONTHS, "El tope debe estar entre 1 y 12 meses")
+        }
+
         return Result(
             configuration = ClubConfiguration(
                 name = name,
@@ -83,7 +106,16 @@ object ClubConfigurationValidator {
                 acceptsCash = draft.acceptsCash,
                 acceptsTransfer = draft.acceptsTransfer,
                 acceptsCard = draft.acceptsCard,
-                logoUri = draft.logoUri?.trim()?.takeIf { it.isNotEmpty() }
+                logoUri = draft.logoUri?.trim()?.takeIf { it.isNotEmpty() },
+                billingRules = BillingRules(
+                    lateFeeType = lateFeeType,
+                    lateFeeValue = lateFeeValue,
+                    lateFeeFrequency = lateFeeFrequency,
+                    lateFeeMaxMonths = maxMonths ?: BillingRules.DEFAULT.lateFeeMaxMonths,
+                    benefitStacking = BenefitStacking.fromCode(draft.benefitStackingCode),
+                    scholarshipWaivesLateFee = draft.scholarshipWaivesLateFee,
+                    lateLosesDiscount = draft.lateLosesDiscount
+                )
             )
         )
     }

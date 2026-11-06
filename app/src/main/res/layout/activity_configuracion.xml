@@ -231,6 +231,114 @@
                 android:visibility="gone" />
 
             <TextView
+                android:id="@+id/tvTituloRecargo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:text="@string/late_fee_title"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/late_fee_help"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <TextView
+                style="@style/ClubFormLabel"
+                android:labelFor="@id/spTipoRecargo"
+                android:text="@string/late_fee_type_label" />
+
+            <Spinner
+                android:id="@+id/spTipoRecargo"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_input_gray"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp" />
+
+            <TextView
+                style="@style/ClubFormLabel"
+                android:labelFor="@id/etValorRecargo"
+                android:text="@string/late_fee_value_label" />
+
+            <EditText
+                android:id="@+id/etValorRecargo"
+                style="@style/ClubFormInput"
+                android:hint="@string/late_fee_value_hint"
+                android:inputType="numberDecimal" />
+
+            <TextView
+                style="@style/ClubFormLabel"
+                android:labelFor="@id/spFrecuenciaRecargo"
+                android:text="@string/late_fee_frequency_label" />
+
+            <Spinner
+                android:id="@+id/spFrecuenciaRecargo"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_input_gray"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp" />
+
+            <TextView
+                android:id="@+id/tvLabelTopeRecargo"
+                style="@style/ClubFormLabel"
+                android:labelFor="@id/etTopeMesesRecargo"
+                android:text="@string/late_fee_max_months_label" />
+
+            <EditText
+                android:id="@+id/etTopeMesesRecargo"
+                style="@style/ClubFormInput"
+                android:hint="@string/late_fee_max_months_hint"
+                android:inputType="number"
+                android:maxLength="2" />
+
+            <TextView
+                android:id="@+id/tvTituloBeneficios"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:text="@string/benefit_rules_title"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                style="@style/ClubFormLabel"
+                android:labelFor="@id/spAcumulacionBeneficios"
+                android:text="@string/benefit_stacking_label" />
+
+            <Spinner
+                android:id="@+id/spAcumulacionBeneficios"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_input_gray"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp" />
+
+            <CheckBox
+                android:id="@+id/cbBecaEximeRecargo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:minHeight="48dp"
+                android:text="@string/scholarship_waives_late_fee"
+                android:textColor="@color/text_primary" />
+
+            <CheckBox
+                android:id="@+id/cbVencidoPierdeDescuento"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/late_loses_discount"
+                android:textColor="@color/text_primary" />
+
+            <TextView
                 android:id="@+id/tvEstadoConfiguracion"
                 android:accessibilityLiveRegion="polite"
                 android:layout_width="match_parent"
