@@ -12,4 +12,7 @@ object PaymentValidator {
         }
         return Result(true)
     }
+
+    fun validateCharge(total: Double, method: String?): Result =
+        if (total == 0.0) Result(true) else validateManualPayment(total, method)
 }

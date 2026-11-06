@@ -21,6 +21,13 @@ class PaymentValidatorTest {
     }
 
     @Test
+    fun validateCharge_permiteRegistrarSinMedioCuandoNoHayImporte() {
+        assertTrue(PaymentValidator.validateCharge(0.0, null).isValid)
+        assertFalse(PaymentValidator.validateCharge(25500.0, null).isValid)
+        assertTrue(PaymentValidator.validateCharge(25500.0, "Efectivo").isValid)
+    }
+
+    @Test
     fun validateManualPayment_aceptaMontoYMedioValidos() {
         assertTrue(PaymentValidator.validateManualPayment(15000.0, "Debito").isValid)
     }

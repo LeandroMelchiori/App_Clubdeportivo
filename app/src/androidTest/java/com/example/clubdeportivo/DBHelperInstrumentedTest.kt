@@ -59,6 +59,84 @@ class DBHelperInstrumentedTest {
     }
 
     @Test
+    fun registrarPagoCuota_aplicaDescuentoYRecargoConfigurados() {
+        helper.guardarConfiguracionClub(
+            ClubConfiguration.DEFAULT.copy(billingRules = BillingRules(lateFeeValue = 10.0))
+        )
+        val discountId = helper.insertarDescuento(
+            Discount(-1L, "Grupo familiar", AdjustmentType.PERCENT, 15.0, ChargeScope.BOTH)
+        )
+        helper.guardarBeneficiosCliente(1, discountId, null)
+
+        val rowId = helper.registrarPagoCuota(CLIENT_DNI, "Efectivo", "2026-08-15")
+
+        helper.readableDatabase.rawQuery(
+            """
+                SELECT monto, monto_base, descuento, recargo, detalle_ajustes, formaPago
+                FROM cuotas
+                WHERE idCuota = ?
+            """.trimIndent(),
+            arrayOf(rowId.toString())
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(28050.0, cursor.getDouble(0), 0.0)
+            assertEquals(30000.0, cursor.getDouble(1), 0.0)
+            assertEquals(4500.0, cursor.getDouble(2), 0.0)
+            assertEquals(2550.0, cursor.getDouble(3), 0.0)
+            assertEquals("descuento Grupo familiar, recargo por mora", cursor.getString(4))
+            assertEquals("Efectivo", cursor.getString(5))
+        }
+    }
+
+    @Test
+    fun registrarPagoCuota_conBecaTotalRegistraSinCargoNiMedio() {
+        helper.guardarBeneficiosCliente(1, null, Scholarship(100, ChargeScope.FEE, "Convenio"))
+
+        val rowId = helper.registrarPagoCuota(CLIENT_DNI, null, "2026-08-15")
+
+        helper.readableDatabase.rawQuery(
+            "SELECT monto, descuento, formaPago, detalle_ajustes, fechaVencimiento FROM cuotas WHERE idCuota = ?",
+            arrayOf(rowId.toString())
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(0.0, cursor.getDouble(0), 0.0)
+            assertEquals(30000.0, cursor.getDouble(1), 0.0)
+            assertEquals(PaymentDbRules.noChargeMethod, cursor.getString(2))
+            assertEquals("beca 100 %", cursor.getString(3))
+            assertEquals("2026-09-10", cursor.getString(4))
+        }
+    }
+
+    @Test
+    fun registrarPagoActividad_aplicaBecaDeActividades() {
+        helper.writableDatabase.execSQL(
+            """
+                INSERT INTO clientes
+                (id, nombre, apellido, dni, fecha_nac, telefono, direccion,
+                 fecha_inscripcion, ficha_medica, email, esSocio, activo, carnet)
+                VALUES (2, 'Ana', 'Rios', '30111222', '2000-01-01', '3415552222',
+                        'Calle 3', '2026-01-01', 1, 'ana@example.com', 0, 1, 0)
+            """.trimIndent()
+        )
+        helper.guardarBeneficiosCliente(2, null, Scholarship(50, ChargeScope.ACTIVITIES, "Convenio escolar"))
+
+        assertEquals(2500.0, helper.calcularCobroActividad(2, 1)?.total ?: -1.0, 0.0)
+        val rowId = helper.registrarPagoActividadNoSocio("2", 1, "Transferencia", "2026-08-15")
+
+        helper.readableDatabase.rawQuery(
+            "SELECT monto, monto_base, descuento, recargo, forma_pago FROM pagos_actividad WHERE id_pago = ?",
+            arrayOf(rowId.toString())
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(2500.0, cursor.getDouble(0), 0.0)
+            assertEquals(5000.0, cursor.getDouble(1), 0.0)
+            assertEquals(2500.0, cursor.getDouble(2), 0.0)
+            assertEquals(0.0, cursor.getDouble(3), 0.0)
+            assertEquals("Transferencia", cursor.getString(4))
+        }
+    }
+
+    @Test
     fun insertarHorario_rechazaSolapamientoDeProfesor() {
         val error = assertThrows(IllegalArgumentException::class.java) {
             helper.insertarHorario(
@@ -126,6 +204,61 @@ class DBHelperInstrumentedTest {
     }
 
     @Test
+    fun descuentos_permiteCrudYProtegeLosAsignados() {
+        val discountId = helper.insertarDescuento(
+            Discount(-1L, "Grupo familiar", AdjustmentType.PERCENT, 15.0, ChargeScope.BOTH)
+        )
+        val unusedId = helper.insertarDescuento(
+            Discount(-1L, "Jubilados", AdjustmentType.FIXED, 5000.0, ChargeScope.FEE)
+        )
+
+        assertTrue(discountId > 0L)
+        assertEquals(
+            1,
+            helper.actualizarDescuento(
+                Discount(discountId, "Familia", AdjustmentType.PERCENT, 20.0, ChargeScope.FEE, active = false)
+            )
+        )
+        val updated = helper.obtenerDescuento(discountId)
+        assertEquals("Familia", updated?.name)
+        assertEquals(20.0, updated?.value ?: 0.0, 0.0)
+        assertEquals(ChargeScope.FEE, updated?.scope)
+        assertEquals(false, updated?.active)
+        assertEquals(listOf("Jubilados"), helper.obtenerDescuentos(soloActivos = true).map { it.name })
+
+        assertTrue(helper.guardarBeneficiosCliente(1, discountId, null))
+        assertEquals(false, helper.eliminarDescuento(discountId))
+        assertTrue(helper.eliminarDescuento(unusedId))
+        assertEquals(null, helper.obtenerDescuento(unusedId))
+    }
+
+    @Test
+    fun beneficios_guardaDescuentoYBecaPorCliente() {
+        val discountId = helper.insertarDescuento(
+            Discount(-1L, "Grupo familiar", AdjustmentType.PERCENT, 15.0, ChargeScope.BOTH)
+        )
+        val scholarship = Scholarship(
+            percent = 50,
+            scope = ChargeScope.FEE,
+            reason = "Deportista federado",
+            until = java.time.LocalDate.parse("2026-12-31")
+        )
+
+        assertEquals(ClientBenefits.NONE, helper.obtenerBeneficiosCliente(1))
+        assertTrue(helper.guardarBeneficiosCliente(1, discountId, scholarship))
+        val benefits = helper.obtenerBeneficiosCliente(1)
+        assertEquals("Grupo familiar", benefits.discount?.name)
+        assertEquals(scholarship, benefits.scholarship)
+
+        assertTrue(helper.guardarBeneficiosCliente(1, null, scholarship.copy(until = null)))
+        assertEquals(null, helper.obtenerBeneficiosCliente(1).discount)
+        assertEquals(null, helper.obtenerBeneficiosCliente(1).scholarship?.until)
+
+        assertTrue(helper.guardarBeneficiosCliente(1, null, null))
+        assertEquals(ClientBenefits.NONE, helper.obtenerBeneficiosCliente(1))
+    }
+
+    @Test
     fun importarClientes_guardaNoSociosActivosConFechaDeInscripcion() {
         val imported = helper.importarClientes(
             listOf(clienteImportado("30111222", "ana@club.com"), clienteImportado("30111223", "eva@club.com")),
@@ -187,6 +320,8 @@ class DBHelperInstrumentedTest {
         helper.writableDatabase.apply {
             beginTransaction()
             try {
+                execSQL("DELETE FROM cliente_beneficios")
+                execSQL("DELETE FROM descuentos")
                 execSQL("DELETE FROM pagos_actividad")
                 execSQL("DELETE FROM cuotas")
                 execSQL("DELETE FROM dias_horarios")

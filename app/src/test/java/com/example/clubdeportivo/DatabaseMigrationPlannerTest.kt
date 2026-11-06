@@ -21,6 +21,16 @@ class DatabaseMigrationPlannerTest {
     }
 
     @Test
+    fun pendingSteps_deVersionTresACuatroIncluyeBeneficios() {
+        assertEquals(listOf(4), DatabaseMigrationPlanner.pendingSteps(3, 4))
+    }
+
+    @Test
+    fun pendingSteps_deVersionUnoACuatroConservaElOrden() {
+        assertEquals(listOf(2, 3, 4), DatabaseMigrationPlanner.pendingSteps(1, 4))
+    }
+
+    @Test
     fun pendingSteps_mismaVersionNoTieneCambios() {
         assertEquals(emptyList<Int>(), DatabaseMigrationPlanner.pendingSteps(3, 3))
     }

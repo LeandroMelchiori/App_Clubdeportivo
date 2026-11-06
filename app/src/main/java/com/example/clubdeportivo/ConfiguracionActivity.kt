@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.CheckBox
 import android.widget.EditText
@@ -31,6 +32,14 @@ class ConfiguracionActivity : AppCompatActivity() {
     private lateinit var acceptsCash: CheckBox
     private lateinit var acceptsTransfer: CheckBox
     private lateinit var acceptsCard: CheckBox
+    private lateinit var lateFeeType: Spinner
+    private lateinit var lateFeeValue: EditText
+    private lateinit var lateFeeFrequency: Spinner
+    private lateinit var lateFeeMaxMonthsLabel: TextView
+    private lateinit var lateFeeMaxMonths: EditText
+    private lateinit var benefitStacking: Spinner
+    private lateinit var scholarshipWaivesLateFee: CheckBox
+    private lateinit var lateLosesDiscount: CheckBox
     private lateinit var paymentMethodError: TextView
     private lateinit var status: TextView
     private var logoUri: String? = null
@@ -52,6 +61,7 @@ class ConfiguracionActivity : AppCompatActivity() {
         bindViews()
         setupHeader()
         setupCurrencySelector()
+        setupBillingRuleSelectors()
         renderConfiguration(dbHelper.obtenerConfiguracionClub())
 
         findViewById<MaterialButton>(R.id.btnSeleccionarLogo).setOnClickListener {
@@ -65,6 +75,9 @@ class ConfiguracionActivity : AppCompatActivity() {
         }
         findViewById<MaterialButton>(R.id.btnGestionActividades).setOnClickListener {
             startActivity(Intent(this, CatalogoActividadesActivity::class.java))
+        }
+        findViewById<MaterialButton>(R.id.btnGestionDescuentos).setOnClickListener {
+            startActivity(Intent(this, DescuentosActivity::class.java))
         }
         findViewById<MaterialButton>(R.id.btnImportarClientes).setOnClickListener {
             startActivity(Intent(this, ImportarClientesActivity::class.java))
@@ -95,6 +108,14 @@ class ConfiguracionActivity : AppCompatActivity() {
         acceptsCash = findViewById(R.id.cbEfectivo)
         acceptsTransfer = findViewById(R.id.cbTransferencia)
         acceptsCard = findViewById(R.id.cbTarjeta)
+        lateFeeType = findViewById(R.id.spTipoRecargo)
+        lateFeeValue = findViewById(R.id.etValorRecargo)
+        lateFeeFrequency = findViewById(R.id.spFrecuenciaRecargo)
+        lateFeeMaxMonthsLabel = findViewById(R.id.tvLabelTopeRecargo)
+        lateFeeMaxMonths = findViewById(R.id.etTopeMesesRecargo)
+        benefitStacking = findViewById(R.id.spAcumulacionBeneficios)
+        scholarshipWaivesLateFee = findViewById(R.id.cbBecaEximeRecargo)
+        lateLosesDiscount = findViewById(R.id.cbVencidoPierdeDescuento)
         paymentMethodError = findViewById(R.id.tvErrorMediosPago)
         status = findViewById(R.id.tvEstadoConfiguracion)
     }
@@ -115,6 +136,33 @@ class ConfiguracionActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupBillingRuleSelectors() {
+        lateFeeType.adapter = spinnerAdapter(AdjustmentType.entries.map { it.label })
+        lateFeeFrequency.adapter = spinnerAdapter(LateFeeFrequency.entries.map { it.label })
+        benefitStacking.adapter = spinnerAdapter(BenefitStacking.entries.map { it.label })
+        lateFeeFrequency.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                updateMaxMonthsVisibility()
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+        }
+    }
+
+    private fun spinnerAdapter(labels: List<String>) =
+        ArrayAdapter(this, android.R.layout.simple_spinner_item, labels).apply {
+            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
+
+    private fun selectedFrequency(): LateFeeFrequency =
+        LateFeeFrequency.entries.getOrElse(lateFeeFrequency.selectedItemPosition) { LateFeeFrequency.ONCE }
+
+    private fun updateMaxMonthsVisibility() {
+        val visibility = if (selectedFrequency() == LateFeeFrequency.MONTHLY) View.VISIBLE else View.GONE
+        lateFeeMaxMonthsLabel.visibility = visibility
+        lateFeeMaxMonths.visibility = visibility
+    }
+
     private fun renderConfiguration(configuration: ClubConfiguration) {
         clubName.setText(configuration.name)
         clubAddress.setText(configuration.address)
@@ -127,6 +175,15 @@ class ConfiguracionActivity : AppCompatActivity() {
         acceptsCash.isChecked = configuration.acceptsCash
         acceptsTransfer.isChecked = configuration.acceptsTransfer
         acceptsCard.isChecked = configuration.acceptsCard
+        val rules = configuration.billingRules
+        lateFeeType.setSelection(AdjustmentType.entries.indexOf(rules.lateFeeType))
+        lateFeeValue.setText(formatNumber(rules.lateFeeValue))
+        lateFeeFrequency.setSelection(LateFeeFrequency.entries.indexOf(rules.lateFeeFrequency))
+        lateFeeMaxMonths.setText(String.format(Locale.ROOT, "%d", rules.lateFeeMaxMonths))
+        benefitStacking.setSelection(BenefitStacking.entries.indexOf(rules.benefitStacking))
+        scholarshipWaivesLateFee.isChecked = rules.scholarshipWaivesLateFee
+        lateLosesDiscount.isChecked = rules.lateLosesDiscount
+        updateMaxMonthsVisibility()
         logoUri = configuration.logoUri
         configuration.logoUri?.let { renderLogo(Uri.parse(it)) }
     }
@@ -147,7 +204,16 @@ class ConfiguracionActivity : AppCompatActivity() {
                 acceptsCash = acceptsCash.isChecked,
                 acceptsTransfer = acceptsTransfer.isChecked,
                 acceptsCard = acceptsCard.isChecked,
-                logoUri = logoUri
+                logoUri = logoUri,
+                lateFeeTypeCode = AdjustmentType.entries
+                    .getOrElse(lateFeeType.selectedItemPosition) { AdjustmentType.PERCENT }.code,
+                lateFeeValue = lateFeeValue.text.toString(),
+                lateFeeFrequencyCode = selectedFrequency().code,
+                lateFeeMaxMonths = lateFeeMaxMonths.text.toString(),
+                benefitStackingCode = BenefitStacking.entries
+                    .getOrElse(benefitStacking.selectedItemPosition) { BenefitStacking.BEST_ONLY }.code,
+                scholarshipWaivesLateFee = scholarshipWaivesLateFee.isChecked,
+                lateLosesDiscount = lateLosesDiscount.isChecked
             )
         )
 
@@ -177,7 +243,9 @@ class ConfiguracionActivity : AppCompatActivity() {
             clubEmail,
             monthlyFee,
             dueDay,
-            graceDays
+            graceDays,
+            lateFeeValue,
+            lateFeeMaxMonths
         ).forEach { it.error = null }
         paymentMethodError.visibility = View.GONE
         status.visibility = View.GONE
@@ -192,6 +260,8 @@ class ConfiguracionActivity : AppCompatActivity() {
             ClubConfigurationValidator.Field.MONTHLY_FEE -> monthlyFee
             ClubConfigurationValidator.Field.DUE_DAY -> dueDay
             ClubConfigurationValidator.Field.GRACE_DAYS -> graceDays
+            ClubConfigurationValidator.Field.LATE_FEE_VALUE -> lateFeeValue
+            ClubConfigurationValidator.Field.LATE_FEE_MAX_MONTHS -> lateFeeMaxMonths
             else -> null
         }
         if (result.field == ClubConfigurationValidator.Field.PAYMENT_METHODS) {
