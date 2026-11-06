@@ -34,6 +34,22 @@ class PaymentDialogTextTest {
     }
 
     @Test
+    fun sinCargo_explicaQueNoSeCobraImporte() {
+        assertEquals(
+            "Confirmas registrar la cuota sin cargo? No se cobra ningun importe.",
+            PaymentDialogText.cuotaSinCargo()
+        )
+        assertEquals(
+            "Confirmas convertir a Perez, Ana en socio con la primera cuota sin cargo?",
+            PaymentDialogText.convertirNoSocioSinCargo("Perez, Ana")
+        )
+        assertEquals(
+            "Confirmas registrar la actividad Yoga sin cargo?",
+            PaymentDialogText.actividadSinCargo("Yoga")
+        )
+    }
+
+    @Test
     fun socioCreado_muestraIdCuandoExiste() {
         assertEquals("Pago registrado. Ahora es socio (id 12)", PaymentDialogText.socioCreado(12))
     }

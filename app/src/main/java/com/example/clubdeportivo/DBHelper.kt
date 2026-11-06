@@ -888,11 +888,10 @@ package com.example.clubdeportivo
     // ----------------------------------------- CREATE -----------------------------------------
     fun hacerSocioDesdeNoSocio(
         dni: Int,
-        formaPago: String,
+        formaPago: String?,
         fechaPago: String // "YYYY-MM-DD"
     ): Int? {
         val configuration = obtenerConfiguracionClub()
-        val paymentMethod = PaymentDbRules.configuredPaymentMethod(configuration, formaPago)
         val fechaVenc = PaymentDbRules.cuotaVencimiento(
             fechaPago,
             configuration.dueDay,
@@ -907,6 +906,8 @@ package com.example.clubdeportivo
             if (cliente.esSocio) {
                 throw IllegalStateException("El cliente ya es socio")
             }
+            val cobro = calcularCobroCuota(configuration, cliente, LocalDate.parse(fechaPago))
+            val formaRegistrada = PaymentDbRules.recordedPaymentMethod(configuration, formaPago, cobro.total)
 
             val cvUpdate = ContentValues().apply {
                 put("esSocio", 1)
@@ -918,9 +919,9 @@ package com.example.clubdeportivo
             val idCliente = cliente.id
             val cvCuota = ContentValues().apply {
                 put("idCliente", idCliente)
-                put("monto", configuration.monthlyFee)
+                putCharge(cobro)
                 put("fechaPago", fechaPago)
-                put("formaPago", paymentMethod.displayName)
+                put("formaPago", formaRegistrada)
                 put("estadoDelPago", PaymentDbRules.cuotaEstadoPagado())
                 put("fechaVencimiento", fechaVenc)
             }
@@ -1018,27 +1019,94 @@ package com.example.clubdeportivo
     }
     fun registrarPagoCuota(
         dni: String,
-        formaPago: String,
+        formaPago: String?,
         fechaPago: String = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
     ): Long {
         val configuration = obtenerConfiguracionClub()
-        val paymentMethod = PaymentDbRules.configuredPaymentMethod(configuration, formaPago)
+        val cliente = obtenerPersonaPorDni(dni)
+            ?: throw IllegalArgumentException(PaymentDbRules.activeClientMissing)
+        val cobro = calcularCobroCuota(configuration, cliente, LocalDate.parse(fechaPago))
+        val formaRegistrada = PaymentDbRules.recordedPaymentMethod(configuration, formaPago, cobro.total)
         val fechaVenc = PaymentDbRules.cuotaVencimiento(
             fechaPago,
             configuration.dueDay,
             configuration.graceDays
         )
-        val cliente = obtenerPersonaPorDni(dni)
-            ?: throw IllegalArgumentException(PaymentDbRules.activeClientMissing)
         val cv = ContentValues().apply {
             put("idCliente", cliente.id)
-            put("monto", configuration.monthlyFee)
+            putCharge(cobro)
             put("fechaPago", fechaPago)
-            put("formaPago", paymentMethod.displayName)
+            put("formaPago", formaRegistrada)
             put("estadoDelPago", PaymentDbRules.cuotaEstadoPagado())
             put("fechaVencimiento", fechaVenc)
         }
         return writableDatabase.insert("cuotas", null, cv)
+    }
+
+    fun calcularCobroCuota(dni: String, fechaPago: LocalDate = LocalDate.now()): ChargeBreakdown {
+        val cliente = obtenerPersonaPorDni(dni)
+            ?: throw IllegalArgumentException(PaymentDbRules.activeClientMissing)
+        return calcularCobroCuota(obtenerConfiguracionClub(), cliente, fechaPago)
+    }
+
+    private fun calcularCobroCuota(
+        configuration: ClubConfiguration,
+        cliente: PersonaDTO,
+        fechaPago: LocalDate
+    ): ChargeBreakdown {
+        val idCliente = requireNotNull(cliente.id) { PaymentDbRules.activeClientMissing }
+        return ChargeCalculator.calculate(
+            base = configuration.monthlyFee,
+            kind = ChargeKind.FEE,
+            benefits = obtenerBeneficiosCliente(idCliente),
+            rules = configuration.billingRules,
+            currency = configuration.currency,
+            paymentDate = fechaPago,
+            dueDate = if (cliente.esSocio) ultimoVencimientoCuota(idCliente) else null
+        )
+    }
+
+    private fun ultimoVencimientoCuota(idCliente: Int): LocalDate? =
+        readableDatabase.rawQuery(
+            """
+                SELECT fechaVencimiento
+                FROM cuotas
+                WHERE idCliente = ?
+                ORDER BY fechaPago DESC, idCuota DESC
+                LIMIT 1
+            """.trimIndent(),
+            arrayOf(idCliente.toString())
+        ).use { cursor ->
+            if (cursor.moveToFirst() && !cursor.isNull(0)) {
+                runCatching { LocalDate.parse(cursor.getString(0)) }.getOrNull()
+            } else {
+                null
+            }
+        }
+
+    fun calcularCobroActividad(
+        idCliente: Int,
+        horarioId: Int,
+        fecha: LocalDate = LocalDate.now()
+    ): ChargeBreakdown? {
+        val price = obtenerPrecioHorario(horarioId) ?: return null
+        val configuration = obtenerConfiguracionClub()
+        return ChargeCalculator.calculate(
+            base = price,
+            kind = ChargeKind.ACTIVITY,
+            benefits = obtenerBeneficiosCliente(idCliente),
+            rules = configuration.billingRules,
+            currency = configuration.currency,
+            paymentDate = fecha
+        )
+    }
+
+    private fun ContentValues.putCharge(cobro: ChargeBreakdown) {
+        put("monto", cobro.total)
+        put("monto_base", cobro.base)
+        put("descuento", cobro.benefitsAmount)
+        put("recargo", cobro.lateFee)
+        putOrNull("detalle_ajustes", ChargeBreakdownFormatter.summary(cobro))
     }
 
     fun obtenerPrecioHorario(horarioId: Int): Double? {
@@ -1059,20 +1127,28 @@ package com.example.clubdeportivo
     fun registrarPagoActividadNoSocio(
         idCliente: String,
         horarioId: Int,
-        medioPago: String,
+        medioPago: String?,
         fechaIso: String = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
     ): Long {
         val configuration = obtenerConfiguracionClub()
-        val paymentMethod = PaymentDbRules.configuredPaymentMethod(configuration, medioPago)
-        val amount = obtenerPrecioHorario(horarioId)
+        val price = obtenerPrecioHorario(horarioId)
             ?: throw IllegalArgumentException("No existe un horario activo para registrar el pago")
-        require(amount > 0.0 && amount.isFinite()) { "La actividad debe tener un precio valido" }
+        require(price > 0.0 && price.isFinite()) { "La actividad debe tener un precio valido" }
+        val cobro = ChargeCalculator.calculate(
+            base = price,
+            kind = ChargeKind.ACTIVITY,
+            benefits = idCliente.toIntOrNull()?.let(::obtenerBeneficiosCliente) ?: ClientBenefits.NONE,
+            rules = configuration.billingRules,
+            currency = configuration.currency,
+            paymentDate = LocalDate.parse(fechaIso)
+        )
+        val formaRegistrada = PaymentDbRules.recordedPaymentMethod(configuration, medioPago, cobro.total)
 
         val cv = ContentValues().apply {
             put("idCliente", idCliente)
             put("id_actividad", horarioId)
-            put("monto", amount)
-            put("forma_pago", paymentMethod.displayName)
+            putCharge(cobro)
+            put("forma_pago", formaRegistrada)
             put("fecha_pago", fechaIso)
         }
         return writableDatabase.insert("pagos_actividad", null, cv)

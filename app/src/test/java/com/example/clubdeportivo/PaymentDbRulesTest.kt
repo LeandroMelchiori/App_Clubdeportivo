@@ -25,6 +25,20 @@ class PaymentDbRulesTest {
     }
 
     @Test
+    fun recordedPaymentMethod_registraSinCargoCuandoElTotalEsCero() {
+        val configuration = ClubConfiguration.DEFAULT.copy(acceptsCash = false)
+
+        assertEquals("Sin cargo", PaymentDbRules.recordedPaymentMethod(configuration, null, 0.0))
+        assertEquals(
+            "Transferencia",
+            PaymentDbRules.recordedPaymentMethod(configuration, "Transferencia", 25500.0)
+        )
+        assertThrows(IllegalArgumentException::class.java) {
+            PaymentDbRules.recordedPaymentMethod(configuration, "Efectivo", 25500.0)
+        }
+    }
+
+    @Test
     fun configuredPaymentMethod_aceptaSoloMetodosHabilitados() {
         val configuration = ClubConfiguration.DEFAULT.copy(
             acceptsCash = false,

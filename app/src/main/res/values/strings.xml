@@ -48,6 +48,7 @@
     <string name="operation_join_member">Alta de socio y primera cuota</string>
     <string name="value_amount">Valor: %1$s</string>
     <string name="price_amount">Precio: %1$s</string>
+    <string name="register_no_charge">REGISTRAR</string>
     <string name="current_period_already_paid">El pago del periodo actual ya fue registrado</string>
     <string name="dashboard_income">Ingresos: %1$s</string>
     <string name="summary_quota_amount">Monto cuotas: %1$s</string>
