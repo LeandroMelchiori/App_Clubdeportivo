@@ -22,6 +22,7 @@ class VerMasActivity : AppCompatActivity() {
         val usuario = intent.getStringExtra("usuario") ?: "Usuario"
         val tvBienvenida = findViewById<TextView>(R.id.tvBienvenida)
         tvBienvenida.text = "Bienvenido, $usuario"
+        findViewById<TextView>(R.id.tvFecha).text = HeaderDateFormatter.format()
 
         // Recupera dni del intent y busca a la persona en la BBDD
         val dniUsuario = intent.getStringExtra("dni") ?: ""
