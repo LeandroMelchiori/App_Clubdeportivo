@@ -160,6 +160,27 @@ class DBHelperInstrumentedTest {
     }
 
     @Test
+    fun obtenerCuentaCorriente_muestraLaActividadDelHorarioPagado() {
+        pagarHorarioCuyoIdCoincideConOtraActividad()
+
+        val movimiento = helper.obtenerCuentaCorriente(NON_MEMBER_DNI)!!
+            .movimientos.single { it.tipo == "Actividad" }
+
+        assertEquals("Funcional", movimiento.detalle)
+        assertEquals("2026-08-15", movimiento.fecha)
+    }
+
+    @Test
+    fun obtenerNoSocios_muestraLaUltimaActividadPagada() {
+        pagarHorarioCuyoIdCoincideConOtraActividad()
+
+        val card = helper.obtenerNoSocios().single { it.dni == NON_MEMBER_DNI }
+
+        assertEquals("2026-08-15", card.ultimaPago)
+        assertEquals("Funcional", card.nombreAct)
+    }
+
+    @Test
     fun profesores_permiteAltaEdicionYBajaLogica() {
         val professor = DBHelper.Profesor(
             dni = "30123456",
@@ -306,6 +327,31 @@ class DBHelperInstrumentedTest {
         )
     }
 
+    // El horario 2 es de Funcional, pero la actividad con id 2 es Yoga.
+    private fun pagarHorarioCuyoIdCoincideConOtraActividad() {
+        helper.writableDatabase.apply {
+            execSQL("INSERT INTO actividades (id_actividad, nombre, precio) VALUES (2, 'Yoga', 4000)")
+            execSQL(
+                """
+                    INSERT INTO dias_horarios
+                    (id, actividad_profesor_id, dia, hora_inicio, hora_fin, activo)
+                    VALUES (2, 1, 3, 600, 660, 1)
+                """.trimIndent()
+            )
+            execSQL(
+                """
+                    INSERT INTO clientes
+                    (id, nombre, apellido, dni, fecha_nac, telefono, direccion,
+                     fecha_inscripcion, ficha_medica, email, esSocio, activo, carnet)
+                    VALUES (2, 'Ana', 'Rios', ?, '2000-01-01', '3415552222',
+                            'Calle 3', '2026-01-01', 1, 'ana@example.com', 0, 1, 0)
+                """.trimIndent(),
+                arrayOf(NON_MEMBER_DNI)
+            )
+        }
+        helper.registrarPagoActividadNoSocio("2", 2, "Efectivo", "2026-08-15")
+    }
+
     private fun clienteImportado(dni: String, email: String) = ClientCsvImport.Client(
         dni = dni,
         name = "Ana",
@@ -386,5 +432,6 @@ class DBHelperInstrumentedTest {
         const val DB_NAME = "app_clubDeportivo.db"
         const val CLIENT_DNI = "40111111"
         const val PROFESSOR_DNI = "27999888"
+        const val NON_MEMBER_DNI = "30111222"
     }
 }
