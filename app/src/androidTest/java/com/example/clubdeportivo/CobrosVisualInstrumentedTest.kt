@@ -4,8 +4,10 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.database.sqlite.SQLiteDatabase
+import android.os.SystemClock
 import android.view.View
 import android.widget.SearchView
+import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onData
@@ -25,6 +27,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.screenshot.Screenshot
 import java.time.LocalDate
 import org.hamcrest.Matchers.containsString
@@ -367,6 +370,47 @@ class CobrosVisualInstrumentedTest {
         }
     }
 
+    @Test
+    fun historialYListados_muestranLaActividadPagadaPorElNoSocio() {
+        val clientId = ensureMember(HISTORY_DNI, "Nora", "Historial", isMember = false)
+        val scheduleId = ensureVisualSchedule()
+        val today = LocalDate.now().toString()
+        DBHelper(context).use { helper ->
+            helper.writableDatabase.execSQL(
+                "DELETE FROM pagos_actividad WHERE idCliente = ?",
+                arrayOf(clientId.toString())
+            )
+            helper.registrarPagoActividadNoSocio(clientId.toString(), scheduleId, "Efectivo", today)
+        }
+
+        val verMas = ActivityScenario.launch<VerMasActivity>(
+            Intent(context, VerMasActivity::class.java)
+                .putExtra("usuario", "QA")
+                .putExtra("dni", HISTORY_DNI)
+        )
+        try {
+            onView(withId(R.id.tvHistorialCuenta)).perform(scrollTo()).check(
+                matches(withText(containsString("$today - Actividad: ARS 8.000,00 Visual pilates")))
+            )
+            captureScreen("ver_mas_historial_actividad")
+        } finally {
+            verMas.close()
+        }
+
+        val listados = ActivityScenario.launch<ListadosActivity>(
+            Intent(context, ListadosActivity::class.java).putExtra("usuario", "QA")
+        )
+        try {
+            onView(withId(R.id.svBuscar)).perform(submitSearch("Historial"))
+            onView(withId(R.id.rvNoSocios)).perform(waitForItemCount(1))
+            onView(withText("Última actividad: Visual pilates - $today"))
+                .check(matches(isDisplayed()))
+            captureScreen("listados_no_socio_actividad")
+        } finally {
+            listados.close()
+        }
+    }
+
     private fun launchFeePayment(dni: String, name: String, isMember: Boolean) =
         ActivityScenario.launch<PagoDeCuotaActivity>(
             Intent(context, PagoDeCuotaActivity::class.java)
@@ -461,6 +505,27 @@ class CobrosVisualInstrumentedTest {
         }
     }
 
+    // ListAdapter filtra en segundo plano y la lista se redibuja en el frame siguiente:
+    // Espresso no espera ninguna de las dos cosas.
+    private fun waitForItemCount(expected: Int) = object : ViewAction {
+        override fun getConstraints(): Matcher<View> = isAssignableFrom(RecyclerView::class.java)
+
+        override fun getDescription(): String = "esperar $expected elementos dibujados"
+
+        override fun perform(uiController: UiController, view: View) {
+            val list = view as RecyclerView
+            val deadline = SystemClock.uptimeMillis() + 5_000
+            fun settled() = list.adapter?.itemCount == expected &&
+                !list.hasPendingAdapterUpdates() &&
+                !list.isLayoutRequested &&
+                list.itemAnimator?.isRunning != true
+            while (!settled() && SystemClock.uptimeMillis() < deadline) {
+                uiController.loopMainThreadForAtLeast(50)
+            }
+            uiController.loopMainThreadUntilIdle()
+        }
+    }
+
     private fun ensureMember(
         dni: String,
         nombre: String,
@@ -499,6 +564,9 @@ class CobrosVisualInstrumentedTest {
     }
 
     private fun captureScreen(name: String) {
+        // La captura lee la pantalla ya compuesta, que puede ir un frame detras de las vistas.
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+        SystemClock.sleep(SCREEN_SETTLE_MS)
         Screenshot.capture().setName("${BuildConfig.FLAVOR}_$name").process()
     }
 
@@ -507,6 +575,8 @@ class CobrosVisualInstrumentedTest {
         const val LATE_DNI = "40999003"
         const val FREE_DNI = "40999004"
         const val ACTIVITY_DNI = "30999005"
+        const val HISTORY_DNI = "30999006"
+        const val SCREEN_SETTLE_MS = 500L
         const val VISUAL_PROFESSOR_DNI = "29888777"
     }
 }

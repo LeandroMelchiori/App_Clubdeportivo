@@ -16,6 +16,13 @@ package com.example.clubdeportivo
     private companion object {
         const val DB_NAME = "app_clubDeportivo.db"
         const val DB_VERSION = 4
+
+        // pagos_actividad.id_actividad guarda el id del horario (dias_horarios), no el de la actividad.
+        const val JOIN_ACTIVIDAD_DEL_PAGO = """
+            LEFT JOIN dias_horarios dh ON dh.id = p.id_actividad
+            LEFT JOIN actividad_profesor ap ON ap.id = dh.actividad_profesor_id
+            LEFT JOIN actividades a ON a.id_actividad = ap.actividad_id
+        """
     }
 
     // ----------------------------------- Creacion DB -----------------------------------------
@@ -393,11 +400,10 @@ package com.example.clubdeportivo
             MAX(p.fecha_pago) AS ultima_pago,
             a.nombre AS actividad_pagada
         FROM clientes ns
-        LEFT JOIN pagos_actividad p 
-               ON p.idCliente = ns.dni
-        LEFT JOIN actividades a
-               ON a.id_actividad = p.id_actividad
-        WHERE ns.esSocio = false AND activo = 1
+        LEFT JOIN pagos_actividad p
+               ON p.idCliente = ns.id
+        $JOIN_ACTIVIDAD_DEL_PAGO
+        WHERE ns.esSocio = false AND ns.activo = 1
         GROUP BY ns.dni, ns.nombre, ns.apellido
         ORDER BY ns.apellido, ns.nombre;
 
@@ -810,7 +816,7 @@ package com.example.clubdeportivo
             """
                 SELECT p.fecha_pago, IFNULL(p.monto, 0), a.nombre, p.detalle_ajustes
                 FROM pagos_actividad p
-                LEFT JOIN actividades a ON a.id_actividad = p.id_actividad
+                $JOIN_ACTIVIDAD_DEL_PAGO
                 WHERE p.idCliente = ?
                 ORDER BY p.fecha_pago DESC, p.id_pago DESC
                 LIMIT 5
