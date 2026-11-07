@@ -28,6 +28,29 @@ class CuentaCorrienteFormatterTest {
     }
 
     @Test
+    fun historial_indicaLosAjustesDeCadaPago() {
+        val texto = CuentaCorrienteFormatter.historial(
+            listOf(
+                DBHelper.MovimientoCuenta(
+                    "Cuota",
+                    "2026-08-15",
+                    28050.0,
+                    "Efectivo",
+                    "descuento Grupo familiar, recargo por mora"
+                ),
+                DBHelper.MovimientoCuenta("Cuota", "2026-07-01", 0.0, "Sin cargo", "beca 100 %")
+            ),
+            ClubCurrency.ARS
+        )
+
+        assertEquals(
+            "2026-08-15 - Cuota: ARS 28.050,00 Efectivo (descuento Grupo familiar, recargo por mora)\n" +
+                "2026-07-01 - Cuota: ARS 0,00 Sin cargo (beca 100 %)",
+            texto
+        )
+    }
+
+    @Test
     fun filtrar_devuelveSoloCuotasOActividades() {
         val movimientos = listOf(
             DBHelper.MovimientoCuenta("Cuota", "2026-08-01", 30000.0, "Efectivo"),

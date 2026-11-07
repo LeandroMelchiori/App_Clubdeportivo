@@ -10,7 +10,7 @@ object MoneyFormatter {
 
     fun format(amount: Double, currency: ClubCurrency): String {
         require(amount.isFinite()) { "El importe debe ser finito" }
-        val fractionDigits = Currency.getInstance(currency.code).defaultFractionDigits.coerceAtLeast(0)
+        val fractionDigits = fractionDigits(currency)
         val pattern = buildString {
             append("#,##0")
             if (fractionDigits > 0) {
@@ -20,4 +20,7 @@ object MoneyFormatter {
         }
         return "${currency.code} ${DecimalFormat(pattern, spanishSymbols).format(amount)}"
     }
+
+    fun fractionDigits(currency: ClubCurrency): Int =
+        Currency.getInstance(currency.code).defaultFractionDigits.coerceAtLeast(0)
 }

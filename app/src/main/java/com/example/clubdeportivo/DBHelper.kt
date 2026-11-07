@@ -15,7 +15,7 @@ package com.example.clubdeportivo
 
     private companion object {
         const val DB_NAME = "app_clubDeportivo.db"
-        const val DB_VERSION = 3
+        const val DB_VERSION = 4
     }
 
     // ----------------------------------- Creacion DB -----------------------------------------
@@ -141,8 +141,10 @@ package com.example.clubdeportivo
             """.trimIndent())
 
         createClubConfigurationTable(db)
+        migrateToVersion4(db)
         ensureDefaultClubConfiguration(db)
         InitialDataSeeder.seed(db)
+        backfillPaymentBaseAmounts(db)
     }
 
     // Actualiza la base sin borrar datos existentes.
@@ -151,8 +153,10 @@ package com.example.clubdeportivo
             when (step) {
                 2 -> migrateToVersion2(db)
                 3 -> migrateToVersion3(db)
+                4 -> migrateToVersion4(db)
             }
         }
+        ensureDefaultClubConfiguration(db)
     }
 
     private fun migrateToVersion2(db: SQLiteDatabase) {
@@ -184,7 +188,70 @@ package com.example.clubdeportivo
 
     private fun migrateToVersion3(db: SQLiteDatabase) {
         createClubConfigurationTable(db)
-        ensureDefaultClubConfiguration(db)
+    }
+
+    private fun migrateToVersion4(db: SQLiteDatabase) {
+        val rules = BillingRules.DEFAULT
+        addColumnIfMissing(db, "club_configuration", "late_fee_type", "TEXT NOT NULL DEFAULT '${rules.lateFeeType.code}'")
+        addColumnIfMissing(db, "club_configuration", "late_fee_value", "REAL NOT NULL DEFAULT ${rules.lateFeeValue}")
+        addColumnIfMissing(db, "club_configuration", "late_fee_frequency", "TEXT NOT NULL DEFAULT '${rules.lateFeeFrequency.code}'")
+        addColumnIfMissing(db, "club_configuration", "late_fee_max_months", "INTEGER NOT NULL DEFAULT ${rules.lateFeeMaxMonths}")
+        addColumnIfMissing(db, "club_configuration", "benefit_stacking", "TEXT NOT NULL DEFAULT '${rules.benefitStacking.code}'")
+        addColumnIfMissing(db, "club_configuration", "scholarship_waives_late_fee", "INTEGER NOT NULL DEFAULT ${if (rules.scholarshipWaivesLateFee) 1 else 0}")
+        addColumnIfMissing(db, "club_configuration", "late_loses_discount", "INTEGER NOT NULL DEFAULT ${if (rules.lateLosesDiscount) 1 else 0}")
+
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS descuentos (
+                id_descuento INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT NOT NULL,
+                tipo TEXT NOT NULL,
+                valor REAL NOT NULL,
+                alcance TEXT NOT NULL,
+                activo INTEGER NOT NULL DEFAULT 1
+            );
+        """.trimIndent())
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS cliente_beneficios (
+                id_cliente INTEGER PRIMARY KEY,
+                id_descuento INTEGER,
+                beca_porcentaje INTEGER,
+                beca_alcance TEXT,
+                beca_motivo TEXT,
+                beca_hasta TEXT,
+                FOREIGN KEY (id_cliente) REFERENCES clientes(id) ON DELETE CASCADE,
+                FOREIGN KEY (id_descuento) REFERENCES descuentos(id_descuento) ON DELETE SET NULL
+            );
+        """.trimIndent())
+
+        listOf("cuotas", "pagos_actividad").forEach { table ->
+            addColumnIfMissing(db, table, "monto_base", "NUMERIC")
+            addColumnIfMissing(db, table, "descuento", "NUMERIC NOT NULL DEFAULT 0")
+            addColumnIfMissing(db, table, "recargo", "NUMERIC NOT NULL DEFAULT 0")
+            addColumnIfMissing(db, table, "detalle_ajustes", "TEXT")
+        }
+        backfillPaymentBaseAmounts(db)
+    }
+
+    private fun backfillPaymentBaseAmounts(db: SQLiteDatabase) {
+        listOf("cuotas", "pagos_actividad").filter { tableExists(db, it) }.forEach { table ->
+            db.execSQL("UPDATE $table SET monto_base = monto WHERE monto_base IS NULL")
+        }
+    }
+
+    private fun tableExists(db: SQLiteDatabase, table: String): Boolean =
+        db.rawQuery(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+            arrayOf(table)
+        ).use { it.moveToFirst() }
+
+    private fun addColumnIfMissing(db: SQLiteDatabase, table: String, column: String, definition: String) {
+        if (!tableExists(db, table)) return
+        val exists = db.rawQuery("PRAGMA table_info($table)", null).use { cursor ->
+            val nameIndex = cursor.getColumnIndexOrThrow("name")
+            generateSequence { if (cursor.moveToNext()) cursor.getString(nameIndex) else null }
+                .any { it == column }
+        }
+        if (!exists) db.execSQL("ALTER TABLE $table ADD COLUMN $column $definition")
     }
 
     private fun createClubConfigurationTable(db: SQLiteDatabase) {
@@ -231,7 +298,14 @@ package com.example.clubdeportivo
                 "accepts_cash",
                 "accepts_transfer",
                 "accepts_card",
-                "logo_uri"
+                "logo_uri",
+                "late_fee_type",
+                "late_fee_value",
+                "late_fee_frequency",
+                "late_fee_max_months",
+                "benefit_stacking",
+                "scholarship_waives_late_fee",
+                "late_loses_discount"
             ),
             "id = 1",
             null,
@@ -252,7 +326,16 @@ package com.example.clubdeportivo
                     acceptsCash = cursor.getInt(8) == 1,
                     acceptsTransfer = cursor.getInt(9) == 1,
                     acceptsCard = cursor.getInt(10) == 1,
-                    logoUri = if (cursor.isNull(11)) null else cursor.getString(11)
+                    logoUri = if (cursor.isNull(11)) null else cursor.getString(11),
+                    billingRules = BillingRules(
+                        lateFeeType = AdjustmentType.fromCode(cursor.getString(12)),
+                        lateFeeValue = cursor.getDouble(13),
+                        lateFeeFrequency = LateFeeFrequency.fromCode(cursor.getString(14)),
+                        lateFeeMaxMonths = cursor.getInt(15),
+                        benefitStacking = BenefitStacking.fromCode(cursor.getString(16)),
+                        scholarshipWaivesLateFee = cursor.getInt(17) == 1,
+                        lateLosesDiscount = cursor.getInt(18) == 1
+                    )
                 )
             }
         }
@@ -286,6 +369,14 @@ package com.example.clubdeportivo
         put("accepts_transfer", if (configuration.acceptsTransfer) 1 else 0)
         put("accepts_card", if (configuration.acceptsCard) 1 else 0)
         putOrNull("logo_uri", configuration.logoUri)
+        val rules = configuration.billingRules
+        put("late_fee_type", rules.lateFeeType.code)
+        put("late_fee_value", rules.lateFeeValue)
+        put("late_fee_frequency", rules.lateFeeFrequency.code)
+        put("late_fee_max_months", rules.lateFeeMaxMonths)
+        put("benefit_stacking", rules.benefitStacking.code)
+        put("scholarship_waives_late_fee", if (rules.scholarshipWaivesLateFee) 1 else 0)
+        put("late_loses_discount", if (rules.lateLosesDiscount) 1 else 0)
     }
 
     // ----------------------------------------- READ -------------------------------------------
@@ -674,10 +765,8 @@ package com.example.clubdeportivo
         val movimientos = obtenerMovimientosCuenta(db, persona.id.toString())
 
         val estado = if (persona.esSocio) {
-            CuentaCorrienteCalculator.evaluarSocio(
-                proximoVencimiento,
-                obtenerConfiguracionClub().monthlyFee
-            )
+            val cobroHoy = calcularCobroCuota(obtenerConfiguracionClub(), persona, LocalDate.now())
+            CuentaCorrienteCalculator.evaluarSocio(proximoVencimiento, cobroHoy.total)
         } else {
             CuentaCorrienteCalculator.evaluarNoSocio(ultimoPagoActividad != null)
         }
@@ -699,7 +788,7 @@ package com.example.clubdeportivo
         val movimientos = mutableListOf<MovimientoCuenta>()
         db.rawQuery(
             """
-                SELECT fechaPago, IFNULL(monto, 0), formaPago
+                SELECT fechaPago, IFNULL(monto, 0), formaPago, detalle_ajustes
                 FROM cuotas
                 WHERE idCliente = ?
                 ORDER BY fechaPago DESC, idCuota DESC
@@ -712,13 +801,14 @@ package com.example.clubdeportivo
                     tipo = "Cuota",
                     fecha = c.getString(0),
                     monto = c.getDouble(1),
-                    detalle = c.getString(2)
+                    detalle = c.getString(2),
+                    ajustes = c.getStringOrNull("detalle_ajustes")
                 )
             }
         }
         db.rawQuery(
             """
-                SELECT p.fecha_pago, IFNULL(p.monto, 0), a.nombre
+                SELECT p.fecha_pago, IFNULL(p.monto, 0), a.nombre, p.detalle_ajustes
                 FROM pagos_actividad p
                 LEFT JOIN actividades a ON a.id_actividad = p.id_actividad
                 WHERE p.idCliente = ?
@@ -732,7 +822,8 @@ package com.example.clubdeportivo
                     tipo = "Actividad",
                     fecha = c.getString(0),
                     monto = c.getDouble(1),
-                    detalle = if (!c.isNull(2)) c.getString(2) else "Sin actividad"
+                    detalle = if (!c.isNull(2)) c.getString(2) else "Sin actividad",
+                    ajustes = c.getStringOrNull("detalle_ajustes")
                 )
             }
         }
@@ -797,11 +888,10 @@ package com.example.clubdeportivo
     // ----------------------------------------- CREATE -----------------------------------------
     fun hacerSocioDesdeNoSocio(
         dni: Int,
-        formaPago: String,
+        formaPago: String?,
         fechaPago: String // "YYYY-MM-DD"
     ): Int? {
         val configuration = obtenerConfiguracionClub()
-        val paymentMethod = PaymentDbRules.configuredPaymentMethod(configuration, formaPago)
         val fechaVenc = PaymentDbRules.cuotaVencimiento(
             fechaPago,
             configuration.dueDay,
@@ -816,6 +906,8 @@ package com.example.clubdeportivo
             if (cliente.esSocio) {
                 throw IllegalStateException("El cliente ya es socio")
             }
+            val cobro = calcularCobroCuota(configuration, cliente, LocalDate.parse(fechaPago))
+            val formaRegistrada = PaymentDbRules.recordedPaymentMethod(configuration, formaPago, cobro.total)
 
             val cvUpdate = ContentValues().apply {
                 put("esSocio", 1)
@@ -827,9 +919,9 @@ package com.example.clubdeportivo
             val idCliente = cliente.id
             val cvCuota = ContentValues().apply {
                 put("idCliente", idCliente)
-                put("monto", configuration.monthlyFee)
+                putCharge(cobro)
                 put("fechaPago", fechaPago)
-                put("formaPago", paymentMethod.displayName)
+                put("formaPago", formaRegistrada)
                 put("estadoDelPago", PaymentDbRules.cuotaEstadoPagado())
                 put("fechaVencimiento", fechaVenc)
             }
@@ -927,27 +1019,94 @@ package com.example.clubdeportivo
     }
     fun registrarPagoCuota(
         dni: String,
-        formaPago: String,
+        formaPago: String?,
         fechaPago: String = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
     ): Long {
         val configuration = obtenerConfiguracionClub()
-        val paymentMethod = PaymentDbRules.configuredPaymentMethod(configuration, formaPago)
+        val cliente = obtenerPersonaPorDni(dni)
+            ?: throw IllegalArgumentException(PaymentDbRules.activeClientMissing)
+        val cobro = calcularCobroCuota(configuration, cliente, LocalDate.parse(fechaPago))
+        val formaRegistrada = PaymentDbRules.recordedPaymentMethod(configuration, formaPago, cobro.total)
         val fechaVenc = PaymentDbRules.cuotaVencimiento(
             fechaPago,
             configuration.dueDay,
             configuration.graceDays
         )
-        val cliente = obtenerPersonaPorDni(dni)
-            ?: throw IllegalArgumentException(PaymentDbRules.activeClientMissing)
         val cv = ContentValues().apply {
             put("idCliente", cliente.id)
-            put("monto", configuration.monthlyFee)
+            putCharge(cobro)
             put("fechaPago", fechaPago)
-            put("formaPago", paymentMethod.displayName)
+            put("formaPago", formaRegistrada)
             put("estadoDelPago", PaymentDbRules.cuotaEstadoPagado())
             put("fechaVencimiento", fechaVenc)
         }
         return writableDatabase.insert("cuotas", null, cv)
+    }
+
+    fun calcularCobroCuota(dni: String, fechaPago: LocalDate = LocalDate.now()): ChargeBreakdown {
+        val cliente = obtenerPersonaPorDni(dni)
+            ?: throw IllegalArgumentException(PaymentDbRules.activeClientMissing)
+        return calcularCobroCuota(obtenerConfiguracionClub(), cliente, fechaPago)
+    }
+
+    private fun calcularCobroCuota(
+        configuration: ClubConfiguration,
+        cliente: PersonaDTO,
+        fechaPago: LocalDate
+    ): ChargeBreakdown {
+        val idCliente = requireNotNull(cliente.id) { PaymentDbRules.activeClientMissing }
+        return ChargeCalculator.calculate(
+            base = configuration.monthlyFee,
+            kind = ChargeKind.FEE,
+            benefits = obtenerBeneficiosCliente(idCliente),
+            rules = configuration.billingRules,
+            currency = configuration.currency,
+            paymentDate = fechaPago,
+            dueDate = if (cliente.esSocio) ultimoVencimientoCuota(idCliente) else null
+        )
+    }
+
+    private fun ultimoVencimientoCuota(idCliente: Int): LocalDate? =
+        readableDatabase.rawQuery(
+            """
+                SELECT fechaVencimiento
+                FROM cuotas
+                WHERE idCliente = ?
+                ORDER BY fechaPago DESC, idCuota DESC
+                LIMIT 1
+            """.trimIndent(),
+            arrayOf(idCliente.toString())
+        ).use { cursor ->
+            if (cursor.moveToFirst() && !cursor.isNull(0)) {
+                runCatching { LocalDate.parse(cursor.getString(0)) }.getOrNull()
+            } else {
+                null
+            }
+        }
+
+    fun calcularCobroActividad(
+        idCliente: Int,
+        horarioId: Int,
+        fecha: LocalDate = LocalDate.now()
+    ): ChargeBreakdown? {
+        val price = obtenerPrecioHorario(horarioId) ?: return null
+        val configuration = obtenerConfiguracionClub()
+        return ChargeCalculator.calculate(
+            base = price,
+            kind = ChargeKind.ACTIVITY,
+            benefits = obtenerBeneficiosCliente(idCliente),
+            rules = configuration.billingRules,
+            currency = configuration.currency,
+            paymentDate = fecha
+        )
+    }
+
+    private fun ContentValues.putCharge(cobro: ChargeBreakdown) {
+        put("monto", cobro.total)
+        put("monto_base", cobro.base)
+        put("descuento", cobro.benefitsAmount)
+        put("recargo", cobro.lateFee)
+        putOrNull("detalle_ajustes", ChargeBreakdownFormatter.summary(cobro))
     }
 
     fun obtenerPrecioHorario(horarioId: Int): Double? {
@@ -968,20 +1127,28 @@ package com.example.clubdeportivo
     fun registrarPagoActividadNoSocio(
         idCliente: String,
         horarioId: Int,
-        medioPago: String,
+        medioPago: String?,
         fechaIso: String = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
     ): Long {
         val configuration = obtenerConfiguracionClub()
-        val paymentMethod = PaymentDbRules.configuredPaymentMethod(configuration, medioPago)
-        val amount = obtenerPrecioHorario(horarioId)
+        val price = obtenerPrecioHorario(horarioId)
             ?: throw IllegalArgumentException("No existe un horario activo para registrar el pago")
-        require(amount > 0.0 && amount.isFinite()) { "La actividad debe tener un precio valido" }
+        require(price > 0.0 && price.isFinite()) { "La actividad debe tener un precio valido" }
+        val cobro = ChargeCalculator.calculate(
+            base = price,
+            kind = ChargeKind.ACTIVITY,
+            benefits = idCliente.toIntOrNull()?.let(::obtenerBeneficiosCliente) ?: ClientBenefits.NONE,
+            rules = configuration.billingRules,
+            currency = configuration.currency,
+            paymentDate = LocalDate.parse(fechaIso)
+        )
+        val formaRegistrada = PaymentDbRules.recordedPaymentMethod(configuration, medioPago, cobro.total)
 
         val cv = ContentValues().apply {
             put("idCliente", idCliente)
             put("id_actividad", horarioId)
-            put("monto", amount)
-            put("forma_pago", paymentMethod.displayName)
+            putCharge(cobro)
+            put("forma_pago", formaRegistrada)
             put("fecha_pago", fechaIso)
         }
         return writableDatabase.insert("pagos_actividad", null, cv)
@@ -1100,6 +1267,113 @@ package com.example.clubdeportivo
             arrayOf(id.toString())
         ) > 0
     }
+
+    // ----------------------------------------- Descuentos y beneficios -----------------------------------------
+    fun insertarDescuento(discount: Discount): Long =
+        writableDatabase.insert("descuentos", null, discountValues(discount))
+
+    fun actualizarDescuento(discount: Discount): Int =
+        writableDatabase.update(
+            "descuentos",
+            discountValues(discount),
+            "id_descuento = ?",
+            arrayOf(discount.id.toString())
+        )
+
+    fun obtenerDescuento(id: Long): Discount? =
+        obtenerDescuentos().firstOrNull { it.id == id }
+
+    fun obtenerDescuentos(soloActivos: Boolean = false): List<Discount> {
+        val where = if (soloActivos) "WHERE activo = 1" else ""
+        readableDatabase.rawQuery(
+            "SELECT id_descuento, nombre, tipo, valor, alcance, activo FROM descuentos $where ORDER BY nombre ASC",
+            null
+        ).use { cursor ->
+            return generateSequence { if (cursor.moveToNext()) cursor.toDiscount(0) else null }.toList()
+        }
+    }
+
+    fun eliminarDescuento(id: Long): Boolean {
+        val assignments = android.database.DatabaseUtils.longForQuery(
+            readableDatabase,
+            "SELECT COUNT(*) FROM cliente_beneficios WHERE id_descuento = ?",
+            arrayOf(id.toString())
+        )
+        if (assignments > 0L) return false
+        return writableDatabase.delete("descuentos", "id_descuento = ?", arrayOf(id.toString())) > 0
+    }
+
+    fun obtenerBeneficiosCliente(idCliente: Int): ClientBenefits {
+        readableDatabase.rawQuery(
+            """
+                SELECT d.id_descuento, d.nombre, d.tipo, d.valor, d.alcance, d.activo,
+                       b.beca_porcentaje, b.beca_alcance, b.beca_motivo, b.beca_hasta
+                FROM cliente_beneficios b
+                LEFT JOIN descuentos d ON d.id_descuento = b.id_descuento
+                WHERE b.id_cliente = ?
+            """.trimIndent(),
+            arrayOf(idCliente.toString())
+        ).use { cursor ->
+            if (!cursor.moveToFirst()) return ClientBenefits.NONE
+            val discount = if (cursor.isNull(0)) null else cursor.toDiscount(0)
+            val scholarship = if (cursor.isNull(6)) {
+                null
+            } else {
+                Scholarship(
+                    percent = cursor.getInt(6),
+                    scope = ChargeScope.fromCode(cursor.getString(7)),
+                    reason = cursor.getString(8).orEmpty(),
+                    until = if (cursor.isNull(9)) null else LocalDate.parse(cursor.getString(9))
+                )
+            }
+            return ClientBenefits(discount, scholarship)
+        }
+    }
+
+    fun guardarBeneficiosCliente(idCliente: Int, discountId: Long?, scholarship: Scholarship?): Boolean {
+        if (discountId == null && scholarship == null) {
+            writableDatabase.delete("cliente_beneficios", "id_cliente = ?", arrayOf(idCliente.toString()))
+            return true
+        }
+        val values = ContentValues().apply {
+            put("id_cliente", idCliente)
+            if (discountId == null) putNull("id_descuento") else put("id_descuento", discountId)
+            if (scholarship == null) {
+                putNull("beca_porcentaje")
+                putNull("beca_alcance")
+                putNull("beca_motivo")
+                putNull("beca_hasta")
+            } else {
+                put("beca_porcentaje", scholarship.percent)
+                put("beca_alcance", scholarship.scope.code)
+                put("beca_motivo", scholarship.reason)
+                putOrNull("beca_hasta", scholarship.until?.toString())
+            }
+        }
+        return writableDatabase.insertWithOnConflict(
+            "cliente_beneficios",
+            null,
+            values,
+            SQLiteDatabase.CONFLICT_REPLACE
+        ) != -1L
+    }
+
+    private fun discountValues(discount: Discount) = ContentValues().apply {
+        put("nombre", discount.name)
+        put("tipo", discount.type.code)
+        put("valor", discount.value)
+        put("alcance", discount.scope.code)
+        put("activo", if (discount.active) 1 else 0)
+    }
+
+    private fun Cursor.toDiscount(offset: Int) = Discount(
+        id = getLong(offset),
+        name = getString(offset + 1),
+        type = AdjustmentType.fromCode(getString(offset + 2)),
+        value = getDouble(offset + 3),
+        scope = ChargeScope.fromCode(getString(offset + 4)),
+        active = getInt(offset + 5) == 1
+    )
 
     // ----------------------------------------- Delete -----------------------------------------
     // Borrado logico del padrón para evitar conflicto con tabla de pagos
@@ -1423,7 +1697,8 @@ package com.example.clubdeportivo
         val tipo: String,
         val fecha: String,
         val monto: Double,
-        val detalle: String
+        val detalle: String,
+        val ajustes: String? = null
     )
     data class ResumenPagosMes(
         val anio: Int,

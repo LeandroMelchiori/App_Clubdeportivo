@@ -2,6 +2,7 @@ package com.example.clubdeportivo
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
@@ -13,6 +14,7 @@ import java.time.LocalDate
 class PagoDeCuotaActivity : AppCompatActivity() {
     private lateinit var db: DBHelper
     private lateinit var configuration: ClubConfiguration
+    private lateinit var charge: ChargeBreakdown
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,17 +40,20 @@ class PagoDeCuotaActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvNombre).text = personName
         findViewById<TextView>(R.id.tvDni).text = dni
         findViewById<TextView>(R.id.tvTipoOperacion).text = operation
-        findViewById<TextView>(R.id.tvPrecio).text = getString(
-            R.string.value_amount,
-            MoneyFormatter.format(configuration.monthlyFee, configuration.currency)
-        )
+        charge = try {
+            db.calcularCobroCuota(dni)
+        } catch (_: IllegalArgumentException) {
+            ChargeBreakdown(base = configuration.monthlyFee)
+        }
 
         val paymentMethods = findViewById<RadioGroup>(R.id.rgMediosdePago)
         PaymentMethodUi.bind(paymentMethods, configuration)
+        renderCharge(paymentMethods)
 
         findViewById<MaterialButton>(R.id.btnPagar).apply {
             contentDescription = AccessibilityText.pay
-            isEnabled = configuration.enabledPaymentMethods().isNotEmpty()
+            if (charge.isFree) setText(R.string.register_no_charge)
+            isEnabled = charge.isFree || configuration.enabledPaymentMethods().isNotEmpty()
             setOnClickListener {
                 registerPayment(
                     dni = dni,
@@ -68,6 +73,25 @@ class PagoDeCuotaActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
+    private fun renderCharge(paymentMethods: RadioGroup) {
+        val price = findViewById<TextView>(R.id.tvPrecio)
+        val breakdown = findViewById<TextView>(R.id.tvDesglose)
+        if (charge.hasAdjustments) {
+            price.visibility = View.GONE
+            breakdown.visibility = View.VISIBLE
+            breakdown.text = ChargeBreakdownFormatter.text(charge, ChargeKind.FEE, configuration.currency)
+        } else {
+            price.text = getString(
+                R.string.value_amount,
+                MoneyFormatter.format(charge.total, configuration.currency)
+            )
+        }
+        if (charge.isFree) {
+            findViewById<TextView>(R.id.tvMetodoPago).visibility = View.GONE
+            paymentMethods.visibility = View.GONE
+        }
+    }
+
     private fun registerPayment(
         dni: String,
         personName: String,
@@ -76,11 +100,8 @@ class PagoDeCuotaActivity : AppCompatActivity() {
         user: String,
         paymentMethods: RadioGroup
     ) {
-        val method = PaymentMethodUi.selected(paymentMethods)
-        val validation = PaymentValidator.validateManualPayment(
-            configuration.monthlyFee,
-            method?.displayName
-        )
+        val method = if (charge.isFree) null else PaymentMethodUi.selected(paymentMethods)
+        val validation = PaymentValidator.validateCharge(charge.total, method?.displayName)
         if (!validation.isValid) {
             toast(validation.error ?: "Selecciona un medio de pago")
             return
@@ -92,15 +113,12 @@ class PagoDeCuotaActivity : AppCompatActivity() {
             return
         }
 
-        val message = if (isMember) {
-            PaymentDialogText.cuota(
-                configuration.monthlyFee,
-                paymentMethod,
-                configuration.currency
-            )
-        } else {
-            PaymentDialogText.convertirNoSocio(
-                configuration.monthlyFee,
+        val message = when {
+            charge.isFree && isMember -> PaymentDialogText.cuotaSinCargo()
+            charge.isFree -> PaymentDialogText.convertirNoSocioSinCargo(personName)
+            isMember -> PaymentDialogText.cuota(charge.total, paymentMethod, configuration.currency)
+            else -> PaymentDialogText.convertirNoSocio(
+                charge.total,
                 paymentMethod,
                 personName,
                 configuration.currency
@@ -108,10 +126,10 @@ class PagoDeCuotaActivity : AppCompatActivity() {
         }
 
         AlertDialog.Builder(this)
-            .setTitle(PaymentDialogText.confirmTitle)
+            .setTitle(if (charge.isFree) PaymentDialogText.noChargeTitle else PaymentDialogText.confirmTitle)
             .setMessage(message)
             .setPositiveButton(PaymentDialogText.confirm) { _, _ ->
-                persistPayment(dni, paymentMethod, isMember, user, today)
+                persistPayment(dni, method?.displayName, isMember, user, today)
             }
             .setNegativeButton(PaymentDialogText.cancel, null)
             .show()
@@ -119,7 +137,7 @@ class PagoDeCuotaActivity : AppCompatActivity() {
 
     private fun persistPayment(
         dni: String,
-        paymentMethod: String,
+        paymentMethod: String?,
         isMember: Boolean,
         user: String,
         paymentDate: LocalDate

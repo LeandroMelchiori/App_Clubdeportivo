@@ -60,6 +60,29 @@ class ClubConfigurationInstrumentedTest {
     }
 
     @Test
+    fun guardarConfiguracion_persisteReglasDeCobro() {
+        val expected = ClubConfiguration.DEFAULT.copy(
+            billingRules = BillingRules(
+                lateFeeType = AdjustmentType.FIXED,
+                lateFeeValue = 1500.0,
+                lateFeeFrequency = LateFeeFrequency.MONTHLY,
+                lateFeeMaxMonths = 6,
+                benefitStacking = BenefitStacking.COMBINED,
+                scholarshipWaivesLateFee = false,
+                lateLosesDiscount = true
+            )
+        )
+
+        DBHelper(context).use { helper ->
+            assertTrue(helper.guardarConfiguracionClub(expected))
+        }
+
+        DBHelper(context).use { helper ->
+            assertEquals(expected, helper.obtenerConfiguracionClub())
+        }
+    }
+
+    @Test
     fun guardarConfiguracion_admiteLogoVacio() {
         DBHelper(context).use { helper ->
             assertTrue(helper.guardarConfiguracionClub(ClubConfiguration.DEFAULT))

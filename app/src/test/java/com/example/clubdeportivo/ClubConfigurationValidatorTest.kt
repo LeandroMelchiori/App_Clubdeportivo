@@ -77,6 +77,68 @@ class ClubConfigurationValidatorTest {
         assertEquals(ClubConfigurationValidator.Field.PAYMENT_METHODS, result.field)
     }
 
+    @Test
+    fun validate_sinRecargoUsaLasReglasPredeterminadas() {
+        val result = ClubConfigurationValidator.validate(validDraft())
+
+        assertEquals(BillingRules.DEFAULT, result.configuration?.billingRules)
+    }
+
+    @Test
+    fun validate_armaLasReglasDeCobroConfiguradas() {
+        val result = ClubConfigurationValidator.validate(
+            validDraft().copy(
+                lateFeeTypeCode = "fixed",
+                lateFeeValue = "1.500",
+                lateFeeFrequencyCode = "monthly",
+                lateFeeMaxMonths = "6",
+                benefitStackingCode = "combined",
+                scholarshipWaivesLateFee = false,
+                lateLosesDiscount = true
+            )
+        )
+
+        assertEquals(
+            BillingRules(
+                lateFeeType = AdjustmentType.FIXED,
+                lateFeeValue = 1500.0,
+                lateFeeFrequency = LateFeeFrequency.MONTHLY,
+                lateFeeMaxMonths = 6,
+                benefitStacking = BenefitStacking.COMBINED,
+                scholarshipWaivesLateFee = false,
+                lateLosesDiscount = true
+            ),
+            result.configuration?.billingRules
+        )
+    }
+
+    @Test
+    fun validate_rechazaRecargoInvalido() {
+        val negativo = ClubConfigurationValidator.validate(validDraft().copy(lateFeeValue = "-5"))
+        val vacio = ClubConfigurationValidator.validate(validDraft().copy(lateFeeValue = ""))
+        val porcentajeAlto = ClubConfigurationValidator.validate(validDraft().copy(lateFeeValue = "120"))
+        val montoAlto = ClubConfigurationValidator.validate(
+            validDraft().copy(lateFeeTypeCode = "fixed", lateFeeValue = "120")
+        )
+
+        assertEquals(ClubConfigurationValidator.Field.LATE_FEE_VALUE, negativo.field)
+        assertEquals(ClubConfigurationValidator.Field.LATE_FEE_VALUE, vacio.field)
+        assertEquals("El recargo porcentual no puede superar 100", porcentajeAlto.error)
+        assertTrue(montoAlto.isValid)
+    }
+
+    @Test
+    fun validate_exigeTopeDeMesesSoloConRecargoMensual() {
+        val mensual = ClubConfigurationValidator.validate(
+            validDraft().copy(lateFeeFrequencyCode = "monthly", lateFeeMaxMonths = "0")
+        )
+        val unico = ClubConfigurationValidator.validate(validDraft().copy(lateFeeMaxMonths = ""))
+
+        assertEquals(ClubConfigurationValidator.Field.LATE_FEE_MAX_MONTHS, mensual.field)
+        assertTrue(unico.isValid)
+        assertEquals(3, unico.configuration?.billingRules?.lateFeeMaxMonths)
+    }
+
     private fun validDraft() = ClubConfigurationValidator.Draft(
         name = "  Club Central  ",
         address = "San Martin 123",

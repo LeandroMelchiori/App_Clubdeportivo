@@ -2,6 +2,7 @@ package com.example.clubdeportivo
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.RadioGroup
 import android.widget.SearchView
@@ -18,6 +19,10 @@ class PagoActividadActivity : AppCompatActivity() {
     private lateinit var personId: TextView
     private lateinit var payButton: Button
     private lateinit var paymentMethods: RadioGroup
+    private lateinit var breakdownView: TextView
+    private lateinit var priceView: TextView
+    private var scheduleId = -1
+    private var charge: ChargeBreakdown? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,8 +36,10 @@ class PagoActividadActivity : AppCompatActivity() {
         personId = findViewById(R.id.tvIdUsuario)
         payButton = findViewById(R.id.btnPagar)
         paymentMethods = findViewById(R.id.rgMedioPago)
+        breakdownView = findViewById(R.id.tvDesglose)
+        priceView = findViewById(R.id.tvPrecio)
 
-        val scheduleId = intent.getIntExtra("idActividad", -1)
+        scheduleId = intent.getIntExtra("idActividad", -1)
         val activityName = intent.getStringExtra("nombreActividad") ?: "Actividad"
         val startTime = intent.getStringExtra("horaInicio") ?: "--:--"
         val activityDay = intent.getIntExtra("diaActividad", -1)
@@ -44,7 +51,7 @@ class PagoActividadActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvNombreActividad).text = "Actividad: $activityName"
         findViewById<TextView>(R.id.tvHorario).text =
             "${ClubFormatters.nombreDia(activityDay)} - $startTime hs"
-        findViewById<TextView>(R.id.tvPrecio).text = getString(
+        priceView.text = getString(
             R.string.price_amount,
             MoneyFormatter.format(price, configuration.currency)
         )
@@ -74,6 +81,7 @@ class PagoActividadActivity : AppCompatActivity() {
                 if (person == null) {
                     personName.text = "-----"
                     personId.text = "----"
+                    showCharge(null)
                     PaymentMethodUi.setEnabled(paymentMethods, configuration, false)
                     payButton.isEnabled = false
                     toast("Ingresa un DNI valido")
@@ -82,16 +90,40 @@ class PagoActividadActivity : AppCompatActivity() {
 
                 personName.text = "${person.apellido}, ${person.nombre}"
                 personId.text = "DNI: ${person.dni}"
-                PaymentMethodUi.setEnabled(paymentMethods, configuration, true)
-                payButton.isEnabled = paymentMethods.checkedRadioButtonId != -1
+                val personCharge = if (person.esSocio) {
+                    null
+                } else {
+                    person.id?.let { db.calcularCobroActividad(it, scheduleId) }
+                }
+                showCharge(personCharge)
+                val free = personCharge?.isFree == true
+                PaymentMethodUi.setEnabled(paymentMethods, configuration, !free)
+                payButton.isEnabled = free || paymentMethods.checkedRadioButtonId != -1
                 return true
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
+                showCharge(null)
                 payButton.isEnabled = false
                 return false
             }
         })
+    }
+
+    private fun showCharge(newCharge: ChargeBreakdown?) {
+        charge = newCharge
+        if (newCharge != null && newCharge.hasAdjustments) {
+            breakdownView.text = ChargeBreakdownFormatter.text(
+                newCharge,
+                ChargeKind.ACTIVITY,
+                configuration.currency
+            )
+            breakdownView.visibility = View.VISIBLE
+            priceView.visibility = View.GONE
+        } else {
+            breakdownView.visibility = View.GONE
+            priceView.visibility = View.VISIBLE
+        }
     }
 
     private fun confirmPayment(
@@ -100,23 +132,29 @@ class PagoActividadActivity : AppCompatActivity() {
         price: Double,
         user: String
     ) {
-        val method = PaymentMethodUi.selected(paymentMethods)
-        val validation = PaymentValidator.validateManualPayment(price, method?.displayName)
+        val total = charge?.total ?: price
+        val free = charge?.isFree == true
+        val method = if (free) null else PaymentMethodUi.selected(paymentMethods)
+        val validation = PaymentValidator.validateCharge(total, method?.displayName)
         if (!validation.isValid) {
             toast(validation.error ?: "Selecciona un medio de pago")
             return
         }
-        val paymentMethod = method?.displayName.orEmpty()
+        val paymentMethod = method?.displayName
 
         AlertDialog.Builder(this)
-            .setTitle(PaymentDialogText.confirmActivityTitle)
+            .setTitle(if (free) PaymentDialogText.noChargeTitle else PaymentDialogText.confirmActivityTitle)
             .setMessage(
-                PaymentDialogText.actividad(
-                    price,
-                    activityName,
-                    paymentMethod,
-                    configuration.currency
-                )
+                if (free) {
+                    PaymentDialogText.actividadSinCargo(activityName)
+                } else {
+                    PaymentDialogText.actividad(
+                        total,
+                        activityName,
+                        paymentMethod.orEmpty(),
+                        configuration.currency
+                    )
+                }
             )
             .setPositiveButton(PaymentDialogText.confirm) { _, _ ->
                 try {
@@ -137,7 +175,7 @@ class PagoActividadActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun payActivity(dni: String, scheduleId: Int, paymentMethod: String): Boolean {
+    private fun payActivity(dni: String, scheduleId: Int, paymentMethod: String?): Boolean {
         val client = db.obtenerPersonaPorDni(dni)
             ?: throw IllegalArgumentException("Debe ingresar un DNI valido")
         if (client.esSocio) {

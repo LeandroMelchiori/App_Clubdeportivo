@@ -8,16 +8,23 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import java.time.LocalDate
 
 class VerMasActivity : AppCompatActivity() {
+    private lateinit var db: DBHelper
+    private lateinit var configuration: ClubConfiguration
+    private var cliente: DBHelper.PersonaDTO? = null
+    private var movimientosCuenta: List<DBHelper.MovimientoCuenta> = emptyList()
+    private var filtroHistorial = CuentaCorrienteFormatter.Filtro.TODOS
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_ver_mas)
         SystemBarInsets.applyTopTo(this)
 
         // DB Helper
-        val db = DBHelper(this)
-        val configuration = db.obtenerConfiguracionClub()
+        db = DBHelper(this)
+        configuration = db.obtenerConfiguracionClub()
 
         // Recupera el nombre de usuario del intent y lo muestra
         val usuario = intent.getStringExtra("usuario") ?: "Usuario"
@@ -38,6 +45,7 @@ class VerMasActivity : AppCompatActivity() {
             finish()
             return
         }
+        this.cliente = cliente
 
         //Inicializar vistas
         val tvNombreCompleto = findViewById<TextView>(R.id.tvNombreUsuario)
@@ -47,41 +55,27 @@ class VerMasActivity : AppCompatActivity() {
         val tvTelefono = findViewById<TextView>(R.id.tvTelefono)
         val tvFechaNacimiento = findViewById<TextView>(R.id.tvFechaNacimiento)
         val tvIdTipoSocio = findViewById<TextView>(R.id.tvIdTipoSocio)
-        val tvEstadoCuenta = findViewById<TextView>(R.id.tvEstadoCuenta)
-        val tvUltimoPago = findViewById<TextView>(R.id.tvUltimoPago)
-        val tvProximoVencimiento = findViewById<TextView>(R.id.tvProximoVencimiento)
-        val tvDeudaEstimada = findViewById<TextView>(R.id.tvDeudaEstimada)
-        val tvHistorialCuenta = findViewById<TextView>(R.id.tvHistorialCuenta)
 
         // Reemplaza datos en las view
         tvNombreCompleto.text = PersonaDisplayFormatter.nombreCompleto(cliente.nombre, cliente.apellido)
         tvDNI.text = PersonaDisplayFormatter.etiqueta("DNI", cliente.dni)
-        tvTelefono.text = PersonaDisplayFormatter.etiqueta("Tel\u00e9fono", cliente.telefono)
+        tvTelefono.text = PersonaDisplayFormatter.etiqueta("Teléfono", cliente.telefono)
         tvDireccion.text = PersonaDisplayFormatter.etiqueta("Domicilio", cliente.direccion)
         tvFechaNacimiento.text = PersonaDisplayFormatter.etiqueta("Fecha de nacimiento", cliente.fecha_nac)
         tvEmail.text = PersonaDisplayFormatter.etiqueta("Email", cliente.email)
         tvIdTipoSocio.text = PersonaDisplayFormatter.tipoSocio(cliente.id, cliente.esSocio)
 
-        val cuenta = db.obtenerCuentaCorriente(cliente.dni)
-        tvEstadoCuenta.text = "Estado: ${cuenta?.estado ?: "Sin datos"} - ${cuenta?.detalleEstado ?: ""}"
-        tvUltimoPago.text = "\u00daltimo pago: ${cuenta?.ultimoPagoCuota ?: cuenta?.ultimoPagoActividad ?: "Sin registros"}"
-        tvProximoVencimiento.text = "Pr\u00f3ximo vencimiento: ${cuenta?.proximoVencimiento ?: "No aplica"}"
-        tvDeudaEstimada.text = getString(
-            R.string.estimated_debt,
-            MoneyFormatter.format(cuenta?.deudaEstimada ?: 0.0, configuration.currency)
-        )
-        val movimientosCuenta = cuenta?.movimientos.orEmpty()
-        fun mostrarHistorial(filtro: CuentaCorrienteFormatter.Filtro) {
-            tvHistorialCuenta.text = CuentaCorrienteFormatter.historial(
-                movimientosCuenta,
-                configuration.currency,
-                filtro
-            )
-        }
-        mostrarHistorial(CuentaCorrienteFormatter.Filtro.TODOS)
         findViewById<Button>(R.id.btnHistorialTodos).setOnClickListener { mostrarHistorial(CuentaCorrienteFormatter.Filtro.TODOS) }
         findViewById<Button>(R.id.btnHistorialCuotas).setOnClickListener { mostrarHistorial(CuentaCorrienteFormatter.Filtro.CUOTAS) }
         findViewById<Button>(R.id.btnHistorialActividades).setOnClickListener { mostrarHistorial(CuentaCorrienteFormatter.Filtro.ACTIVIDADES) }
+
+        // Boton beneficios
+        findViewById<Button>(R.id.btnBeneficios).setOnClickListener {
+            startActivity(
+                Intent(this, BeneficiosClienteActivity::class.java)
+                    .putExtra(BeneficiosClienteActivity.EXTRA_DNI, cliente.dni)
+            )
+        }
 
         // Boton editar
         val btnEditar = findViewById<Button>(R.id.btnEditar)
@@ -122,5 +116,45 @@ class VerMasActivity : AppCompatActivity() {
 
         // Bottom
         BottomNavHelper.setup(this, usuario, R.id.nav_listas)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        cliente?.let(::mostrarCuenta)
+    }
+
+    override fun onDestroy() {
+        db.close()
+        super.onDestroy()
+    }
+
+    private fun mostrarCuenta(cliente: DBHelper.PersonaDTO) {
+        val cuenta = db.obtenerCuentaCorriente(cliente.dni)
+        findViewById<TextView>(R.id.tvEstadoCuenta).text =
+            "Estado: ${cuenta?.estado ?: "Sin datos"} - ${cuenta?.detalleEstado ?: ""}"
+        findViewById<TextView>(R.id.tvUltimoPago).text =
+            "Último pago: ${cuenta?.ultimoPagoCuota ?: cuenta?.ultimoPagoActividad ?: "Sin registros"}"
+        findViewById<TextView>(R.id.tvProximoVencimiento).text =
+            "Próximo vencimiento: ${cuenta?.proximoVencimiento ?: "No aplica"}"
+        findViewById<TextView>(R.id.tvDeudaEstimada).text = getString(
+            R.string.estimated_debt,
+            MoneyFormatter.format(cuenta?.deudaEstimada ?: 0.0, configuration.currency)
+        )
+        findViewById<TextView>(R.id.tvBeneficios).text = BenefitText.clientSummary(
+            cliente.id?.let(db::obtenerBeneficiosCliente) ?: ClientBenefits.NONE,
+            configuration.currency,
+            LocalDate.now()
+        )
+        movimientosCuenta = cuenta?.movimientos.orEmpty()
+        mostrarHistorial(filtroHistorial)
+    }
+
+    private fun mostrarHistorial(filtro: CuentaCorrienteFormatter.Filtro) {
+        filtroHistorial = filtro
+        findViewById<TextView>(R.id.tvHistorialCuenta).text = CuentaCorrienteFormatter.historial(
+            movimientosCuenta,
+            configuration.currency,
+            filtro
+        )
     }
 }

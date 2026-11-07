@@ -6,6 +6,7 @@ import java.time.YearMonth
 object PaymentDbRules {
     const val activeClientMissing = "No existe un cliente activo con ese DNI"
     const val disabledPaymentMethod = "El medio de pago no esta habilitado para el club"
+    const val noChargeMethod = "Sin cargo"
 
     fun cuotaVencimiento(fechaPagoIso: String, dueDay: Int, graceDays: Int): String {
         require(dueDay in 1..28) { "El dia de vencimiento debe estar entre 1 y 28" }
@@ -25,6 +26,16 @@ object PaymentDbRules {
             ?: throw IllegalArgumentException(disabledPaymentMethod)
         require(method in configuration.enabledPaymentMethods()) { disabledPaymentMethod }
         return method
+    }
+
+    fun recordedPaymentMethod(
+        configuration: ClubConfiguration,
+        value: String?,
+        total: Double
+    ): String = if (total == 0.0) {
+        noChargeMethod
+    } else {
+        configuredPaymentMethod(configuration, value).displayName
     }
 
     fun paymentAlreadyRegistered(lastPaymentIso: String?, date: LocalDate): Boolean =
