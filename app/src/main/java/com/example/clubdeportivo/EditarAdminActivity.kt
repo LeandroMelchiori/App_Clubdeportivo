@@ -15,6 +15,7 @@ class EditarAdminActivity : AppCompatActivity() {
         val usuario = intent.getStringExtra("usuario") ?: "Usuario"
         val tvBienvenida = findViewById<TextView>(R.id.tvBienvenida)
         tvBienvenida.text = "Bienvenido, $usuario"
+        findViewById<TextView>(R.id.tvFecha).text = HeaderDateFormatter.format()
 
         // Bottom
         BottomNavHelper.setup(this, usuario, R.id.nav_settings)
