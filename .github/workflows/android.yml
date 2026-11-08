@@ -25,7 +25,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Tests JVM
-        run: ./gradlew testDemoDebugUnitTest testProductionDebugUnitTest
+        run: ./gradlew :shared:test testDemoDebugUnitTest testProductionDebugUnitTest
 
       - name: Lint
         run: ./gradlew lintDemoDebug lintProductionDebug

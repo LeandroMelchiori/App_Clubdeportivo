@@ -31,6 +31,7 @@ Comandos por variante:
 ```powershell
 .\gradlew.bat assembleDemoDebug
 .\gradlew.bat assembleProductionDebug
+.\gradlew.bat :shared:test
 .\gradlew.bat testDemoDebugUnitTest
 .\gradlew.bat testProductionDebugUnitTest
 .\gradlew.bat connectedDemoDebugAndroidTest
@@ -57,11 +58,12 @@ Desde la raiz del proyecto en Windows:
 
 ## Estructura
 
-- `app/src/main/java/com/example/clubdeportivo/`: Activities, adapters, helpers y reglas simples.
+- `shared/`: modulo Kotlin puro, sin dependencias de Android, con la logica de negocio que tambien va a usar el backend: cobros, descuentos, becas y recargos, vencimientos, cuenta corriente y validaciones. Sus tests JVM viven en `shared/src/test/`.
+- `app/src/main/java/com/example/clubdeportivo/`: Activities, adapters, acceso a SQLite y helpers de interfaz.
 - `app/src/main/res/layout/`: pantallas XML.
 - `app/src/main/res/menu/menu_bottom_nav.xml`: navegacion inferior.
 - `app/src/main/res/values/`: colores, strings y temas.
-- `app/src/test/`: tests unitarios JVM.
+- `app/src/test/`: tests unitarios JVM de la capa de interfaz e importacion.
 - `app/src/androidTest/`: tests instrumentados de SQLite real y smoke visual.
 
 ## Modelo de datos
@@ -117,6 +119,8 @@ Tests instrumentados:
 - `ClubConfigurationInstrumentedTest`: verifica valores iniciales y persistencia completa en SQLite.
 - `ClubConfigurationMigrationInstrumentedTest`: migra de v2 a v3 sin borrar datos.
 - `VisualSmokeInstrumentedTest`: recorre las pantallas principales y genera capturas por variante, incluidos los listados y formularios de profesores y actividades y la previsualizacion, el filtro de errores y la confirmacion de la importacion CSV.
+
+En cada PR, GitHub Actions corre los tests JVM de `shared` y de las dos variantes, Lint y el build (`.github/workflows/android.yml`). Las pruebas instrumentadas todavia se corren a mano en un emulador.
 
 Para obtener evidencia visual, ejecutar:
 
