@@ -126,6 +126,10 @@ Para obtener evidencia visual, ejecutar:
 
 Luego revisar los artefactos generados por Android Test Orchestrator/runner en el reporte de instrumented tests del modulo `app`.
 
+## Arquitectura
+
+Las decisiones de arquitectura se registran en `docs/arquitectura/`. La [ADR-001](docs/arquitectura/ADR-001-backend-saas.md) define el backend propio para el servicio multi-club.
+
 ## Notas para desarrollo
 
 - Mantener la arquitectura actual salvo que se planifique una refactorizacion mayor.
