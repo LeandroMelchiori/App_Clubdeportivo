@@ -1,5 +1,7 @@
 package com.example.clubdeportivo.backend.error
 
+import java.time.Duration
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
 import org.springframework.web.ErrorResponseException
@@ -51,6 +53,16 @@ class SamePasswordException : ApiProblemException(
     "Contraseña repetida",
     "La contraseña nueva tiene que ser distinta de la actual.",
 )
+
+class TooManyAttemptsException(retryAfter: Duration) : ApiProblemException(
+    HttpStatus.TOO_MANY_REQUESTS,
+    "Demasiados intentos",
+    "Se superó el límite de intentos de ingreso. Hay que esperar unos minutos antes de volver a probar.",
+) {
+    init {
+        headers.set(HttpHeaders.RETRY_AFTER, retryAfter.toSeconds().coerceAtLeast(1).toString())
+    }
+}
 
 class ConflictException(detail: String) : ApiProblemException(HttpStatus.CONFLICT, "Conflicto", detail)
 

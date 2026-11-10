@@ -26,18 +26,22 @@ class AuthService(
     private val sessions: SessionRepository,
     private val hasher: PasswordHasher,
     private val accessTokens: AccessTokenIssuer,
+    private val limiter: LoginAttemptLimiter,
     private val properties: AuthProperties,
 ) {
 
-    fun login(email: String, password: String, clubId: UUID?): AuthResponse {
+    fun login(email: String, password: String, clubId: UUID?, ip: String): AuthResponse {
         val account = Emails.normalize(email)
+        limiter.checkAllowed(account, ip)
         // La verificación de Argon2 queda fuera de la transacción: tarda y no necesita la base.
         val user = db.identity { users.findByEmail(account) }
         val valid = if (user != null) hasher.matches(password, user.passwordHash) else hasher.matchesNothing(password)
         if (user == null || !valid) {
+            limiter.recordFailure(account, ip)
             log.info("Ingreso rechazado por credenciales inválidas")
             throw InvalidCredentialsException()
         }
+        limiter.recordSuccess(account)
         return db.identity {
             val clubs = sessions.activeClubsOf(user.id)
             if (clubs.isEmpty()) throw NoActiveClubsException()
@@ -89,9 +93,13 @@ class AuthService(
      * Cambia la contraseña, cierra todas las sesiones de la cuenta en todos sus clubes y abre una nueva
      * en el club actual.
      */
-    fun changePassword(principal: ClubPrincipal, currentPassword: String, newPassword: String): AuthResponse {
+    fun changePassword(principal: ClubPrincipal, currentPassword: String, newPassword: String, ip: String): AuthResponse {
         val user = db.identity { users.findById(principal.userId) } ?: throw InvalidRefreshTokenException()
-        if (!hasher.matches(currentPassword, user.passwordHash)) throw WrongCurrentPasswordException()
+        limiter.checkAllowed(user.email, ip)
+        if (!hasher.matches(currentPassword, user.passwordHash)) {
+            limiter.recordFailure(user.email, ip)
+            throw WrongCurrentPasswordException()
+        }
         if (currentPassword == newPassword) throw SamePasswordException()
         val newHash = hasher.hash(newPassword)
         return db.identity {

@@ -3,6 +3,7 @@ package com.example.clubdeportivo.backend.auth
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -23,7 +24,8 @@ class AuthController(private val auth: AuthService) {
         description = "Abre una sesión en el club pedido o, si no se indica, en el del último ingreso. " +
             "La respuesta lista todos los clubes de la cuenta.",
     )
-    fun login(@Valid @RequestBody body: LoginRequest): AuthResponse = auth.login(body.email, body.password, body.clubId)
+    fun login(@Valid @RequestBody body: LoginRequest, request: HttpServletRequest): AuthResponse =
+        auth.login(body.email, body.password, body.clubId, request.remoteAddr)
 
     @PostMapping("/refresh")
     @Operation(
@@ -47,5 +49,6 @@ class AuthController(private val auth: AuthService) {
     fun changePassword(
         @Valid @RequestBody body: ChangePasswordRequest,
         @AuthenticationPrincipal principal: ClubPrincipal,
-    ): AuthResponse = auth.changePassword(principal, body.currentPassword, body.newPassword)
+        request: HttpServletRequest,
+    ): AuthResponse = auth.changePassword(principal, body.currentPassword, body.newPassword, request.remoteAddr)
 }

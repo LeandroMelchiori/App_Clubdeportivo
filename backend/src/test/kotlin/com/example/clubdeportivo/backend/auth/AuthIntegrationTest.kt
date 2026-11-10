@@ -169,6 +169,29 @@ class AuthIntegrationTest : IntegrationTest() {
             .expectBody().jsonPath("$.id").isEqualTo(clubA.clubId.toString())
     }
 
+    @Test
+    fun limitePorCuenta_bloqueaTrasCincoFallos_sinAfectarOtrasCuentas() {
+        val club = createClub()
+        val otro = createClub()
+
+        repeat(5) { loginRequest(club.adminEmail, "clave-incorrecta").expectStatus().isUnauthorized }
+
+        loginRequest(club.adminEmail, PASSWORD)
+            .expectStatus().isEqualTo(429)
+            .expectHeader().exists(HttpHeaders.RETRY_AFTER)
+            .expectBody().jsonPath("$.title").isEqualTo("Demasiados intentos")
+        login(otro.adminEmail, PASSWORD)
+    }
+
+    @Test
+    fun limitePorIp_bloqueaTrasVeinteFallosConCuentasDistintas() {
+        val club = createClub()
+
+        repeat(20) { loginRequest(uniqueEmail("intento"), "clave-incorrecta").expectStatus().isUnauthorized }
+
+        loginRequest(club.adminEmail, PASSWORD).expectStatus().isEqualTo(429)
+    }
+
     private fun logout(refreshToken: String) {
         client.post().uri("/api/v1/auth/logout")
             .contentType(MediaType.APPLICATION_JSON)

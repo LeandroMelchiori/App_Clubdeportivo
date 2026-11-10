@@ -1,10 +1,12 @@
 package com.example.clubdeportivo.backend
 
 import com.example.clubdeportivo.backend.auth.AuthResponse
+import com.example.clubdeportivo.backend.auth.LoginAttemptLimiter
 import com.example.clubdeportivo.backend.club.CreateClubResponse
 import com.example.clubdeportivo.backend.club.Role
 import com.example.clubdeportivo.backend.member.AddMemberResponse
 import java.util.UUID
+import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient
 import org.springframework.boot.test.context.SpringBootTest
@@ -32,6 +34,15 @@ abstract class IntegrationTest {
 
     @Autowired
     protected lateinit var jdbc: JdbcClient
+
+    @Autowired
+    private lateinit var limiter: LoginAttemptLimiter
+
+    @BeforeEach
+    fun resetLoginLimits() {
+        // Todos los pedidos de los tests salen de la misma IP local.
+        limiter.clear()
+    }
 
     protected fun createClub(name: String = "Club ${UUID.randomUUID().toString().take(8)}"): ClubFixture {
         val email = uniqueEmail("admin")
