@@ -22,10 +22,10 @@ class ApiIntegrationTest @Autowired constructor(
 ) {
 
     @Test
-    fun flyway_aplicaLaMigracionInicial() {
+    fun flyway_aplicaTodasLasMigraciones() {
         val info = flyway.info()
 
-        assertThat(info.current()?.version?.version).isEqualTo("1")
+        assertThat(info.current()?.version?.version).isEqualTo("3")
         assertThat(info.pending()).isEmpty()
         val comentario = jdbc.queryForObject(
             "select obj_description('public'::regnamespace, 'pg_namespace')",
