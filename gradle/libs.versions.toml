@@ -13,6 +13,7 @@ material = "1.13.0"
 activity = "1.11.0"
 constraintlayout = "2.2.1"
 springBoot = "4.1.2"
+springdoc = "3.2.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -39,6 +40,7 @@ flyway-database-postgresql = { group = "org.flywaydb", name = "flyway-database-p
 postgresql = { group = "org.postgresql", name = "postgresql" }
 jackson-module-kotlin = { group = "tools.jackson.module", name = "jackson-module-kotlin" }
 kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect" }
+springdoc-openapi-webmvc-ui = { group = "org.springdoc", name = "springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
 testcontainers-postgresql = { group = "org.testcontainers", name = "testcontainers-postgresql" }
 junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher" }
 

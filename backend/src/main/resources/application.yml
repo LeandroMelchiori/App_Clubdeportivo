@@ -17,3 +17,10 @@ management:
         enabled: false
       exposure:
         include: health
+
+springdoc:
+  api-docs:
+    path: /api/v1/openapi
+  swagger-ui:
+    path: /api/v1/docs
+  show-actuator: true
