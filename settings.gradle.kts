@@ -22,4 +22,5 @@ dependencyResolutionManagement {
 rootProject.name = "Club deportivo"
 include(":app")
 include(":shared")
+include(":backend")
  

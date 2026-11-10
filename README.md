@@ -2,6 +2,8 @@
 
 Aplicación Android nativa para la administración de finanzas y personal en clubes deportivos.
 
+El repositorio también incluye la API del servicio multi-club (`backend/`), que se construye por etapas según la [ADR-001](docs/arquitectura/ADR-001-backend-saas.md).
+
 ## Stack
 
 - Kotlin
@@ -13,11 +15,12 @@ Aplicación Android nativa para la administración de finanzas y personal en clu
 Versiones principales:
 
 - Android Gradle Plugin `8.12.3`
-- Kotlin `2.0.21`
-- Gradle wrapper `8.13`
+- Kotlin `2.3.21`
+- Gradle wrapper `8.14.6`
 - `compileSdk` / `targetSdk` `36`
 - `minSdk` `30`
-- JVM target `11`
+- JVM target `11` (app y `shared`) y `17` (backend)
+- Spring Boot `4.1.2` y PostgreSQL `18` (backend)
 
 ## Variantes de la aplicacion
 
@@ -43,6 +46,7 @@ Comandos por variante:
 - Android Studio o JDK compatible configurado en `JAVA_HOME`
 - Android SDK instalado
 - Emulador o dispositivo fisico para pruebas instrumentadas
+- Docker (Docker Desktop en Windows) para correr el backend y sus tests
 
 ## Comandos
 
@@ -54,10 +58,51 @@ Desde la raiz del proyecto en Windows:
 .\gradlew.bat connectedAndroidTest
 ```
 
-`connectedAndroidTest` requiere un emulador o dispositivo conectado.
+`connectedAndroidTest` requiere un emulador o dispositivo conectado. `test` también corre los tests del backend, que necesitan Docker.
+
+## Backend
+
+API REST en Spring Boot con Kotlin, PostgreSQL y Flyway. Usa directamente la lógica de `shared/`. Por ahora es el esqueleto: endpoint de salud, migraciones, errores y documentación. Identidad y datos de los clubes llegan en las próximas entregas.
+
+Para correrla localmente, desde la raíz del proyecto:
+
+```powershell
+docker compose -f backend/docker-compose.yml up -d
+.\gradlew.bat :backend:bootRun
+```
+
+El primer comando levanta PostgreSQL en `localhost:5432` con una base `clubdeportivo` solo para desarrollo. Al arrancar, la API aplica con Flyway las migraciones de `backend/src/main/resources/db/migration/` y queda en `http://localhost:8080`:
+
+- Salud: `GET /api/v1/health`
+- OpenAPI en JSON: `GET /api/v1/openapi`
+- Swagger UI: `/api/v1/docs`
+
+Los errores responden con `application/problem+json` (RFC 9457).
+
+Si el puerto 5432 está ocupado, se puede usar otro para la base y avisarle a la API:
+
+```powershell
+$env:POSTGRES_PORT = "5433"
+docker compose -f backend/docker-compose.yml up -d
+$env:SPRING_DATASOURCE_URL = "jdbc:postgresql://localhost:5433/clubdeportivo"
+.\gradlew.bat :backend:bootRun
+```
+
+En otros entornos la conexión se configura con `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` y `SPRING_DATASOURCE_PASSWORD`.
+
+Tests:
+
+```powershell
+.\gradlew.bat :backend:test
+```
+
+Los tests de integración levantan un PostgreSQL real con Testcontainers, así que necesitan Docker corriendo. No usan la base de `docker-compose.yml`.
+
+Para detener la base: `docker compose -f backend/docker-compose.yml down`. Con `-v` también se borran sus datos.
 
 ## Estructura
 
+- `backend/`: API del servicio multi-club. Código en `backend/src/main/kotlin/`, migraciones de Flyway en `backend/src/main/resources/db/migration/` y tests de integración en `backend/src/test/`.
 - `shared/`: modulo Kotlin puro, sin dependencias de Android, con la logica de negocio que tambien va a usar el backend: cobros, descuentos, becas y recargos, vencimientos, cuenta corriente y validaciones. Sus tests JVM viven en `shared/src/test/`.
 - `app/src/main/java/com/example/clubdeportivo/`: Activities, adapters, acceso a SQLite y helpers de interfaz.
 - `app/src/main/res/layout/`: pantallas XML.
@@ -120,7 +165,7 @@ Tests instrumentados:
 - `ClubConfigurationMigrationInstrumentedTest`: migra de v2 a v3 sin borrar datos.
 - `VisualSmokeInstrumentedTest`: recorre las pantallas principales y genera capturas por variante, incluidos los listados y formularios de profesores y actividades y la previsualizacion, el filtro de errores y la confirmacion de la importacion CSV.
 
-En cada PR, GitHub Actions corre los tests JVM de `shared` y de las dos variantes, Lint y el build (`.github/workflows/android.yml`). Las pruebas instrumentadas todavia se corren a mano en un emulador.
+En cada PR, GitHub Actions corre los tests JVM de `shared` y de las dos variantes, Lint y el build de la app (`.github/workflows/android.yml`), y los tests y el build del backend contra PostgreSQL real (`.github/workflows/backend.yml`). Las pruebas instrumentadas todavia se corren a mano en un emulador.
 
 Para obtener evidencia visual, ejecutar:
 

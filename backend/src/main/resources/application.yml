@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: club-deportivo-api
+  # Apunta al PostgreSQL de docker-compose.yml. En otros entornos se reemplaza con las variables
+  # SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME y SPRING_DATASOURCE_PASSWORD.
+  datasource:
+    url: jdbc:postgresql://localhost:5432/clubdeportivo
+    username: clubdeportivo
+    password: clubdeportivo
+
+management:
+  endpoints:
+    web:
+      # La salud queda en /api/v1/health, junto con el resto de la API.
+      base-path: /api/v1
+      discovery:
+        enabled: false
+      exposure:
+        include: health
+
+springdoc:
+  api-docs:
+    path: /api/v1/openapi
+  swagger-ui:
+    path: /api/v1/docs
+  show-actuator: true
