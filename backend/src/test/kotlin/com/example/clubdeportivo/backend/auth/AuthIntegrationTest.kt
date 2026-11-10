@@ -143,6 +143,32 @@ class AuthIntegrationTest : IntegrationTest() {
         }
     }
 
+    @Test
+    fun cuentaConVariosClubes_eligeClubAlIngresarYCambiaDeClubConRefresh() {
+        val clubA = createClub()
+        val clubB = createClub()
+        val adminB = login(clubB.adminEmail, PASSWORD)
+        val alta = addMember(adminB.accessToken, clubA.adminEmail, Role.RECEPTION)
+        assertThat(alta.existingAccount).isTrue()
+        assertThat(alta.temporaryPassword).isNull()
+
+        // Sin clubId: el del último ingreso, o el más antiguo si nunca ingresó a otro.
+        val enA = login(clubA.adminEmail, PASSWORD)
+        assertThat(enA.club.id).isEqualTo(clubA.clubId)
+        assertThat(enA.clubs.map { it.id to it.role })
+            .containsExactlyInAnyOrder(clubA.clubId to Role.ADMIN, clubB.clubId to Role.RECEPTION)
+
+        val enB = login(clubA.adminEmail, PASSWORD, clubB.clubId)
+        assertThat(enB.club).isEqualTo(ClubAccessResponse(clubB.clubId, clubB.name, Role.RECEPTION))
+        assertThat(login(clubA.adminEmail, PASSWORD).club.id).isEqualTo(clubB.clubId)
+
+        val deVueltaEnA = refresh(enB.refreshToken, clubA.clubId)
+        assertThat(deVueltaEnA.club.role).isEqualTo(Role.ADMIN)
+        get("/api/v1/club", deVueltaEnA.accessToken)
+            .expectStatus().isOk
+            .expectBody().jsonPath("$.id").isEqualTo(clubA.clubId.toString())
+    }
+
     private fun logout(refreshToken: String) {
         client.post().uri("/api/v1/auth/logout")
             .contentType(MediaType.APPLICATION_JSON)

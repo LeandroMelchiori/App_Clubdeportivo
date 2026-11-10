@@ -1,9 +1,11 @@
 package com.example.clubdeportivo.backend.auth
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -35,4 +37,15 @@ class AuthController(private val auth: AuthService) {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Cerrar la sesión", description = "Revoca la sesión del token de renovación.")
     fun logout(@Valid @RequestBody body: LogoutRequest) = auth.logout(body.refreshToken)
+
+    @PostMapping("/password")
+    @SecurityRequirement(name = "bearer")
+    @Operation(
+        summary = "Cambiar la contraseña",
+        description = "Cierra todas las sesiones de la cuenta y abre una nueva en el club actual.",
+    )
+    fun changePassword(
+        @Valid @RequestBody body: ChangePasswordRequest,
+        @AuthenticationPrincipal principal: ClubPrincipal,
+    ): AuthResponse = auth.changePassword(principal, body.currentPassword, body.newPassword)
 }

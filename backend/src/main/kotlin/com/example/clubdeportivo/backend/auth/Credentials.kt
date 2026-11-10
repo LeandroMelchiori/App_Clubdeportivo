@@ -43,3 +43,13 @@ object RefreshTokens {
     fun hash(token: String): ByteArray = MessageDigest.getInstance("SHA-256").digest(token.toByteArray())
 }
 
+/** Contraseñas temporales para el personal: sin caracteres que se confundan al dictarlas (0, O, 1, l, I). */
+object TemporaryPasswords {
+    private const val ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"
+    private const val LENGTH = 12
+    private val random = SecureRandom()
+
+    fun generate(): String = buildString(LENGTH) {
+        repeat(LENGTH) { append(ALPHABET[random.nextInt(ALPHABET.length)]) }
+    }
+}

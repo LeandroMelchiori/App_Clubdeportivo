@@ -44,6 +44,7 @@ class ApiIntegrationTest : IntegrationTest() {
             .jsonPath("$.info.version").isEqualTo("v1")
             .jsonPath("$.paths['/api/v1/health'].get").exists()
             .jsonPath("$.paths['/api/v1/auth/login'].post").exists()
+            .jsonPath("$.paths['/api/v1/members'].post.security").isNotEmpty()
             .jsonPath("$.components.securitySchemes.bearer.scheme").isEqualTo("bearer")
     }
 

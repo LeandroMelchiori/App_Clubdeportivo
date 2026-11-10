@@ -43,4 +43,12 @@ class CredentialsTest {
         assertThat(tokens.first()).hasSize(43)
         assertThat(RefreshTokens.hash(tokens.first())).hasSize(32).isEqualTo(RefreshTokens.hash(tokens.first()))
     }
+
+    @Test
+    fun contraseñasTemporales_tienen12CaracteresSinAmbiguos() {
+        val temporales = List(200) { TemporaryPasswords.generate() }
+
+        assertThat(temporales).allSatisfy { assertThat(it).hasSize(12).doesNotContainPattern("[0O1lI]") }
+        assertThat(temporales.toSet()).hasSize(200)
+    }
 }

@@ -37,6 +37,14 @@ data class LogoutRequest(
     val refreshToken: String = "",
 )
 
+data class ChangePasswordRequest(
+    @field:NotBlank(message = "La contraseña actual es obligatoria.")
+    @field:Size(max = PasswordPolicy.MAX_LENGTH, message = PasswordPolicy.MESSAGE)
+    val currentPassword: String = "",
+    @field:Size(min = PasswordPolicy.MIN_LENGTH, max = PasswordPolicy.MAX_LENGTH, message = PasswordPolicy.MESSAGE)
+    val newPassword: String = "",
+)
+
 data class ClubAccessResponse(val id: UUID, val name: String, val role: Role) {
     constructor(access: ClubAccess) : this(access.clubId, access.clubName, access.role)
 }

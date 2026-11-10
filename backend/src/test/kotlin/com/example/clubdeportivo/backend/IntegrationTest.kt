@@ -2,6 +2,8 @@ package com.example.clubdeportivo.backend
 
 import com.example.clubdeportivo.backend.auth.AuthResponse
 import com.example.clubdeportivo.backend.club.CreateClubResponse
+import com.example.clubdeportivo.backend.club.Role
+import com.example.clubdeportivo.backend.member.AddMemberResponse
 import java.util.UUID
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient
@@ -67,6 +69,17 @@ abstract class IntegrationTest {
         refreshRequest(refreshToken, clubId)
             .expectStatus().isOk
             .expectBody(AuthResponse::class.java)
+            .returnResult()
+            .responseBody!!
+
+    protected fun addMember(accessToken: String, email: String, role: Role, name: String = "Persona del club"): AddMemberResponse =
+        client.post().uri("/api/v1/members")
+            .headers { it.setBearerAuth(accessToken) }
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(mapOf("name" to name, "email" to email, "role" to role))
+            .exchange()
+            .expectStatus().isCreated
+            .expectBody(AddMemberResponse::class.java)
             .returnResult()
             .responseBody!!
 

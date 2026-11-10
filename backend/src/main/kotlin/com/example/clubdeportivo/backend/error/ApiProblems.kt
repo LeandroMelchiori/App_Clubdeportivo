@@ -40,6 +40,18 @@ class NoActiveClubsException : ApiProblemException(
     "La cuenta no tiene una membresía activa en ningún club.",
 )
 
+class WrongCurrentPasswordException : ApiProblemException(
+    HttpStatus.BAD_REQUEST,
+    "Contraseña actual incorrecta",
+    "La contraseña actual no es correcta.",
+)
+
+class SamePasswordException : ApiProblemException(
+    HttpStatus.BAD_REQUEST,
+    "Contraseña repetida",
+    "La contraseña nueva tiene que ser distinta de la actual.",
+)
+
 class ConflictException(detail: String) : ApiProblemException(HttpStatus.CONFLICT, "Conflicto", detail)
 
 class NotFoundException(detail: String) :

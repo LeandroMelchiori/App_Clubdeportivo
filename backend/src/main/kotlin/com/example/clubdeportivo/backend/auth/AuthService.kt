@@ -5,6 +5,8 @@ import com.example.clubdeportivo.backend.error.ClubAccessDeniedException
 import com.example.clubdeportivo.backend.error.InvalidCredentialsException
 import com.example.clubdeportivo.backend.error.InvalidRefreshTokenException
 import com.example.clubdeportivo.backend.error.NoActiveClubsException
+import com.example.clubdeportivo.backend.error.SamePasswordException
+import com.example.clubdeportivo.backend.error.WrongCurrentPasswordException
 import com.example.clubdeportivo.backend.user.UserAccount
 import com.example.clubdeportivo.backend.user.UserRepository
 import java.util.UUID
@@ -80,6 +82,25 @@ class AuthService(
     fun logout(refreshToken: String) {
         db.identity {
             sessions.findRefreshTokenForUpdate(RefreshTokens.hash(refreshToken))?.let { sessions.revokeSession(it.sessionId) }
+        }
+    }
+
+    /**
+     * Cambia la contraseña, cierra todas las sesiones de la cuenta en todos sus clubes y abre una nueva
+     * en el club actual.
+     */
+    fun changePassword(principal: ClubPrincipal, currentPassword: String, newPassword: String): AuthResponse {
+        val user = db.identity { users.findById(principal.userId) } ?: throw InvalidRefreshTokenException()
+        if (!hasher.matches(currentPassword, user.passwordHash)) throw WrongCurrentPasswordException()
+        if (currentPassword == newPassword) throw SamePasswordException()
+        val newHash = hasher.hash(newPassword)
+        return db.identity {
+            val clubs = sessions.activeClubsOf(user.id)
+            val current = clubs.find { it.clubId == principal.clubId } ?: throw ClubAccessDeniedException()
+            users.updatePassword(user.id, newHash)
+            sessions.revokeAllSessionsOf(user.id)
+            log.info("Contraseña cambiada por la cuenta {}", user.id)
+            startSession(user.copy(passwordChangeRequired = false), current, clubs)
         }
     }
 
