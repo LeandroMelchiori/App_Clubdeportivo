@@ -14,6 +14,7 @@ activity = "1.11.0"
 constraintlayout = "2.2.1"
 springBoot = "4.1.2"
 springdoc = "3.2.0"
+bouncycastle = "1.86"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -34,6 +35,9 @@ spring-boot-starter-webmvc = { group = "org.springframework.boot", name = "sprin
 spring-boot-starter-actuator = { group = "org.springframework.boot", name = "spring-boot-starter-actuator" }
 spring-boot-starter-jdbc = { group = "org.springframework.boot", name = "spring-boot-starter-jdbc" }
 spring-boot-starter-flyway = { group = "org.springframework.boot", name = "spring-boot-starter-flyway" }
+spring-boot-starter-security = { group = "org.springframework.boot", name = "spring-boot-starter-security" }
+spring-boot-starter-oauth2-resource-server = { group = "org.springframework.boot", name = "spring-boot-starter-oauth2-resource-server" }
+spring-boot-starter-validation = { group = "org.springframework.boot", name = "spring-boot-starter-validation" }
 spring-boot-starter-webmvc-test = { group = "org.springframework.boot", name = "spring-boot-starter-webmvc-test" }
 spring-boot-testcontainers = { group = "org.springframework.boot", name = "spring-boot-testcontainers" }
 flyway-database-postgresql = { group = "org.flywaydb", name = "flyway-database-postgresql" }
@@ -41,6 +45,8 @@ postgresql = { group = "org.postgresql", name = "postgresql" }
 jackson-module-kotlin = { group = "tools.jackson.module", name = "jackson-module-kotlin" }
 kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect" }
 springdoc-openapi-webmvc-ui = { group = "org.springdoc", name = "springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+# Argon2id de Spring Security usa la implementación de Bouncy Castle.
+bouncycastle-bcprov = { group = "org.bouncycastle", name = "bcprov-jdk18on", version.ref = "bouncycastle" }
 testcontainers-postgresql = { group = "org.testcontainers", name = "testcontainers-postgresql" }
 junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher" }
 
