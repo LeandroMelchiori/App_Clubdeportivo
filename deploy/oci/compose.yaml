@@ -1,0 +1,103 @@
+# API de Club deportivo sobre la plataforma Docker + Traefik de OCI.
+#
+# En la VM:
+#   /opt/apps/apps/club-deportivo/compose.yaml             <- este archivo
+#   /opt/apps/apps/club-deportivo/.env                     <- imagen desplegada (la actualiza el autodeploy)
+#   /etc/docker-platform/apps/club-deportivo/runtime.env   <- secretos (root, 0600), nunca en el repo
+#
+# Traefik, compartido con las demás apps de la VM, termina TLS y obtiene y renueva el certificado de
+# Let's Encrypt. PostgreSQL solo está en una red interna, sin salida ni puertos publicados.
+# El runbook de despliegue, backup y restauración está en el README.
+
+name: club-deportivo
+
+x-hardening: &hardening
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  read_only: true
+  pids_limit: 256
+  tmpfs:
+    - /tmp:rw,noexec,nosuid,nodev,size=64m
+
+services:
+  api:
+    <<: *hardening
+    image: ${CLUB_API_IMAGE:?Defina CLUB_API_IMAGE}
+    user: "10001:10001"
+    restart: unless-stopped
+    cpus: 0.50
+    mem_limit: 512m
+    environment:
+      # El usuario de la base es clubdeportivo, el valor por defecto de application.yml.
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/clubdeportivo
+      # Sin POSTGRES_PASSWORD la base no se inicializa y la API no conecta: el despliegue falla y vuelve atrás.
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      CLUB_AUTH_JWT_SECRET: ${CLUB_AUTH_JWT_SECRET:?Defina CLUB_AUTH_JWT_SECRET}
+      # Red `proxy` de Traefik: solo a ella se le cree X-Forwarded-For.
+      CLUB_TRUSTED_PROXIES: ${CLUB_TRUSTED_PROXIES:?Defina CLUB_TRUSTED_PROXIES}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "--max-time", "4", "-o", "/dev/null", "http://127.0.0.1:8080/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+    expose:
+      - "8080"
+    networks:
+      - proxy
+      - datos
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: proxy
+      traefik.http.services.club-deportivo-api.loadbalancer.server.port: "8080"
+      traefik.http.routers.club-deportivo-api.entrypoints: websecure
+      traefik.http.routers.club-deportivo-api.rule: Host(`api-club.sachadev.me`)
+      traefik.http.routers.club-deportivo-api.tls.certresolver: letsencrypt
+      traefik.http.routers.club-deportivo-api-http.entrypoints: web
+      traefik.http.routers.club-deportivo-api-http.rule: Host(`api-club.sachadev.me`)
+      traefik.http.routers.club-deportivo-api-http.middlewares: club-deportivo-api-https
+      traefik.http.middlewares.club-deportivo-api-https.redirectscheme.scheme: https
+      traefik.http.middlewares.club-deportivo-api-https.redirectscheme.permanent: "true"
+
+  postgres:
+    <<: *hardening
+    # 18-alpine fijada por digest: una actualización de la imagen se decide, no llega sola.
+    image: postgres:18-alpine@sha256:9ba53c7d41ea093baf5c1ba635ba5434c4f979880527d49bb7d9237d3193085b
+    user: "70:70"
+    restart: unless-stopped
+    cpus: 0.50
+    mem_limit: 384m
+    environment:
+      POSTGRES_DB: clubdeportivo
+      POSTGRES_USER: clubdeportivo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=64m
+      - /var/run/postgresql:rw,noexec,nosuid,nodev,size=1m,uid=70,gid=70
+    # Excepción writable_volume: los datos de la base.
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "clubdeportivo", "-d", "clubdeportivo"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    networks:
+      - datos
+
+volumes:
+  postgres-data:
+
+networks:
+  proxy:
+    external: true
+    name: proxy
+  # Red solo entre la API y la base: sin salida a internet.
+  datos:
+    internal: true
