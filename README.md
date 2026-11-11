@@ -1,6 +1,6 @@
 # Club deportivo
 
-Aplicación Android nativa para la administración de finanzas y personal en clubes deportivos.
+Aplicación Android nativa para la administración de finanzas y personal en clubes deportivos
 
 El repositorio también incluye la API del servicio multi-club (`backend/`), que se construye por etapas según la [ADR-001](docs/arquitectura/ADR-001-backend-saas.md).
 
