@@ -17,6 +17,10 @@ club:
     # Clave de firma de los tokens de acceso, en Base64 y de 32 bytes o más. Sale del entorno, nunca
     # del repositorio: sin ella la API no arranca.
     jwt-secret: ${CLUB_AUTH_JWT_SECRET:}
+  network:
+    # Proxies de confianza, en CIDR y separados por coma: solo a ellos se les cree X-Forwarded-For para
+    # saber la IP del cliente. Vacío, se usa la IP de la conexión. En la VM es la red `proxy` de Traefik.
+    trusted-proxies: ${CLUB_TRUSTED_PROXIES:}
 
 management:
   endpoints:

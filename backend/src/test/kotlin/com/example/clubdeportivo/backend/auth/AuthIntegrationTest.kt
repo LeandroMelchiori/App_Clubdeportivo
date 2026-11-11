@@ -192,6 +192,29 @@ class AuthIntegrationTest : IntegrationTest() {
         loginRequest(club.adminEmail, PASSWORD).expectStatus().isEqualTo(429)
     }
 
+    @Test
+    fun limitePorIp_ignoraElEncabezadoXForwardedForQueNoVieneDelProxy() {
+        val club = createClub()
+
+        // Cada intento dice venir de otra IP, pero llega desde afuera del proxy de confianza: cuentan todos
+        // para la IP real de la conexión.
+        repeat(20) {
+            client.post().uri("/api/v1/auth/login")
+                .header("X-Forwarded-For", "198.51.100.$it")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(mapOf("email" to uniqueEmail("intento"), "password" to "clave-incorrecta"))
+                .exchange()
+                .expectStatus().isUnauthorized
+        }
+
+        client.post().uri("/api/v1/auth/login")
+            .header("X-Forwarded-For", "198.51.100.99")
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(mapOf("email" to club.adminEmail, "password" to PASSWORD))
+            .exchange()
+            .expectStatus().isEqualTo(429)
+    }
+
     private fun logout(refreshToken: String) {
         client.post().uri("/api/v1/auth/logout")
             .contentType(MediaType.APPLICATION_JSON)
