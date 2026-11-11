@@ -55,6 +55,7 @@ class ApiIntegrationTest : IntegrationTest() {
             .jsonPath("$.paths['/api/v1/auth/login'].post").exists()
             .jsonPath("$.paths['/api/v1/members'].post.security").isNotEmpty()
             .jsonPath("$.components.securitySchemes.bearer.scheme").isEqualTo("bearer")
+            .jsonPath("$.servers[0].url").isEqualTo("/")
     }
 
     @Test
