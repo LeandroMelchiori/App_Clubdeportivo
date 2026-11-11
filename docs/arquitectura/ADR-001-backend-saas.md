@@ -1,7 +1,7 @@
 # ADR-001: Backend propio para el servicio multi-club
 
 - **Estado:** aceptado
-- **Fecha:** 2026-11-08 (diseño de la identidad agregado el 2026-11-10, con la entrega 3)
+- **Fecha:** 2026-11-08 (diseño de la identidad agregado el 2026-11-10, con la entrega 3; despliegue y decisiones abiertas cerradas el 2026-11-11, con la entrega 4)
 - **Alcance:** Fase 2 de la hoja de ruta (seguridad y servicio)
 
 ## Contexto
@@ -178,11 +178,52 @@ La app trabaja siempre contra SQLite. La sincronización corre al abrir la app, 
 
 ### Despliegue y operación
 
-- **Contenedores:** API, PostgreSQL y un proxy inverso que obtiene y renueva el certificado TLS solo, en la plataforma Docker de OCI.
+- **Contenedores:** API y PostgreSQL en la plataforma Docker de OCI. El proxy inverso es el Traefik que la plataforma ya comparte entre sus aplicaciones: termina TLS y obtiene y renueva solo el certificado de Let's Encrypt.
 - **Secretos:** fuera del repositorio, en archivos de entorno del servidor.
 - **Backups:** `pg_dump` diario a OCI Object Storage con retención. Hay un procedimiento escrito de restauración y se prueba restaurando de verdad en una base aparte.
 - **Monitoreo:** logs estructurados sin datos personales, un endpoint de salud y un chequeo externo de disponibilidad.
 - **Límite conocido:** una sola VM es un punto único de falla. Alcanza para portfolio y piloto. Si hubiera clientes pagos, el paso siguiente es una base PostgreSQL administrada.
+
+### Diseño del despliegue (entrega 4)
+
+**Sobre la plataforma existente.** La VM de OCI ya corre otras aplicaciones detrás de un Traefik que atiende los puertos 80 y 443 y saca los certificados de Let's Encrypt. Un segundo proxy en la misma VM chocaría con esos puertos, así que la API se suma a la red `proxy` de Traefik con sus etiquetas para `api-club.sachadev.me`, igual que las demás aplicaciones. El ingreso por 80 y 443 ya estaba abierto y no hubo que cambiarlo.
+
+**Contenedores** (`deploy/oci/compose.yaml`):
+
+- La API está en la red `proxy` y en una red interna con la base. PostgreSQL 18 está solo en esa red interna: sin salida a internet, sin puertos publicados y fuera del alcance de las otras aplicaciones.
+- Siguen la línea base de la plataforma: usuario sin privilegios, sistema de archivos de solo lectura, `/tmp` en memoria sin ejecución, sin capacidades de Linux, límites de CPU y memoria, y healthcheck.
+- La imagen de PostgreSQL está fijada por digest: actualizarla es una decisión, no algo que llega solo.
+
+**IP del cliente.** Traefik descarta el `X-Forwarded-For` que manda el cliente y escribe el suyo. La API le cree ese encabezado solo a la red de Traefik (`CLUB_TRUSTED_PROXIES`). Si un pedido llega desde otro lado, usa la IP de la conexión. Así el límite de intentos por IP cuenta la IP real y no se puede esquivar falsificando el encabezado. Lo prueba un test de integración.
+
+**Secretos.** La contraseña de PostgreSQL y la clave de firma de los tokens se generan en la VM y viven en `/etc/docker-platform/apps/club-deportivo/runtime.env`, de root y con modo 0600. No pasan por el repositorio ni por GitHub.
+
+**Publicar una versión.**
+
+1. Una etiqueta `vX.Y.Z` dispara el workflow "Despliegue del backend": corre los tests, arma el jar y publica en GHCR la imagen ARM64 con esa etiqueta y con `:stable`.
+2. En la VM, un temporizador revisa `:stable` cada 3 minutos. Si cambió, la despliega fijada por digest. Si no queda healthy, vuelve a la anterior.
+3. El workflow espera hasta ver la versión nueva en `/api/v1/info`.
+
+GitHub no tiene acceso SSH ni credenciales de OCI. Flyway migra al arrancar y un rollback no deshace migraciones, así que cada migración tiene que ser compatible con la versión anterior de la API.
+
+**Backups.** Un temporizador de la VM corre todos los días a las 06:15 UTC:
+
+- hace un `pg_dump` en formato custom;
+- comprueba que `pg_restore` lo puede leer;
+- lo sube a un bucket privado de Object Storage con Instance Principal, así que la VM no guarda credenciales de OCI.
+
+El bucket y sus permisos están en el repo de infraestructura (stack `oci/application-backups`):
+
+- la regla de ciclo de vida borra cada backup a los 30 días;
+- la VM puede crear y leer objetos, pero no borrarlos ni sobrescribirlos.
+
+**Restauración.** `club-deportivo-restaurar` baja un backup y lo restaura en una base aparte, `clubdeportivo_restauracion`. Después compara cuántas filas tiene cada tabla contra producción, sin mostrar datos. Para devolver producción a un backup hay un procedimiento manual en el README. La prueba real está en `docs/operacion/prueba-de-restauracion.md`.
+
+**Límites conocidos.**
+
+- Todavía no hay un chequeo externo de disponibilidad: hoy lo cubren el healthcheck de Docker y la verificación del workflow en cada versión.
+- La red `proxy` es compartida: otra aplicación comprometida en esa red podría falsificar `X-Forwarded-For`. Solo le alcanzaría para confundir el límite de intentos, no para saltear la autenticación.
+- Los backups viven en la misma región que la VM.
 
 ### CI/CD
 
@@ -230,13 +271,14 @@ Cada entrega es un PR con sus tests y, cuando cambia la interfaz, evidencia visu
 6. **Tokens de acceso JWT con HS256** y clave tomada del entorno. Una sola API firma y verifica, así que no hace falta un par de claves.
 7. **Reglas por fila con un rol propio (`club_app`)** para las operaciones de club. Las de identidad corren con el usuario dueño de las tablas.
 8. **El límite de intentos vive en memoria.** Alcanza con una sola instancia. Si hubiera varias, pasaría a la base o a un almacén compartido.
+9. **Terraform vive en el repo de infraestructura existente**, el que ya define la VM y la red de OCI. El bucket de backups es un stack propio (`oci/application-backups`), con su propio state, para no registrar una aplicación concreta dentro de la plataforma genérica.
+10. **La API usa el dominio `api-club.sachadev.me`**, con un registro DNS sin proxy de Cloudflare hacia la VM, como las demás aplicaciones de la plataforma.
+11. **El TLS lo termina el Traefik de la plataforma** y no un proxy propio de la API, porque la VM ya lo tiene en los puertos 80 y 443.
+12. **El despliegue es por *pull*:** la etiqueta publica la imagen y la VM la toma sola. GitHub no tiene acceso a la VM ni a OCI.
 
 ## Decisiones abiertas
 
-Se resuelven antes de la entrega 4 (despliegue):
-
-1. **Dónde vive la infraestructura (Terraform):** en este repo o en el repo de infraestructura existente.
-2. **Qué dominio usa la API:** hace falta uno para el certificado HTTPS.
+No quedan. Las dos que había, dónde vive Terraform y qué dominio usa la API, se cerraron antes de la entrega 4 (decisiones 9 y 10).
 
 ## Fuera de alcance
 
