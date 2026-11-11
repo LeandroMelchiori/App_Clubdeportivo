@@ -46,3 +46,12 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
+// Un solo jar, con nombre fijo, para que la imagen de Docker lo encuentre.
+tasks.bootJar {
+    archiveFileName.set("club-deportivo-api.jar")
+}
+
+tasks.jar {
+    enabled = false
+}

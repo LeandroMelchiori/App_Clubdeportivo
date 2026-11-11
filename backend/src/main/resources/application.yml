@@ -30,7 +30,15 @@ management:
       discovery:
         enabled: false
       exposure:
-        include: health
+        include: health, info
+  info:
+    env:
+      enabled: true
+
+# Versión publicada en /api/v1/info. La imagen la toma de la etiqueta con la que se construyó.
+info:
+  app:
+    version: ${CLUB_API_VERSION:dev}
 
 springdoc:
   api-docs:

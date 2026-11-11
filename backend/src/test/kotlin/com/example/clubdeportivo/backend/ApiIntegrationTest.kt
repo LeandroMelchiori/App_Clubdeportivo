@@ -35,6 +35,15 @@ class ApiIntegrationTest : IntegrationTest() {
     }
 
     @Test
+    fun info_publicaLaVersionDesplegada() {
+        client.get().uri("/api/v1/info")
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("$.app.version").isEqualTo("dev")
+    }
+
+    @Test
     fun openApi_documentaLaApiBajoApiV1() {
         client.get().uri("/api/v1/openapi")
             .exchange()

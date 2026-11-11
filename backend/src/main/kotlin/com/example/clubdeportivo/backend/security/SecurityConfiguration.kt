@@ -30,6 +30,7 @@ class SecurityConfiguration {
                 authorize("/error", permitAll)
                 authorize("/api/v1/health", permitAll)
                 authorize("/api/v1/health/**", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/info", permitAll)
                 authorize("/api/v1/openapi", permitAll)
                 authorize("/api/v1/openapi/**", permitAll)
                 authorize("/api/v1/docs", permitAll)
