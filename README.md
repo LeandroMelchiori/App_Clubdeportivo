@@ -140,8 +140,117 @@ Los tests de integración levantan un PostgreSQL real con Testcontainers, así q
 
 Para detener la base: `docker compose -f backend/docker-compose.yml down`. Con `-v` también se borran sus datos.
 
+### Producción en OCI
+
+La API corre en `https://api-club.sachadev.me`, en la VM ARM de la plataforma Docker de OCI, junto con otras aplicaciones. Las decisiones están en la [ADR-001](docs/arquitectura/ADR-001-backend-saas.md), sección "Diseño del despliegue".
+
+- **Traefik**, compartido por la plataforma, termina TLS y renueva solo el certificado de Let's Encrypt.
+- **La API y PostgreSQL** están definidas en `deploy/oci/compose.yaml`. La base solo es accesible desde la API.
+- **El despliegue es por *pull*:** una etiqueta `vX.Y.Z` publica la imagen ARM64 en GHCR y un temporizador de la VM la despliega.
+- **Backup diario** a un bucket privado de Object Storage, que borra cada backup a los 30 días. El bucket está en el repo de infraestructura, stack `oci/application-backups`.
+
+En la VM:
+
+| Ruta | Contenido |
+|---|---|
+| `/opt/apps/apps/club-deportivo/compose.yaml` | `deploy/oci/compose.yaml` |
+| `/opt/apps/apps/club-deportivo/.env` | imagen desplegada (`CLUB_API_IMAGE`), la escribe el autodeploy |
+| `/etc/docker-platform/apps/club-deportivo/runtime.env` | secretos: contraseña de PostgreSQL, clave de los tokens y red de Traefik (root, 0600) |
+| `/etc/docker-platform/apps/club-deportivo/backup.env` | namespace y bucket de Object Storage (root, 0600) |
+| `/usr/local/sbin/club-deportivo-{autodeploy,backup,restaurar}` | scripts de `deploy/oci/` |
+
+#### Primera puesta en marcha
+
+Se hace una sola vez. Antes hacen falta:
+
+- el registro DNS `A` de `api-club.sachadev.me` hacia la VM, sin el proxy de Cloudflare, para que Let's Encrypt valide el dominio contra Traefik;
+- el bucket, creado con el stack `oci/application-backups` del repo de infraestructura;
+- el paquete `club-deportivo-api` de GHCR en público, para que la VM lo baje sin credenciales.
+
+Con los archivos de `deploy/oci/` copiados a la VM (por ejemplo con `scp` a `~/club-deportivo/`):
+
+```bash
+cd ~/club-deportivo
+sudo install -d -m 0750 /opt/apps/apps/club-deportivo /etc/docker-platform/apps/club-deportivo
+sudo install -m 0640 compose.yaml /opt/apps/apps/club-deportivo/compose.yaml
+echo "CLUB_API_IMAGE=" | sudo tee /opt/apps/apps/club-deportivo/.env > /dev/null
+
+# Los secretos se generan en la VM y no salen de ella.
+sudo sh -c 'umask 077; {
+  echo "POSTGRES_PASSWORD=$(openssl rand -hex 32)"
+  echo "CLUB_AUTH_JWT_SECRET=$(openssl rand -base64 48)"
+  echo "CLUB_TRUSTED_PROXIES=$(docker network inspect proxy --format "{{range .IPAM.Config}}{{.Subnet}}{{end}}")"
+} > /etc/docker-platform/apps/club-deportivo/runtime.env'
+sudo sh -c 'umask 077; printf "OCI_NAMESPACE=%s\nOCI_BUCKET=%s\n" NAMESPACE BUCKET > /etc/docker-platform/apps/club-deportivo/backup.env'
+
+sudo install -m 0755 autodeploy/club-deportivo-autodeploy.sh /usr/local/sbin/club-deportivo-autodeploy
+sudo install -m 0755 backup/club-deportivo-backup.sh /usr/local/sbin/club-deportivo-backup
+sudo install -m 0755 backup/club-deportivo-restaurar.sh /usr/local/sbin/club-deportivo-restaurar
+sudo install -m 0644 autodeploy/*.service autodeploy/*.timer backup/*.service backup/*.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now club-deportivo-autodeploy.timer club-deportivo-backup.timer
+```
+
+`NAMESPACE` y `BUCKET` salen de `terraform output` en el stack de backups. La primera versión publicada levanta la base y la API.
+
+#### Publicar una versión
+
+```bash
+git tag v1.2.3
+git push origin v1.2.3
+```
+
+El workflow "Despliegue del backend" corre los tests, publica `ghcr.io/leandromelchiori/club-deportivo-api:v1.2.3` y `:stable`, y espera hasta ver la versión en `https://api-club.sachadev.me/api/v1/info`. En la VM, el despliegue queda en el journal:
+
+```bash
+sudo journalctl -u club-deportivo-autodeploy -n 50
+```
+
+Si la versión nueva no queda healthy, el script vuelve a la anterior y no reintenta ese digest. Para volver a una versión anterior a propósito, se crea una etiqueta nueva desde el commit bueno. Flyway no deshace migraciones: cada migración tiene que ser compatible con la versión anterior de la API.
+
+#### Backups
+
+Corren todos los días a las 06:15 UTC. Cada backup se sube como `postgres/clubdeportivo-<fecha UTC>.dump`, en formato custom de `pg_dump`. Para correr uno en el momento o ver los últimos:
+
+```bash
+sudo systemctl start club-deportivo-backup.service
+sudo journalctl -u club-deportivo-backup -n 20
+sudo sh -c '. /etc/docker-platform/apps/club-deportivo/backup.env; oci os object list --auth instance_principal --namespace "$OCI_NAMESPACE" --bucket-name "$OCI_BUCKET" --prefix postgres/ --query "data[].name"'
+```
+
+La VM puede crear y leer backups, pero no borrarlos ni sobrescribirlos.
+
+#### Restauración
+
+**Probar un backup sin tocar producción.** Restaura en la base aparte `clubdeportivo_restauracion` y compara cuántas filas tiene cada tabla:
+
+```bash
+sudo club-deportivo-restaurar                                    # el más reciente
+sudo club-deportivo-restaurar postgres/clubdeportivo-<fecha>.dump  # uno puntual
+```
+
+La última prueba real está en [docs/operacion/prueba-de-restauracion.md](docs/operacion/prueba-de-restauracion.md).
+
+**Devolver producción a un backup.** Primero se restaura en la base aparte y se revisa. Después se intercambian las bases, así la anterior queda guardada por si hay que volver atrás:
+
+```bash
+cd /opt/apps/apps/club-deportivo
+compose() { sudo docker compose --env-file .env --env-file /etc/docker-platform/apps/club-deportivo/runtime.env "$@"; }
+sudo club-deportivo-restaurar postgres/clubdeportivo-<fecha>.dump
+sudo systemctl stop club-deportivo-autodeploy.timer
+compose stop api
+sudo docker exec club-deportivo-postgres-1 psql -U clubdeportivo -d postgres \
+  -c "ALTER DATABASE clubdeportivo RENAME TO clubdeportivo_anterior" \
+  -c "ALTER DATABASE clubdeportivo_restauracion RENAME TO clubdeportivo"
+compose start api
+sudo systemctl start club-deportivo-autodeploy.timer
+```
+
+Cuando la API vuelve a estar healthy y los datos están bien, `clubdeportivo_anterior` se puede borrar con `dropdb`.
+
 ## Estructura
 
+- `deploy/oci/`: compose de producción, despliegue automático, backup y restauración en la VM de OCI.
 - `backend/`: API del servicio multi-club. Código en `backend/src/main/kotlin/`, migraciones de Flyway en `backend/src/main/resources/db/migration/` y tests de integración en `backend/src/test/`.
 - `shared/`: modulo Kotlin puro, sin dependencias de Android, con la logica de negocio que tambien va a usar el backend: cobros, descuentos, becas y recargos, vencimientos, cuenta corriente y validaciones. Sus tests JVM viven en `shared/src/test/`.
 - `app/src/main/java/com/example/clubdeportivo/`: Activities, adapters, acceso a SQLite y helpers de interfaz.
@@ -205,7 +314,7 @@ Tests instrumentados:
 - `ClubConfigurationMigrationInstrumentedTest`: migra de v2 a v3 sin borrar datos.
 - `VisualSmokeInstrumentedTest`: recorre las pantallas principales y genera capturas por variante, incluidos los listados y formularios de profesores y actividades y la previsualizacion, el filtro de errores y la confirmacion de la importacion CSV.
 
-En cada PR, GitHub Actions corre los tests JVM de `shared` y de las dos variantes, Lint y el build de la app (`.github/workflows/android.yml`), y los tests y el build del backend contra PostgreSQL real (`.github/workflows/backend.yml`). Las pruebas instrumentadas todavia se corren a mano en un emulador.
+En cada PR, GitHub Actions corre los tests JVM de `shared` y de las dos variantes, Lint y el build de la app (`.github/workflows/android.yml`), y los tests y el build del backend contra PostgreSQL real (`.github/workflows/backend.yml`). Las etiquetas `vX.Y.Z` publican y despliegan la API (`.github/workflows/backend-deploy.yml`). Las pruebas instrumentadas todavia se corren a mano en un emulador.
 
 Para obtener evidencia visual, ejecutar:
 
