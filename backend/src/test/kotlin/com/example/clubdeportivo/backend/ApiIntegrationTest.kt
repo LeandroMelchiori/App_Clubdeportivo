@@ -35,6 +35,15 @@ class ApiIntegrationTest : IntegrationTest() {
     }
 
     @Test
+    fun info_publicaLaVersionDesplegada() {
+        client.get().uri("/api/v1/info")
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("$.app.version").isEqualTo("dev")
+    }
+
+    @Test
     fun openApi_documentaLaApiBajoApiV1() {
         client.get().uri("/api/v1/openapi")
             .exchange()
@@ -46,6 +55,7 @@ class ApiIntegrationTest : IntegrationTest() {
             .jsonPath("$.paths['/api/v1/auth/login'].post").exists()
             .jsonPath("$.paths['/api/v1/members'].post.security").isNotEmpty()
             .jsonPath("$.components.securitySchemes.bearer.scheme").isEqualTo("bearer")
+            .jsonPath("$.servers[0].url").isEqualTo("/")
     }
 
     @Test

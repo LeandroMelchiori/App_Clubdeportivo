@@ -1,5 +1,6 @@
 package com.example.clubdeportivo.backend.auth
 
+import com.example.clubdeportivo.backend.security.ClientIpResolver
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/v1/auth")
 @Tag(name = "Autenticación")
-class AuthController(private val auth: AuthService) {
+class AuthController(private val auth: AuthService, private val clientIps: ClientIpResolver) {
 
     @PostMapping("/login")
     @Operation(
@@ -25,7 +26,7 @@ class AuthController(private val auth: AuthService) {
             "La respuesta lista todos los clubes de la cuenta.",
     )
     fun login(@Valid @RequestBody body: LoginRequest, request: HttpServletRequest): AuthResponse =
-        auth.login(body.email, body.password, body.clubId, request.remoteAddr)
+        auth.login(body.email, body.password, body.clubId, clientIps.resolve(request))
 
     @PostMapping("/refresh")
     @Operation(
@@ -50,5 +51,5 @@ class AuthController(private val auth: AuthService) {
         @Valid @RequestBody body: ChangePasswordRequest,
         @AuthenticationPrincipal principal: ClubPrincipal,
         request: HttpServletRequest,
-    ): AuthResponse = auth.changePassword(principal, body.currentPassword, body.newPassword, request.remoteAddr)
+    ): AuthResponse = auth.changePassword(principal, body.currentPassword, body.newPassword, clientIps.resolve(request))
 }

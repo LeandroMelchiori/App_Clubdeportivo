@@ -1,0 +1,109 @@
+name: Despliegue del backend
+
+# Al crear una etiqueta de versión (por ejemplo v1.2.3) corre los tests, publica en GHCR la imagen ARM64
+# de la API con esa etiqueta y mueve :stable a ella. La VM la toma sola: un temporizador revisa :stable
+# y la despliega fijada por digest, con rollback si no queda healthy. GitHub no necesita acceso SSH ni
+# credenciales de OCI. El último job espera hasta ver la versión nueva en producción.
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+env:
+  IMAGEN: ghcr.io/leandromelchiori/club-deportivo-api
+  URL_INFO: https://api-club.sachadev.me/api/v1/info
+
+jobs:
+  jar:
+    name: Tests y jar
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Tests con PostgreSQL en Testcontainers y jar
+        run: ./gradlew :backend:test :backend:bootJar
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jar
+          path: backend/build/libs/club-deportivo-api.jar
+          retention-days: 1
+
+  imagen:
+    name: Imagen ARM64 en GHCR
+    needs: jar
+    # La VM es ARM: la imagen se arma en un runner ARM, sin emulación.
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: jar
+          path: backend/build/libs
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Construir y publicar
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          platforms: linux/arm64
+          push: true
+          build-args: VERSION=${{ github.ref_name }}
+          tags: |
+            ${{ env.IMAGEN }}:${{ github.ref_name }}
+            ${{ env.IMAGEN }}:stable
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+
+  verificar:
+    name: Versión en producción
+    needs: imagen
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Esperar la versión nueva en producción
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          for i in $(seq 1 48); do
+            actual=$(curl -fsS --max-time 10 "$URL_INFO" | jq -r '.app.version' 2>/dev/null || true)
+            if [ "$actual" = "$VERSION" ]; then
+              echo "En producción: $VERSION"
+              exit 0
+            fi
+            echo "Producción todavía en: ${actual:-?}"
+            sleep 15
+          done
+          echo "La versión $VERSION no llegó a producción en 12 minutos." >&2
+          exit 1

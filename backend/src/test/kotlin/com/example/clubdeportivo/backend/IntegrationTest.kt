@@ -23,7 +23,11 @@ import org.springframework.test.web.servlet.client.RestTestClient
  */
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = ["club.auth.jwt-secret=${IntegrationTest.TEST_JWT_SECRET}"],
+    properties = [
+        "club.auth.jwt-secret=${IntegrationTest.TEST_JWT_SECRET}",
+        // Como en la VM: solo la red de Traefik es de confianza, y los tests llegan desde 127.0.0.1.
+        "club.network.trusted-proxies=172.18.0.0/16",
+    ],
 )
 @AutoConfigureRestTestClient
 @Import(TestcontainersConfiguration::class)

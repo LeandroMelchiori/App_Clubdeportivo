@@ -1,0 +1,8 @@
+[Unit]
+Description=Despliegue automático de la API de Club deportivo desde GHCR
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/club-deportivo-autodeploy
