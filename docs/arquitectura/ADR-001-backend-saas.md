@@ -1,7 +1,7 @@
 # ADR-001: Backend propio para el servicio multi-club
 
 - **Estado:** aceptado
-- **Fecha:** 2026-11-08
+- **Fecha:** 2026-11-08 (diseño de la identidad agregado el 2026-11-10, con la entrega 3)
 - **Alcance:** Fase 2 de la hoja de ruta (seguridad y servicio)
 
 ## Contexto
@@ -75,10 +75,67 @@ flowchart LR
 
 - **Usuarios:** email y contraseña con hash Argon2id. Un usuario puede pertenecer a más de un club con un rol distinto en cada uno.
 - **Roles:** administrador, recepción, caja y solo lectura. Los permisos se validan en el servidor en cada operación. La app oculta lo que el rol no permite, pero no es la que decide.
-- **Tokens:** un token de acceso de vida corta (15 minutos) y un token de renovación opaco que rota en cada uso. El servidor guarda el hash del token de renovación, así que cerrar sesión o dar de baja a un usuario lo invalida de inmediato.
+- **Tokens:** un token de acceso de vida corta (15 minutos) y un token de renovación opaco que rota en cada uso. El servidor guarda el hash del token de renovación, así que cerrar sesión o dar de baja a un usuario lo invalida de inmediato. El token de acceso ya emitido sigue valiendo hasta que vence, como máximo 15 minutos.
 - **En el dispositivo:** el token de renovación se guarda cifrado con una clave del Android Keystore. Nada de credenciales en el APK.
 - **Alta de un club:** un endpoint crea el club y su administrador. El administrador da de alta a su personal con una contraseña temporal que hay que cambiar en el primer ingreso. Las invitaciones por email quedan para más adelante porque requieren un proveedor de correo.
 - **Fuerza bruta:** límite de intentos de login por cuenta y por IP.
+
+### Diseño de la identidad (entrega 3)
+
+**Elegir el club al ingresar.** `POST /auth/login` recibe un `clubId` opcional. Sin él, la sesión se abre en el club del último ingreso o, si nunca ingresó, en el de la membresía más antigua. La respuesta siempre trae el club activo y la lista de todos los clubes de la cuenta con su rol. Para pasar a otro club, `POST /auth/refresh` con `clubId` rota el token y cambia el club de la misma sesión, sin volver a pedir la contraseña. Se eligió así porque:
+
+- quien tiene un solo club, que es lo más común, ingresa en un paso;
+- el login tiene una sola forma de respuesta, siempre con tokens;
+- cambiar de club no obliga a guardar ni a reenviar la contraseña.
+
+Un `clubId` de un club sin membresía activa responde 403 y no consume el token de renovación.
+
+**Tokens y sesiones.**
+
+- El token de acceso es un JWT firmado con HS256. La clave sale de la variable de entorno `CLUB_AUTH_JWT_SECRET` (Base64, 32 bytes o más). Sin ella, o si es corta, la API no arranca.
+- Los claims son la cuenta (`sub`), el club activo (`club`), el rol en ese club (`role`), la sesión (`sid`) y si falta cambiar la contraseña temporal (`pwd_change`). El token no lleva email ni nombre.
+- Una sesión es un ingreso de una cuenta a un club. El token de renovación tiene 256 bits al azar, se guarda solo su SHA-256 y vence a los 30 días. Cada renovación lo marca como usado y emite uno nuevo en la misma sesión.
+- Si llega un token ya usado, alguien lo copió: se revoca la sesión entera, así tampoco sirve el token nuevo que se emitió con él. La renovación bloquea la fila del token, así que dos pedidos simultáneos con el mismo token no pasan los dos.
+- Cerrar sesión revoca la sesión. Dar de baja a alguien de un club revoca sus sesiones en ese club. Cambiar la contraseña revoca todas las sesiones de la cuenta, en todos sus clubes.
+
+**Alta de club y de personal.**
+
+- `POST /clubs` es público y crea el club con su administrador. Si el email ya tiene cuenta, responde 409.
+- El administrador suma personal con `POST /members`. Si el email no tiene cuenta, el servidor genera una contraseña temporal de 12 caracteres, sin los que se confunden al dictarla, y la devuelve una sola vez.
+- Mientras la contraseña temporal no se cambie, el token no tiene ningún rol y solo sirve para `POST /auth/password`.
+- Si el email ya tiene cuenta en otro club, se le suma este club con el rol pedido y conserva su contraseña. Así es como una persona llega a tener varios clubes. El administrador se entera de que esa cuenta existe, algo aceptable mientras no haya invitaciones por email.
+- La baja marca la membresía como inactiva. Volver a sumar a la persona la reactiva. Nadie puede darse de baja a sí mismo, así el club nunca queda sin un administrador.
+- En esta entrega, el personal solo lo administra el rol administrador. Los permisos de cada operación de negocio llegan con la entrega 8.
+
+**Aislamiento en la base.** Las operaciones abren su transacción con `DatabaseContext`, en uno de dos contextos:
+
+- **De club:** la transacción pasa al rol `club_app`, que no es dueño de las tablas y por eso cumple las reglas por fila. También fija el club activo con `set_config('app.club_id', ..., true)`. Las dos cosas duran solo hasta el final de la transacción, así la conexión vuelve al pool limpia.
+- **De identidad:** alta de club, login, renovación y cambio de contraseña no pertenecen a un solo club. Corren con el usuario dueño de las tablas, al que las reglas no se aplican.
+
+Las capas de protección son estas:
+
+- Los repositorios de datos de club toman el club del contexto y fallan si se los usa fuera de él.
+- Las reglas de `clubs`, `club_memberships` y `sessions` filtran por el club activo. Sin club activo, no dejan ver ni escribir nada.
+- Una cuenta solo es visible desde los clubes donde tiene membresía.
+- `club_app` no puede leer el hash de las contraseñas ni los tokens de renovación.
+- Para encontrar por email a una cuenta de otro club hay una función `SECURITY DEFINER` que solo devuelve el id.
+- Ninguna ruta recibe el club como parámetro, y el cuerpo de los pedidos rechaza los campos desconocidos: un `clubId` de más responde 400.
+
+**Fuerza bruta y privacidad.**
+
+- Se permiten 5 intentos fallidos por cuenta y 20 por IP en ventanas de 15 minutos. Pasado el límite, la respuesta es 429 con `Retry-After`.
+- La cuenta se cuenta por el email normalizado, exista o no.
+- Un email inexistente y una contraseña incorrecta responden igual. En los dos casos se verifica un hash Argon2id, así el tiempo de respuesta tampoco delata qué cuentas existen.
+- Argon2id usa 19 MiB, 2 pasadas y 1 hilo, el mínimo que recomienda OWASP.
+- Los logs registran ids de cuenta, sesión y club. Nunca emails, contraseñas, tokens ni IPs.
+- Los errores no controlados registran solo el tipo de excepción y dónde ocurrió, porque el mensaje puede traer datos de la consulta.
+
+**Límites conocidos.**
+
+- Los contadores de intentos viven en memoria: valen para una sola instancia y se reinician con ella.
+- La IP es la del pedido. Detrás del proxy de la entrega 4 hay que tomarla de los encabezados reenviados.
+- El token de acceso sigue valiendo hasta 15 minutos después de cerrar la sesión o de una baja.
+- La contraseña temporal no vence.
 
 ### Datos en el servidor
 
@@ -110,7 +167,7 @@ La app trabaja siempre contra SQLite. La sincronización corre al abrir la app, 
 
 - REST con JSON, versionada en `/api/v1` y documentada con OpenAPI.
 - Errores con el formato estándar de detalles de problema (RFC 9457).
-- Endpoints principales: autenticación (`/auth/login`, `/auth/refresh`, `/auth/logout`), alta de clubes, administración de miembros, `/sync/push` y `/sync/pull`.
+- Endpoints principales: autenticación (`/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/password`), alta de clubes (`POST /clubs`), club activo (`GET /club`), administración de miembros (`/members`), `/sync/push` y `/sync/pull`.
 
 ### Cliente Android
 
@@ -169,6 +226,10 @@ Cada entrega es un PR con sus tests y, cuando cambia la interfaz, evidencia visu
 2. **La app suma OkHttp, kotlinx.serialization, corrutinas y WorkManager.** Retrofit, Room y Hilt siguen fuera.
 3. **La variante demo sigue funcionando sin backend.**
 4. **El personal se da de alta con una contraseña temporal.** Las invitaciones por email quedan para más adelante.
+5. **El club se elige al ingresar y se cambia con la renovación**, sin volver a pedir la contraseña. Ver "Diseño de la identidad".
+6. **Tokens de acceso JWT con HS256** y clave tomada del entorno. Una sola API firma y verifica, así que no hace falta un par de claves.
+7. **Reglas por fila con un rol propio (`club_app`)** para las operaciones de club. Las de identidad corren con el usuario dueño de las tablas.
+8. **El límite de intentos vive en memoria.** Alcanza con una sola instancia. Si hubiera varias, pasaría a la base o a un almacén compartido.
 
 ## Decisiones abiertas
 

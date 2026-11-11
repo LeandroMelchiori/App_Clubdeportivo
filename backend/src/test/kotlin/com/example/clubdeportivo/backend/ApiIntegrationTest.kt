@@ -4,33 +4,24 @@ import org.assertj.core.api.Assertions.assertThat
 import org.flywaydb.core.Flyway
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.context.annotation.Import
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
-import org.springframework.jdbc.core.JdbcTemplate
-import org.springframework.test.web.servlet.client.RestTestClient
 
-/** Levanta la API completa contra un PostgreSQL real. */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureRestTestClient
-@Import(TestcontainersConfiguration::class)
-class ApiIntegrationTest @Autowired constructor(
-    private val client: RestTestClient,
-    private val flyway: Flyway,
-    private val jdbc: JdbcTemplate,
-) {
+/** El esqueleto de la API: migraciones, salud, documentación y formato de los errores. */
+class ApiIntegrationTest : IntegrationTest() {
+
+    @Autowired
+    private lateinit var flyway: Flyway
 
     @Test
-    fun flyway_aplicaLaMigracionInicial() {
+    fun flyway_aplicaTodasLasMigraciones() {
         val info = flyway.info()
 
-        assertThat(info.current()?.version?.version).isEqualTo("1")
+        assertThat(info.current()?.version?.version).isEqualTo("3")
         assertThat(info.pending()).isEmpty()
-        val comentario = jdbc.queryForObject(
-            "select obj_description('public'::regnamespace, 'pg_namespace')",
-            String::class.java,
-        )
+        val comentario = jdbc.sql("select obj_description('public'::regnamespace, 'pg_namespace')")
+            .query(String::class.java)
+            .single()
         assertThat(comentario).isEqualTo("Club deportivo: datos del servicio multi-club")
     }
 
@@ -52,12 +43,29 @@ class ApiIntegrationTest @Autowired constructor(
             .jsonPath("$.info.title").isEqualTo("Club deportivo API")
             .jsonPath("$.info.version").isEqualTo("v1")
             .jsonPath("$.paths['/api/v1/health'].get").exists()
+            .jsonPath("$.paths['/api/v1/auth/login'].post").exists()
+            .jsonPath("$.paths['/api/v1/members'].post.security").isNotEmpty()
+            .jsonPath("$.components.securitySchemes.bearer.scheme").isEqualTo("bearer")
+    }
+
+    @Test
+    fun sinToken_respondeProblemDetail401() {
+        client.get().uri("/api/v1/club")
+            .exchange()
+            .expectStatus().isUnauthorized
+            .expectHeader().valueEquals(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
+            .expectHeader().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON)
+            .expectBody()
+            .jsonPath("$.status").isEqualTo(401)
+            .jsonPath("$.title").isEqualTo("No autenticado")
+            .jsonPath("$.instance").isEqualTo("/api/v1/club")
     }
 
     @Test
     fun rutaInexistente_respondeProblemDetail() {
-        client.get().uri("/api/v1/no-existe")
-            .exchange()
+        val token = login(createClub().adminEmail, PASSWORD).accessToken
+
+        get("/api/v1/no-existe", token)
             .expectStatus().isNotFound
             .expectHeader().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON)
             .expectBody()

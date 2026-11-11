@@ -62,20 +62,29 @@ Desde la raiz del proyecto en Windows:
 
 ## Backend
 
-API REST en Spring Boot con Kotlin, PostgreSQL y Flyway. Usa directamente la lógica de `shared/`. Por ahora es el esqueleto: endpoint de salud, migraciones, errores y documentación. Identidad y datos de los clubes llegan en las próximas entregas.
+API REST en Spring Boot con Kotlin, PostgreSQL y Flyway. Usa directamente la lógica de `shared/`. Hoy tiene salud, migraciones, errores, documentación e identidad: alta de clubes, login con tokens, personal con roles y aislamiento entre clubes. Los datos de negocio de los clubes llegan en las próximas entregas. El diseño está en la [ADR-001](docs/arquitectura/ADR-001-backend-saas.md).
 
 Para correrla localmente, desde la raíz del proyecto:
 
 ```powershell
 docker compose -f backend/docker-compose.yml up -d
+$clave = New-Object byte[] 32
+[Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($clave)
+$env:CLUB_AUTH_JWT_SECRET = [Convert]::ToBase64String($clave)
 .\gradlew.bat :backend:bootRun
 ```
 
-El primer comando levanta PostgreSQL en `localhost:5432` con una base `clubdeportivo` solo para desarrollo. Al arrancar, la API aplica con Flyway las migraciones de `backend/src/main/resources/db/migration/` y queda en `http://localhost:8080`:
+El primer comando levanta PostgreSQL en `localhost:5432` con una base `clubdeportivo` solo para desarrollo. Los tres siguientes generan la clave con la que la API firma los tokens de acceso. La API la toma de `CLUB_AUTH_JWT_SECRET` (Base64, 32 bytes o más) y no arranca sin ella. La clave nunca va en el repositorio. En Git Bash alcanza con `export CLUB_AUTH_JWT_SECRET=$(openssl rand -base64 32)`. Con una clave nueva, los tokens emitidos antes dejan de servir.
+
+Al arrancar, la API aplica con Flyway las migraciones de `backend/src/main/resources/db/migration/` y queda en `http://localhost:8080`:
 
 - Salud: `GET /api/v1/health`
 - OpenAPI en JSON: `GET /api/v1/openapi`
-- Swagger UI: `/api/v1/docs`
+- Swagger UI: `/api/v1/docs`. El botón Authorize recibe el token de acceso.
+- Alta de club: `POST /api/v1/clubs`
+- Sesión: `POST /api/v1/auth/login`, `/auth/refresh`, `/auth/logout` y `/auth/password`
+- Club activo: `GET /api/v1/club`
+- Personal del club: `GET` y `POST /api/v1/members`, `DELETE /api/v1/members/{userId}`
 
 Los errores responden con `application/problem+json` (RFC 9457).
 
@@ -90,13 +99,44 @@ $env:SPRING_DATASOURCE_URL = "jdbc:postgresql://localhost:5433/clubdeportivo"
 
 En otros entornos la conexión se configura con `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` y `SPRING_DATASOURCE_PASSWORD`.
 
+### Probar el login localmente
+
+Con la API corriendo, desde otra terminal de PowerShell:
+
+```powershell
+$api = "http://localhost:8080/api/v1"
+function Post($ruta, $cuerpo, $token) {
+    $headers = @{}
+    if ($token) { $headers.Authorization = "Bearer $token" }
+    Invoke-RestMethod -Method Post "$api$ruta" -Headers $headers -ContentType "application/json" -Body ($cuerpo | ConvertTo-Json)
+}
+
+# 1. Dar de alta un club con su administradora e ingresar
+Post "/clubs" @{ clubName = "Club Demo"; adminName = "Ana Admin"; adminEmail = "ana@example.com"; adminPassword = "clave-segura-123" }
+$ana = Post "/auth/login" @{ email = "ana@example.com"; password = "clave-segura-123" }
+Invoke-RestMethod "$api/club" -Headers @{ Authorization = "Bearer $($ana.accessToken)" }
+
+# 2. Sumar personal: la respuesta trae una contraseña temporal, que se muestra una sola vez
+$alta = Post "/members" @{ name = "Beto Gomez"; email = "beto@example.com"; role = "RECEPTION" } $ana.accessToken
+
+# 3. El personal ingresa con la temporal y la cambia: hasta entonces el token no sirve para otra cosa
+$beto = Post "/auth/login" @{ email = "beto@example.com"; password = $alta.temporaryPassword }
+$beto = Post "/auth/password" @{ currentPassword = $alta.temporaryPassword; newPassword = "otra-clave-segura" } $beto.accessToken
+
+# 4. Renovar la sesión, que rota el token de renovación, y cerrarla
+$ana = Post "/auth/refresh" @{ refreshToken = $ana.refreshToken }
+Post "/auth/logout" @{ refreshToken = $ana.refreshToken }
+```
+
+Si una cuenta tiene varios clubes, el login acepta `clubId` y la respuesta trae la lista en `clubs`. Para pasar a otro club sin volver a ingresar, se manda `clubId` en `/auth/refresh`. Pasados 5 intentos fallidos por cuenta, o 20 por IP, la API responde 429 durante 15 minutos.
+
 Tests:
 
 ```powershell
 .\gradlew.bat :backend:test
 ```
 
-Los tests de integración levantan un PostgreSQL real con Testcontainers, así que necesitan Docker corriendo. No usan la base de `docker-compose.yml`.
+Los tests de integración levantan un PostgreSQL real con Testcontainers, así que necesitan Docker corriendo. No usan la base de `docker-compose.yml`. Cubren login, renovación y cierre de sesión, contraseña temporal, límite de intentos, y que cada endpoint rechace los datos de otro club, incluidas las reglas por fila de la base.
 
 Para detener la base: `docker compose -f backend/docker-compose.yml down`. Con `-v` también se borran sus datos.
 

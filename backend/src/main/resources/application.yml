@@ -7,6 +7,16 @@ spring:
     url: jdbc:postgresql://localhost:5432/clubdeportivo
     username: clubdeportivo
     password: clubdeportivo
+  jackson:
+    deserialization:
+      # Un campo de más se rechaza: por ejemplo, un clubId en el cuerpo, que nunca se acepta como parámetro.
+      fail-on-unknown-properties: true
+
+club:
+  auth:
+    # Clave de firma de los tokens de acceso, en Base64 y de 32 bytes o más. Sale del entorno, nunca
+    # del repositorio: sin ella la API no arranca.
+    jwt-secret: ${CLUB_AUTH_JWT_SECRET:}
 
 management:
   endpoints:
